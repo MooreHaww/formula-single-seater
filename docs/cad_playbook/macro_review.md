@@ -48,6 +48,46 @@ Result: 76 member uses checked, the `InsertCurveFileBegin` line was the only pro
 
 **Next test, in order:** `SaveStandardViews` (white background, shaded with edges, your own background back afterwards); `ImportFrameNodes` in an empty part (seven sketches, counts 12 / 10 / 7 / 4 / 18 / 32 / 33); `ImportAirfoil` with `symmetric.dat`, chord 300; `ExportConfigsSTEP` on a part with two configurations.
 
+### BuildTubes.bas (new, 2026-11-16)
+
+**Why:** in the 2026 test, the Structural Member command showed every sketch during selection, so a box select caught lines from other `FRAME_*` sketches even when they were hidden. The macro builds each member from one sketch's segments without any selection.
+
+**API route, confirmed in the installed 2026 interop DLLs:**
+
+| Step | Call (variable type) | Signature in 2026 |
+|---|---|---|
+| sketch of a group | `Feature.GetSpecificFeature2` (Feature) then `Sketch.GetSketchSegments` (Sketch) | both return Object (late-bound) |
+| group | `FeatureManager.CreateStructuralMemberGroup` (FeatureManager) | returns `StructuralMemberGroup` |
+| group settings | `StructuralMemberGroup.Segments`, `.ApplyCornerTreatment`, `.CornerTreatmentType` | writable properties; miter = `swSolidworksWeldmentEndCondOptions_e.swEndConditionMiter` (1) |
+| member | `FeatureManager.InsertStructuralWeldment5(Path, ConnectedSegmentsOption, AllowProtrusion, Groups, ConfigurationName)` | 5 args, returns Feature; `swConnectedSegments_SimpleCut` (1). Fallback `InsertStructuralWeldment4` (4 args) |
+| weldment feature | `PartDoc.IsWeldment`, `FeatureManager.InsertWeldmentFeature` | Boolean property; returns Feature |
+| failure reason | `FeatureManager.GetCreateFeatureErrors(ByRef Msgs, ByRef FeatureTypeName)` | returns Int32 |
+| material | `PartDoc.SetMaterialPropertyName2(Config, Database, Name)` (Sub), `PartDoc.GetMaterialPropertyName2(Config, ByRef Database)` | `AISI 1020` and `Plain Carbon Steel` both exist in the installed `solidworks materials.sldmat` (7900 and 7800 kg/m³); the macro uses AISI 1020 |
+| cut list | `BodyFolder.SetAutomaticUpdate`, `.UpdateCutList`, `.GetBodyCount`; `Feature.GetFirstSubFeature` / `GetNextSubFeature`; `Feature.CustomPropertyManager`, `CustomPropertyManager.Get6` (6 args) | all present |
+| mass | `ModelDocExtension.CreateMassProperty`, `MassProperty.Mass` | kg with system units |
+| save | `ModelDoc2.Save3(Options, ByRef Errors, ByRef Warnings)`, or `ModelDocExtension.SaveAs3` (7 args) for an unsaved part | |
+
+The per-interface checker now covers five modules and 136 member uses, with no problems. All enum names used in `BuildTubes` exist in 2026.
+
+**What depends on run-time behaviour** (cannot be settled from the type library; the macro reports each one):
+- **A branched network in one group** (more than two segments at a node). If SolidWorks refuses the all-segments group, the macro retries with one group per segment in the same feature. That is always valid, but nothing within the group is mitered, so the trim does the joints. The message says which mode each group got.
+- **The empty profile configuration name `""`** in `InsertStructuralWeldment5`. If it is refused, the macro falls back to `InsertStructuralWeldment4`.
+- **Whether the Weldment feature has to be inserted first.** The macro inserts it only when `IsWeldment` is False.
+- **The database name `SOLIDWORKS Materials`.** The macro reads the material back to check; a failure is reported, not fatal.
+- **The feature type names `SolidBodyFolder` / `CutListFolder` and the cut-list property `LENGTH`** (resolved in mm). If `LENGTH` is missing, the length line FAILs and says so.
+- **Late-bound casts:** the Object/Variant returns (`GetSpecificFeature2`, `GetSketchSegments`, the sub-feature walk) are only type-checked when the macro runs.
+- **Mass and cut length are measured before the trim.** The tubes overlap at the joints, so both read slightly high; the limits (38 to 46 kg, ±5 %) allow for it.
+
+**First run (2026-11-16): a bug, fixed.**
+- **What happened:** on a part without `FRAME_*` sketches, the macro inserted a Weldment feature and then stopped with "no sketch named FRAME_hoop". A second run inserted another one (`Weldment`, `Weldment1`). `PartDoc.IsWeldment` had stayed False with a Weldment feature present but no members, so it cannot tell whether the feature exists.
+- **Fix, part 1: check first.** All checks now run for all seven groups before anything is changed: sketch exists, has segments, group in the CSV, profile file exists, plus the CSV and save-path checks before them. Any failure there stops with "Nothing was changed".
+- **Fix, part 2: no second Weldment.** The Weldment feature is inserted only after those checks, and only if the part has none. A part counts as having one if any of these holds:
+  - `IsWeldment` is True;
+  - a feature has the type name `WeldmentFeature`. That name appears in the installed weldment DLLs but could not be confirmed from the type library;
+  - a feature is named `Weldment` or `Weldment<n>`, the default names.
+- **Stop messages:** a stop during the build says that the members made so far are kept and the part is not saved.
+- **Still untested in the app:** the full build path (members, material, cut list, save).
+
 ## Read-through before the test (history)
 
 The four `.bas` modules in `cad/macros/` were re-read for API mistakes against what I knew of the SolidWorks API up to 2025 and for Student-edition limits, before anything was executed. Items marked **fixed** were changed in the files; items marked **verify** were to be checked on first run.

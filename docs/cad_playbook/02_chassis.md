@@ -28,8 +28,29 @@ On a new PC: add `<repo>\cad\weldment_profiles` to the same File Locations list.
    | `FRAME_rear` | 33 | 25.4x1.6 | `SM_rear` |
 
    The final message lists the line count per sketch (116 in total); compare it with this table. Lines that meet at a node share one sketch point within a sketch (this worked in the 2026 test with the old single-sketch macro). Lines are not dimensioned (no equations), which is deliberate: the frame follows the hardpoints through MATLAB regeneration of the CSV, not through SolidWorks equations. To regenerate, delete the seven `FRAME_*` sketches (and the members built on them) first; the macro refuses to run while a `FRAME_*` feature exists. The macro was tested in its first, single-sketch form only; the per-group version is untested, needs the app.
-3. **One Structural Member per group, same routine every time** (start with `hoop`, then the order of the table):
-   1. In the FeatureManager tree, hide every `FRAME_*` sketch except the one you are working on (right-click > Hide; Ctrl-select several and hide them together). Hidden sketches cannot be picked, so the box select below only catches this group.
+3. **Structural Members with the `BuildTubes` macro** (preferred; untested, needs the app). The 2026 test showed that the Structural Member command shows every sketch while it is selecting, so a box select picks up lines of other groups even with the other sketches hidden. Save the part, then Tools > Macro > Run > `cad/macros/BuildTubes.swp`. For each `FRAME_<group>` sketch it:
+   - takes the sketch's own segments (no selection involved);
+   - creates one Structural Member with Standard `formula`, Type `tube_round` and the size read per group from `frame_tubes.csv` (25.4x2.4 for `hoop` and `hoop_brace`, 25.4x1.6 for the rest), with end miter;
+   - names it `SM_<group>`.
+
+   It inserts the Weldment feature first if the part does not have one. Then, in the same run, it:
+   - sets the material to AISI 1020 (SOLIDWORKS Materials, 7900 kg/m³; Plain Carbon Steel if AISI 1020 doesn't take);
+   - updates the cut list;
+   - saves the part. An unsaved part becomes `cad/chassis/chassis.SLDPRT`; if that file already exists the macro stops before changing anything.
+
+   The final message has a PASS/FAIL line for each check:
+   - tubes per group: 12 / 10 / 7 / 4 / 18 / 32 / 33, with the mode used:
+     - **one group:** miters between all segments of the sketch;
+     - **one group per segment:** used when SolidWorks refused a branched network in a single group. This is valid, but nothing is mitered; the trim in step 7 does the joints.
+   - cut-list bodies: 116;
+   - total cut length: within 5 % of the 41.88 m in `frame_tubes.csv`;
+   - mass: 38 to 46 kg;
+   - material set.
+
+   If a group fails, the macro stops with the group name and SolidWorks' error text, keeps the members already made and does not save. Members that already exist are kept, so after fixing the cause just run it again. To redo a group, delete its `SM_<group>` and rerun. The short version of steps 1 to 3 is `02a_frame_in_3_steps.md`.
+
+   **By hand (fallback only), the old routine** (start with `hoop`, then the order of the table):
+   1. In the FeatureManager tree, hide every `FRAME_*` sketch except the one you are working on (right-click > Hide; Ctrl-select several and hide them together). In 2026 the command still shows hidden sketches during selection, so pick lines one by one or check the selection list for strays.
    2. Insert > Weldments > Structural Member. Standard `formula`, Type `tube_round`, Size from the table.
    3. With the Group box active in the PropertyManager, drag a selection box around the whole car in a side or iso view: every line of the visible sketch goes into the group. Check the selection count against the table.
    4. Tick "Apply corner treatment", end miter (end trim for the braces, the trim against the hoops happens in step 7). OK.
@@ -40,8 +61,8 @@ On a new PC: add `<repo>\cad\weldment_profiles` to the same File Locations list.
 6. **Front and rear boxes** (`FRAME_front` 32 lines, `FRAME_rear` 33): one member each. If the corner-treatment dialog becomes slow, split the box select into two members (left half, right half: `SM_front_a`, `SM_front_b`); a member can take lines from one sketch only, which the per-group sketches guarantee.
 7. **Trim.** Insert > Weldments > Trim/Extend. Trim the secondary tubes against the hoops and the main rails ("Bodies to be trimmed" = the group, "Trimming boundary" = the hoop bodies, tick "Allow extension"). Do this group by group; one big trim fails silently on tangent cases.
 8. **Suspension pickup tabs**: skip in v1. The wishbone inboard points sit on the tube centreline nodes; the assembly mates to the layout's HP points, not to tabs.
-9. **Weldment cut list**: Insert > Weldments > Weldment (if not already created automatically) gives the cut list in the tree. Right-click > Update. The cut list is your tube length table; check its total against `frame_tubes.csv` (41.9 m before trimming; after trimming a little less).
-10. Material: Plain Carbon Steel or AISI 1020 on the whole part. Mass Properties: expect 40 to 45 kg.
+9. **Weldment cut list**: done by `BuildTubes` (update plus a total-length check against `frame_tubes.csv`, 41.9 m before trimming). After the trim, right-click the cut list > Update and expect a little less length.
+10. **Material and mass**: done by `BuildTubes` (AISI 1020, mass checked against 38 to 46 kg). By hand: right-click Material > Edit Material > SOLIDWORKS Materials > Steel > AISI 1020.
 
 ## Naming
 
@@ -57,7 +78,7 @@ The chassis is the fixed component? No: fix the master layout and mate the chass
 
 ## Beginner mistakes
 
-- Picking lines from two different sketches into one Structural Member: not allowed. That is why the macro makes one sketch per group; box select only with the other `FRAME_*` sketches hidden.
+- Picking lines from two different sketches into one Structural Member: not allowed. That is why `ImportFrameNodes` makes one sketch per group and `BuildTubes` builds each member from one sketch's segments; a box select in the command can still catch lines from other sketches in 2026.
 - Lines that meet at a node but do not share the endpoint (two separate points 0.1 mm apart): the corner treatment refuses to miter and the beam mesh later shows a disconnected node. Within one `FRAME_*` sketch the macro shares endpoints; between groups the members meet at the same coordinates and the trim in step 7 joins them. By hand, snap to the existing endpoint (yellow coincident icon).
 - Letting SolidWorks apply the profile with the wrong orientation on a bent group: irrelevant for round tubes, so ignore the "locate profile" option.
 - Trimming everything against everything: creates hundreds of tiny bodies and a 10-minute rebuild. Trim secondary against primary only.

@@ -8,6 +8,7 @@ All four are VBA modules saved as text (`.bas`, CRLF) so they diff in git. **Sta
 | `ExportConfigsSTEP.bas` | Activates every configuration of the active part or assembly, rebuilds, saves STEP AP214 | `cfd/geometry/<doc>_<config>.STEP` plus `export_log.txt` with mass and CG per config |
 | `SaveStandardViews.bas` | Saves iso, front, right, top, rear, bottom PNGs of the active document, white background | `media/views/<doc>_<config>_<view>.png` |
 | `ImportFrameNodes.bas` | Draws one 3D-sketch line per tube from `cad/frame/frame_nodes.csv` and `frame_tubes.csv` One 3D sketch per tube group (`FRAME_hoop`, `FRAME_hoop_brace`, `FRAME_sis`, `FRAME_bulkhead`, `FRAME_sidepod`, `FRAME_front`, `FRAME_rear`), ready for one Structural Member each |
+| `BuildTubes.bas` | Run after `ImportFrameNodes`. For each `FRAME_<group>` sketch it builds one Structural Member from that sketch's segments (`formula` / `tube_round`, size per group from `frame_tubes.csv`, end miter). It then sets AISI 1020, updates the cut list, checks counts, length and mass, and saves. Untested, needs the app. | `SM_<group>` features, one PASS/FAIL message, saved part (`cad/chassis/chassis.SLDPRT` if it was unsaved) |
 
 Review notes and the order to test them in: `docs/cad_playbook/macro_review.md`.
 

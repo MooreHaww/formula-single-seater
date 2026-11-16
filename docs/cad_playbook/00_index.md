@@ -6,6 +6,7 @@ One file per part, in build order. Each file gives the inputs (parameter names f
 |---|---|---|---|
 | 1 | `01_master_layout.md` | `cad/layout/master_layout.SLDPRT` | 2a |
 | 2 | `02_chassis.md` | `cad/chassis/chassis.SLDPRT` (weldment) | 2b |
+| 2a | `02a_frame_in_3_steps.md` | the same frame, macro route: empty part, `ImportFrameNodes`, `BuildTubes` | 2b |
 | 3 | `03_wishbones.md` | `cad/suspension/wishbone_*.SLDPRT` | 2c |
 | 4 | `04_upright.md` | `cad/suspension/upright_front.SLDPRT`, `_rear` | 2c |
 | 5 | `05_hub.md` | `cad/suspension/hub.SLDPRT` | 2c |

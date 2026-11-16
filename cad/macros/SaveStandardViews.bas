@@ -42,8 +42,13 @@ Sub main()
     Dim cfg As String
     cfg = SafeName(swModel.ConfigurationManager.ActiveConfiguration.Name)
 
-    ' Plain white background, shaded with edges
+    ' Plain white background, shaded with edges. Two ways to ask for a plain
+    ' background; whichever enum exists in 2026 wins, the other is skipped (verify).
+    On Error Resume Next
+    swApp.SetUserPreferenceIntegerValue swUserPreferenceIntegerValue_e.swColorsBackgroundAppearance, _
+        swColorsBackgroundAppearance_e.swColorsBackgroundAppearance_PlainWhite
     swApp.SetUserPreferenceToggle swUserPreferenceToggle_e.swColorsGradientPartBackground, False
+    On Error GoTo 0
     swModel.ViewDisplayShadedWithEdges
 
     Dim views As Variant, names As Variant, k As Long

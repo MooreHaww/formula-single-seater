@@ -82,14 +82,18 @@ Sub main()
 
     ' Rename the new curve feature after the file
     Dim feat As SldWorks.Feature
+    Dim featName As String
+    featName = "(unnamed)"
     Set feat = swModel.FeatureManager.FeatureByPositionReverse(0)
     If Not feat Is Nothing Then
         feat.Name = "Airfoil_" & BaseName(fileName) & "_c" & chordStr
+        featName = feat.Name
     End If
     swModel.ClearSelection2 True
     swModel.ViewZoomtofit2
-    MsgBox "Inserted " & n & " points as curve '" & feat.Name & "'." & vbCrLf & _
-           "Next: sketch on Front plane, Convert Entities, close the trailing edge, Extrude.", vbInformation
+    MsgBox "Inserted " & n & " points as curve '" & featName & "'." & vbCrLf & _
+           "The curve lies in the model XY plane (z = 0), i.e. the default Front plane. " & _
+           "Next: sketch on that plane, Convert Entities, close the trailing edge, Extrude.", vbInformation
 End Sub
 
 ' Read a Selig-format .dat: title line, then "x y" pairs. Returns the count.
@@ -103,12 +107,14 @@ Private Function ReadDat(ByVal path As String, ByRef xs() As Double, ByRef ys() 
     Do While Not EOF(fnum)
         Line Input #fnum, line
         line = Trim$(line)
-        If first Then
-            first = False
-            If Not IsNumeric(Left$(line, 1)) Then GoTo NextLine   ' title line
-        End If
         If line = "" Then GoTo NextLine
         parts = SplitWhitespace(line)
+        If first Then
+            first = False
+            ' title line: skip it unless it is already two numbers
+            If UBound(parts) < 1 Then GoTo NextLine
+            If Not (IsNumeric(parts(0)) And IsNumeric(parts(1))) Then GoTo NextLine
+        End If
         If UBound(parts) >= 1 Then
             If IsNumeric(parts(0)) And IsNumeric(parts(1)) Then
                 If count > UBound(xs) Then
@@ -127,6 +133,10 @@ Private Function ReadDat(ByVal path As String, ByRef xs() As Double, ByRef ys() 
 NextLine:
     Loop
     Close #fnum
+    If count = 0 Then
+        ReadDat = 0
+        Exit Function
+    End If
     ' Open the trailing edge by a hair so the curve is not a closed loop with a
     ' coincident end point (the sketch later closes it with a line).
     If count >= 2 Then

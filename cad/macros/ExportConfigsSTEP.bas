@@ -44,9 +44,13 @@ Sub main()
     outDir = repoRoot & "\cfd\geometry"
     If Dir(outDir, vbDirectory) = "" Then MkDir outDir
 
-    ' STEP AP214, export solids and surfaces
+    ' STEP AP214. The "export geometry" preference name is uncertain (verify in
+    ' the API Help: swUserPreferenceIntegerValue_e); if it does not exist the
+    ' line is skipped and the Tools > Options > Export > STEP setting applies.
     swApp.SetUserPreferenceIntegerValue swUserPreferenceIntegerValue_e.swStepAP, 214
-    swApp.SetUserPreferenceIntegerValue swUserPreferenceIntegerValue_e.swStepExportGeometry, 3  ' solid + surface
+    On Error Resume Next
+    swApp.SetUserPreferenceIntegerValue swUserPreferenceIntegerValue_e.swStepExportGeometry, 3  ' solid + surface (verify)
+    On Error GoTo 0
 
     Dim docName As String
     docName = BaseNameOf(swModel.GetPathName)

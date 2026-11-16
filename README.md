@@ -70,11 +70,11 @@ Scripts whose input does not exist yet (motion CSVs, CFD results) run on synthet
 
 ```
 params/     car_params.txt (single source of truth) 
-cad/        SolidWorks parts and assemblies (git LFS), airfoils/, macros/, practice/
-matlab/     accel_test, load_cases, suspension_plots, aero_plots, run_all; common/, lapsim/, simulink/, cfd/, cad/
+cad/        SolidWorks parts and assemblies (git LFS), airfoils/, macros/, frame/ (node and tube CSVs), practice/
+matlab/     accel_test, suspension_geometry, load_cases, suspension_plots, aero_plots, run_all; common/, lapsim/, simulink/, cfd/, cad/ (airfoils, frame_layout)
 sim/        motion/ and stress/ exports and reports
 cfd/        Fluent guide and journal, geometry/, results/
-docs/       work plan, log, concept, ring reports, per-ring write-ups
+docs/       work plan, log, concept, ring reports, per-ring write-ups, cad_playbook/ (one file per part)
 media/      figures, renders, GIFs
 ```
 

@@ -2,6 +2,10 @@
 
 The one part everything references. It holds no solid bodies: only planes, axes, points and sketches. If a number changes in `car_params.txt`, this part moves and the rest of the car follows.
 
+**By macro (untested, needs the app):** `cad/macros/BuildLayout.bas` does steps 1 to 4 and the hardpoint points of steps 3 to 5 in one click. Open a new empty part, run `BuildLayout.main`. It saves `cad/layout/master_layout.SLDPRT` and writes `cad/layout/build_layout_report.txt`. Steps 6 to 10 (envelope and layout sketches, wing positions, A to D configurations) are scriptable but not in v1; nothing in the assembly depends on them. The hardpoint points are placed by value, so after `suspension_geometry` changes them, build a fresh layout.
+
+**Plane mapping used by every macro.** The frame CSVs and the build123d STEP parts use car coordinates directly as SolidWorks coordinates (X rearward, Y right, Z up). In that case GROUND (Z = 0) is the default **Front** plane, CENTRE (Y = 0) is **Top**, and FRONT_AXLE (X = 0) is **Right**. This replaces the "Top = ground" advice in `00_index.md`. The car then looks down from above in SolidWorks' "Front" view; that is cosmetic.
+
 ## Inputs (all from `car_params.txt`)
 
 `wheelbase`, `track_front`, `track_rear`, `tyre_od`, `tyre_width`, `tyre_rolling_radius`, `ride_height_front`, `ride_height_rear`, `nose_overhang`, `rear_overhang`, `overall_length`, `main_hoop_x`, `main_hoop_height`, `front_hoop_x`, `front_hoop_height`, `driver_hip_x`, `driver_hip_z`, `seat_back_angle`, `battery_*`, `motor_*`, the hardpoint block `f_*` and `r_*`, the wing block `fw_*`, `rw_*`, the floor block.

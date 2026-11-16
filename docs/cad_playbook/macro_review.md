@@ -104,6 +104,31 @@ The per-interface checker now covers five modules and 136 member uses, with no p
   - Everything that works is saved. The full report also goes to `cad/chassis/build_tubes_report.txt`, because a message box shows only about 1000 characters.
   - New calls: `SketchSegment.GetType` / `GetLength`, `SketchLine.GetStartPoint2` / `GetEndPoint2`, `SketchPoint.X/Y/Z`, `swSketchSegments_e.swSketchLINE`. All five macros: 158 member uses, no problems. The only public name shared between modules is `main`, which VBA allows in one project such as `repo_macros.swp`.
 
+**Third run (2026-11-16): ALL PASS.** All 7 groups built (12/10/7/4/18/32/31), every one by one group per segment. 114 bodies, 81 cut-list items, cut length 42.57 m vs 41.48 m (+2.6 %), AISI 1020, **mass 41.5 kg**, saved as `cad/chassis/chassis.SLDPRT`.
+- **Mass vs params:** the CSV gives 42.97 kg at 7850 kg/m3, which is 43.24 kg at the 7900 of AISI 1020. SolidWorks gives 41.5 kg, 1.7 kg (4 %) less. The likely reason is that the members are cut against each other at the shared nodes (`swConnectedSegments_SimpleCut`), so the overlap volume at the 50 nodes is counted once instead of twice. `m_frame` stays 43.0 for now (the conservative side); update it from the SolidWorks mass after the trim.
+- **Cut length +2.6 %:** for a tube with an angled or pointed end, the cut-list LENGTH is its longest extent, not its centreline. So the extra length is a measuring effect, not extra steel; the mass budget uses mass, not length.
+
+### TrimTubes.bas (new, 2026-11-16, untested, needs the app)
+
+Executes the trim plan `cad/frame/frame_trims.csv` from `matlab/cad/frame_trims.m` (self-test 17 of 20): one row per node with two or more tube ends, 50 rows, 172 trimmed ends.
+
+| Step | API (checked in the 2026 DLLs) |
+|---|---|
+| bodies | `PartDoc.GetBodies2(swSolidBody, False)`; `Body2.GetMassProperties(7900)` (centroid in elements 0 to 2, m); `Body2.GetBodyBox` |
+| trim | `FeatureManager.InsertWeldmentTrimFeature2(EndCond, Options, GapValue, BodiesToTrim, BodiesOrFaces) -> Feature`, with `swSolidworksWeldmentEndCondOptions_e.swEndConditionTrim` (4) and `swWeldmentTrimExtendOptionType_e.swWeldmentTrimExtendOption_CopedCut` (4); fallback Options 0 |
+| errors | `FeatureManager.GetCreateFeatureErrors` |
+| cut list | `BodyFolder.SetAutomaticUpdate`, `UpdateCutList`, `GetBodyCount`; `CustomPropertyManager.Get6 "LENGTH"` |
+| mass, save | `ModelDocExtension.CreateMassProperty`, `MassProperty.Mass`; `ModelDoc2.Save3` |
+
+- **Body matching:** each solid body is matched to the tube whose midpoint is nearest its centroid (plus a quarter of the bounding-box difference). A match needs a score under 25 mm and a runner-up at least 10 mm worse. In the CSV the closest two tube midpoints are 60 mm apart (`RRK_cross`, `RT1_cross`), so the match is unique with margin. Bodies are matched again before every row, because a trim replaces the bodies it cuts.
+- **Check first:** the part is saved, the three CSVs exist, and every tube in a row has a body. A row that fails is skipped and listed. A row whose `Trim_<node>` exists is kept. If no row can be made, the macro stops with "Nothing was changed".
+- **Checker:** 203 member uses in six macros, no problems; the five enum names exist.
+- **Depends on run-time behaviour:**
+  - whether `swEndConditionTrim` is the right value for the EndCond argument (the help page that names its enum could not be read);
+  - whether the coped cut is accepted for round tubes;
+  - which side of a cut body is kept (expected: the long part);
+  - the boundary tube's own end at a corner node stays flat at the node centre, inside the joint.
+
 ## Read-through before the test (history)
 
 The four `.bas` modules in `cad/macros/` were re-read for API mistakes against what I knew of the SolidWorks API up to 2025 and for Student-edition limits, before anything was executed. Items marked **fixed** were changed in the files; items marked **verify** were to be checked on first run.
@@ -167,3 +192,31 @@ The four `.bas` modules in `cad/macros/` were re-read for API mistakes against w
 4. **ImportFrameNodes** in an empty part: 98 lines, then Repair Sketch, then one Structural Member on the four main-hoop lines with the 25.4x2.4 profile. If the member refuses the corner treatment, the endpoints did not merge: that is the `AddToDB` question above.
 
 Report back: which of the four ran unchanged, which needed an edit, and what the edit was, so the `.bas` files can be corrected.
+
+### BuildLayout.bas and BuildAssembly.bas (new, 2026-11-17, untested, needs the app)
+
+Scriptability of what is left, from the 2026 DLLs:
+
+| Step | Scriptable | Macro |
+|---|---|---|
+| Trim | yes, `InsertWeldmentTrimFeature2` | `TrimTubes` |
+| Master layout: planes, axes, hardpoints, equation link | yes, `InsertRefPlane`, `InsertAxis2`, `InsertReferencePoint`, `EquationMgr.FilePath/LinkToFile/Add3` | `BuildLayout` v1 |
+| Layout sketches (wheels, side/top layout, sections, wing positions), configurations | yes, `SketchManager`, `AddConfiguration3` | later, after v1 runs |
+| Assembly: insert, place, plane mates, interference, mass | yes, `AddComponent5`, `Component2.Transform2`, `AddMate5`, `InterferenceDetectionMgr`, `CreateMassProperty` | `BuildAssembly` v1 |
+| Suspension corner mates | yes, `AddMate5` (Concentric, Coincident, sphere) | when the wishbone, upright and hub parts exist |
+| Mirror left corners | yes, `AssemblyDoc.MirrorComponents3` | with the corners |
+| Motion study | yes, `swmotionstudy.dll` (`GetMotionStudyManager`, `CreateMotionStudy`, `Calculate`, `GetResults`); needs the add-in and its type library referenced | with the corners |
+| Simulation study | yes, `cosworks.dll` (`CreateNewStudy3`, `AddForce3`, `AddRestraint`, `CreateMesh`, `RunAnalysis`, `GetMinMaxStress`); same add-in condition | Ring 4 |
+
+- **Checker:** 326 member uses in eight macros, no problems. All 67 enum uses exist in `swconst`. The one name not in 2026 (`swStepExportGeometry`) appears only in a comment in ExportConfigsSTEP.
+- **BuildLayout depends on run-time behaviour:**
+  - the plane offset dimension being `D1@<plane>`, used in the equations;
+  - the offset direction (the macro reads the plane back through `RefPlane.Transform` and rebuilds it flipped if it is wrong);
+  - `InsertReferencePoint(swRefPointSketchPoint)` on a selected 3D-sketch point, and whether it returns one feature or an array.
+- **BuildAssembly depends on run-time behaviour:**
+  - `AddComponent5` needs the part loaded, so the macro opens each part first;
+  - STEP import uses the import options last set in the app;
+  - `Transform2` set to identity is expected to put the part's origin on the assembly origin;
+  - the three plane mates use each part's first three planes (Front, Top, Right from the template);
+  - a mate is renamed through a Feature cast.
+- **Plane mapping:** the macros use car coordinates directly, so GROUND = Front plane, CENTRE = Top, FRONT_AXLE = Right. This corrects `00_index.md`.

@@ -23,7 +23,7 @@ fprintf('Repo: %s\n', repo_root());
 tests = {'read_car_params', 'car_from_params', 'long_forces', 'accel_test', 'make_airfoils', ...
     'load_track', 'lapsim', 'cornering_speed_vs_downforce', 'lap_experiments', ...
     'suspension_plots', 'load_cases', 'aero_plots', 'wake_postprocess', ...
-    'suspension_geometry', 'frame_layout', 'mass_budget', 'cornering_balance', 'cornering_balance_study'};
+    'suspension_geometry', 'frame_layout', 'frame_trims', 'mass_budget', 'cornering_balance', 'cornering_balance_study'};
 hasSimulink = license('test', 'Simulink') && ~isempty(ver('simulink'));
 if hasSimulink, tests{end+1} = 'run_accel_simulink'; end
 results = struct('name', tests, 'pass', num2cell(false(size(tests))), 'msg', '');
@@ -52,6 +52,7 @@ summary.params = read_car_params();
 summary.airfoils = make_airfoils();
 summary.suspension_geometry = suspension_geometry(struct('plot', true, 'write', false));
 summary.frame = frame_layout(struct('plot', true, 'write', true));
+summary.trims = frame_trims();
 summary.mass = mass_budget();
 summary.accel = accel_test('C');
 summary.cornering = cornering_speed_vs_downforce();

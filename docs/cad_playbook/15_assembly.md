@@ -2,6 +2,16 @@
 
 Every part is modelled in car coordinates, so the assembly is mostly three-plane mates and the suspension joints. Build it in the order parts are finished so the Ring 2 checks (zero rebuild errors, Interference Detection, 50 mm wheelbase change, mass and CG) run early and often.
 
+**By macro (untested, needs the app):** `cad/macros/BuildAssembly.bas`. Run `BuildAssembly.main` with nothing open, after `BuildLayout` and `BuildTubes` (and `TrimTubes`).
+- It imports `cad/step/*.step` once to `cad/body/*.SLDPRT`.
+- It makes or opens `cad/formula_single_seater.SLDASM`. The layout goes in first and is fixed.
+- The chassis and the 18 bodies get three Coincident mates to GROUND / CENTRE / FRONT_AXLE, named `<component>_G/_C/_X`. A part whose mates are refused is fixed in place and listed.
+- The left tyres and rims are second instances turned 180 deg about the axle's vertical axis, and fixed.
+- Then it runs Interference Detection (coincidence and the chassis' own tube contacts not counted), reports the mass and CG of what is in so far, saves, and writes `cad/build_assembly_report.txt`.
+- A rerun only adds what is missing.
+
+The suspension corners, the wing sub-assemblies and the A to D configurations below are scriptable (`AddMate5` with Concentric and sphere mates, `AddConfiguration3`, component suppression). They come as a macro once the wishbone, upright and hub parts exist.
+
 ## Structure
 
 ```

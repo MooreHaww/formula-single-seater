@@ -24,4 +24,6 @@ The short version of `02_chassis.md` steps 1 to 3 and 9 to 10. Status: `ImportFr
 
 It does not stop at the first problem. A group that fails a check (sketch missing or out of date with the CSV, profile missing) is skipped. A group SolidWorks refuses is tried segment by segment, and every segment that fails even alone is listed with its tube id, nodes and length. Whatever can be built is built and saved, and every failure is in the final message and in `cad/chassis/build_tubes_report.txt`. It changes nothing only if no group at all can be built. Fix the cause and run step 3 again: members that already exist are kept.
 
-**Next:** the trim (`02_chassis.md` step 7).
+## Step 4: trim (after ALL PASS)
+
+Tools > Macro > Run > `repo_macros.swp`, pick `TrimTubes.main` (import `TrimTubes.bas` into the project first). It makes 50 `Trim_<node>` features from `cad/frame/frame_trims.csv` (172 tube ends cut against the stronger tube at each node) and saves. Expect "ALL PASS": bodies still 114, mass lower than before and within 38 to 46 kg. Same carry-on rules as step 3; the full list is in `cad/chassis/trim_tubes_report.txt`. Untested, needs the app.

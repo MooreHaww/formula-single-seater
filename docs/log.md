@@ -116,3 +116,8 @@ What that means for the plan: Fluent in Ansys Student uses at most 4 cores regar
   - interference list, partial mass and CG, save, `cad/build_assembly_report.txt`.
   - Suspension corners, wing sub-assemblies and configurations come once those parts exist.
 - **Checks:** 326 member uses in eight macros and 67 enum uses, no problems. No commits.
+- **TrimTubes first run (owner):** 30 of 50 trims made; bodies 114 before and after; mass 41.46 to 41.30 kg; saved. The 20 failed rows all involved 17 bodies that were already unmatched before any trim: their centroids are on the tube axis but shifted 19 to 42 mm along it, because BuildTubes' simple cut lengthens one tube at a node and shortens the other.
+  - Matching is now by distance to the tube's centreline segment (12 mm or less, next tube at least 8 mm further). On the real centroids: 0.3 to 4.1 mm own tube, 54 mm or more to the next.
+  - Re-run guard: the macro stops if trim features exist that are not named `Trim_*`.
+  - The structural members lost their `SM_` names in SolidWorks (now "25.4x2.4 (1)" and so on). TrimTubes does not touch them. BuildTubes now also finds an existing member as a child of its `FRAME_<group>` sketch, so a re-run no longer builds the tubes twice.
+  - Untested in the app. No commits.

@@ -163,6 +163,8 @@ Sub main()
     Dim smExists() As Boolean, buildable() As Boolean, failTxt() As String
     ReDim gName(1 To nG): ReDim segsByGroup(1 To nG): ReDim profByGroup(1 To nG)
     ReDim smExists(1 To nG): ReDim buildable(1 To nG): ReDim failTxt(1 To nG)
+    Dim smOther() As String
+    ReDim smOther(1 To nG)
     Dim swSkFeat As SldWorks.Feature, swSketch As SldWorks.Sketch
     Dim segs As Variant, keep() As Object, nKeep As Long, nToBuild As Long, nExisting As Long
     For i = 1 To nG
@@ -172,6 +174,11 @@ Sub main()
         If swSkFeat Is Nothing Then
             failTxt(i) = "no sketch named FRAME_" & g & " (run ImportFrameNodes)"
             GoTo NextCheck
+        End If
+        ' A member renamed by SolidWorks (e.g. "25.4x2.4 (1)") is still a child of its sketch
+        If Not smExists(i) Then
+            smOther(i) = MembersFromSketch(swSkFeat)
+            smExists(i) = (smOther(i) <> "")
         End If
         Set swSketch = swSkFeat.GetSpecificFeature2
         If swSketch Is Nothing Then
@@ -228,7 +235,7 @@ NextCheck:
             If failTxt(i) <> "" Then pre = pre & "  " & gName(i) & ": " & failTxt(i) & vbCrLf
         Next i
         If pre = "" Then
-            MsgBox "All " & nExisting & " SM_* members already exist; nothing to build. Nothing was changed.", vbInformation
+            MsgBox "All " & nExisting & " structural members already exist (found by name SM_<group> or as a child of FRAME_<group>); nothing to build. Nothing was changed.", vbInformation
         Else
             MsgBox "No group can be built. Nothing was changed." & vbCrLf & vbCrLf & pre, vbExclamation
         End If
@@ -252,7 +259,7 @@ NextCheck:
     For i = 1 To nG
         g = gName(i)
         If smExists(i) Then
-            report = report & PassFail(UBound(segsByGroup(i)) + 1 = expCount(g), allPass) & "  SM_" & g & ": existed, kept (" & _
+            report = report & PassFail(UBound(segsByGroup(i)) + 1 = expCount(g), allPass) & "  SM_" & g & ": existed" & IIf(smOther(i) = "", "", " as " & smOther(i)) & ", kept (" & _
                      UBound(segsByGroup(i)) + 1 & " segments, " & expCount(g) & " tubes in CSV)" & vbCrLf
             GoTo NextGroup
         End If
@@ -412,6 +419,19 @@ Private Function MakeMember(ByVal swFeatMgr As SldWorks.FeatureManager, ByVal pr
                                                     True, groupsVar)
     End If
     Set MakeMember = f
+End Function
+
+' Names of the features built from this sketch (structural members), "" if none.
+Private Function MembersFromSketch(ByVal skFeat As SldWorks.Feature) As String
+    Dim kids As Variant, k As Long, s As String, kf As SldWorks.Feature
+    kids = skFeat.GetChildren
+    If IsArray(kids) Then
+        For k = 0 To UBound(kids)
+            Set kf = kids(k)
+            If Not kf Is Nothing Then s = s & IIf(s = "", "", ", ") & kf.Name
+        Next k
+    End If
+    MembersFromSketch = s
 End Function
 
 Private Sub RenameFeature(ByVal f As SldWorks.Feature, ByVal nm As String, ByRef modeTxt As String)

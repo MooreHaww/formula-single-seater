@@ -12,9 +12,13 @@ Attribute VB_Name = "TrimTubes"
 '   per row, named Trim_<node>, end trim with a coped cut (the tube end
 '   follows the boundary tube's surface).
 '   1. Checks first, changes nothing: the part, the three CSVs, the solid
-'      bodies, and that every body matches exactly one tube (body centroid
-'      within 25 mm of the tube midpoint, bounding box like the tube's, next
-'      best match clearly worse). A row whose tubes cannot all be matched is
+'      bodies, and that every body matches exactly one tube: the body's
+'      centroid lies within 12 mm of that tube's centreline segment and every
+'      other tube is at least 8 mm further away (a near tie is refused).
+'      The distance to the segment, not to the midpoint, is used because
+'      BuildTubes' simple cut lengthens one tube at a node and shortens the
+'      other, which moves a centroid up to 42 mm ALONG its own tube (first
+'      trim run: 17 hoop and brace bodies missed by the midpoint match). A row whose tubes cannot all be matched is
 '      reported and skipped; a row whose Trim_<node> exists is kept. If no
 '      row can be made the macro stops with "Nothing was changed".
 '   2. Per row: InsertWeldmentTrimFeature2 with a coped cut; if refused, a
@@ -42,12 +46,13 @@ Attribute VB_Name = "TrimTubes"
 '     which is the tube (the cut-off piece is inside the boundary tube).
 '   * The boundary tube's own end at a node stays where BuildTubes left it
 '     (flat at the node centre, inside the joint); only the other tubes are cut.
-'   * Late-bound: GetBodies2, Body2.GetMassProperties / GetBodyBox, the
+'   * Late-bound: GetBodies2, Body2.GetMassProperties, the
 '     cut-list sub-feature walk, CustomPropertyManager LENGTH.
 ' ============================================================================
 Option Explicit
 
-Private Const MATCH_MM As Double = 25#
+Private Const MATCH_MM As Double = 12#     ' centroid to own centreline (real: 0.3 to 4.1 mm)
+Private Const TIE_MM As Double = 8#        ' next tube must be this much further (real: 54 mm or more)
 
 Sub main()
     Dim swApp As SldWorks.SldWorks
@@ -83,7 +88,7 @@ Sub main()
         Exit Sub
     End If
 
-    ' --- tubes: id -> Array(mid x, y, z, box dx, dy, dz) in mm ---------------------
+    ' --- tubes: id -> Array(ax, ay, az, bx, by, bz), the centreline end points in mm ---
     Dim nodes As Object, tubes As Object
     Set nodes = CreateObject("Scripting.Dictionary")
     Set tubes = CreateObject("Scripting.Dictionary")
@@ -96,7 +101,7 @@ Sub main()
             If UBound(parts) >= 3 Then nodes(Trim$(parts(0))) = Array(Val(parts(1)), Val(parts(2)), Val(parts(3)))
         End If
     Next k
-    Dim a As Variant, b As Variant, od As Double
+    Dim a As Variant, b As Variant
     lines = ReadTextLines(tubesFile)
     For k = 1 To UBound(lines)
         ln = Trim$(lines(k))
@@ -104,9 +109,8 @@ Sub main()
             parts = Split(ln, ",")
             If UBound(parts) >= 4 Then
                 If nodes.Exists(Trim$(parts(1))) And nodes.Exists(Trim$(parts(2))) Then
-                    a = nodes(Trim$(parts(1))): b = nodes(Trim$(parts(2))): od = Val(parts(4))
-                    tubes(Trim$(parts(0))) = Array((a(0) + b(0)) / 2, (a(1) + b(1)) / 2, (a(2) + b(2)) / 2, _
-                                                    Abs(b(0) - a(0)) + od, Abs(b(1) - a(1)) + od, Abs(b(2) - a(2)) + od)
+                    a = nodes(Trim$(parts(1))): b = nodes(Trim$(parts(2)))
+                    tubes(Trim$(parts(0))) = Array(a(0), a(1), a(2), b(0), b(1), b(2))
                 End If
             End If
         End If
@@ -135,6 +139,17 @@ Sub main()
     End If
 
     ' --- 1. checks: bodies and matching, nothing changed --------------------------------
+    ' Re-run guard: rows are skipped by their name Trim_<node>. If the part has trim
+    ' features under any other name (SolidWorks renamed the structural members once),
+    ' the "done" rows cannot be told apart, so stop instead of trimming twice.
+    Dim ours As Long, foreign As String
+    CountTrimFeatures swModel, ours, foreign
+    If foreign <> "" Then
+        MsgBox "This part has trim features that are not named Trim_<node>: " & Left$(foreign, 400) & vbCrLf & _
+               "TrimTubes cannot tell which rows they belong to, so it stops. Nothing was changed." & vbCrLf & _
+               "Rename them Trim_<node> (the node is in cad\frame\frame_trims.csv) or delete them, then run again.", vbExclamation
+        Exit Sub
+    End If
     Dim bodyOf As Object, unmatched As String, nBodies0 As Long
     Set bodyOf = MatchBodies(swPart, tubes, unmatched, nBodies0)
     Dim r As Long, ids As Variant, j As Long, nToDo As Long, nKept As Long, why As String
@@ -184,6 +199,7 @@ NextRowCheck:
     ' --- 2. trims -------------------------------------------------------------------------
     Dim report As String, failures As String, allPass As Boolean, nDone As Long
     Dim bArr() As Object, tArr() As Object, nb As Long, nt As Long, bIds As Variant, tIds As Variant
+    Dim trimType As String
     Dim f As SldWorks.Feature, modeTxt As String, err1 As String, dummy As String, dummyN As Long
     allPass = True
     For r = 1 To nRows
@@ -235,6 +251,7 @@ NextRowCheck:
         On Error GoTo 0
         If f.Name <> rowName(r) Then modeTxt = modeTxt & ", NOT renamed (is " & f.Name & ")"
         nDone = nDone + 1
+        If trimType = "" Then trimType = f.GetTypeName2
         report = report & "PASS  " & rowName(r) & ": " & nt & " ends against " & nb & " boundary tube(s), " & modeTxt & vbCrLf
 NextRow:
     Next r
@@ -270,7 +287,8 @@ NextRow:
     full = IIf(allPass, "ALL PASS", "SOME CHECKS FAILED") & "   (" & Format(Now, "yyyy-mm-dd hh:nn") & ", " & nDone & " trims made, " & _
            nKept & " kept, " & nRows & " in plan)" & vbCrLf & vbCrLf & summary & vbCrLf & _
            IIf(failures = "", "No failures.", "Failures:" & vbCrLf & failures) & _
-           IIf(unmatched = "", "", vbCrLf & "Bodies or tubes without a match before trimming: " & unmatched)
+           IIf(unmatched = "", "", vbCrLf & "Bodies or tubes without a match before trimming: " & unmatched) & _
+           vbCrLf & "Trim features found by name before this run: " & ours & IIf(trimType = "", "", "; type name of the new ones: " & trimType)
     WriteReport reportFile, full
     Debug.Print full
     Dim shortTxt As String
@@ -288,15 +306,16 @@ Private Function TrimFeature(ByVal swFeatMgr As SldWorks.FeatureManager, ByRef t
                                                           opts, 0#, tVar, bVar)
 End Function
 
-' Match every solid body to one tube id: centroid near the tube midpoint and
-' bounding box like the tube's. Returns tube id -> Body2. Lists what is left.
+' Match every solid body to one tube id: its centroid is within MATCH_MM of the
+' tube's centreline segment and the next tube is TIE_MM further. Returns
+' tube id -> Body2. Lists what is left.
 Private Function MatchBodies(ByVal swPart As SldWorks.PartDoc, ByVal tubes As Object, ByRef unmatched As String, _
                              ByRef nBodies As Long) As Object
     Dim res As Object, used As Object
     Set res = CreateObject("Scripting.Dictionary")
     Set used = CreateObject("Scripting.Dictionary")
     unmatched = ""
-    Dim bodies As Variant, k As Long, mpv As Variant, box As Variant, key As Variant, t As Variant
+    Dim bodies As Variant, k As Long, mpv As Variant, key As Variant, t As Variant, secondId As String
     Dim best As Double, second As Double, bestId As String, s As Double
     bodies = swPart.GetBodies2(swBodyType_e.swSolidBody, False)
     nBodies = 0
@@ -310,30 +329,40 @@ Private Function MatchBodies(ByVal swPart As SldWorks.PartDoc, ByVal tubes As Ob
     For k = 0 To UBound(bodies)
         Set swBody = bodies(k)
         mpv = swBody.GetMassProperties(7900#)
-        box = swBody.GetBodyBox
-        best = 1E+30: second = 1E+30: bestId = ""
+        best = 1E+30: second = 1E+30: bestId = "": secondId = ""
         For Each key In tubes.Keys
             t = tubes(key)
-            s = Dist3(mpv(0) * 1000, mpv(1) * 1000, mpv(2) * 1000, t(0), t(1), t(2)) + _
-                Dist3((box(3) - box(0)) * 1000, (box(4) - box(1)) * 1000, (box(5) - box(2)) * 1000, t(3), t(4), t(5)) / 4
+            s = DistToSegment(mpv(0) * 1000, mpv(1) * 1000, mpv(2) * 1000, t)
             If s < best Then
-                second = best: best = s: bestId = CStr(key)
+                second = best: secondId = bestId: best = s: bestId = CStr(key)
             ElseIf s < second Then
-                second = s
+                second = s: secondId = CStr(key)
             End If
         Next key
-        If bestId <> "" And best <= MATCH_MM And second - best > 10 And Not used.Exists(bestId) Then
+        If bestId <> "" And best <= MATCH_MM And second - best >= TIE_MM And Not used.Exists(bestId) Then
             Set res(bestId) = swBody
             used(bestId) = True
         Else
             unmatched = unmatched & "body " & k & " at (" & Format(mpv(0) * 1000, "0") & "," & Format(mpv(1) * 1000, "0") & "," & _
-                        Format(mpv(2) * 1000, "0") & ") mm, best " & bestId & " " & Format(best, "0.0") & " mm; "
+                        Format(mpv(2) * 1000, "0") & ") mm, best " & bestId & " " & Format(best, "0.0") & " mm, next " & _
+                        secondId & " " & Format(second, "0.0") & " mm" & IIf(used.Exists(bestId), " (already taken)", "") & "; "
         End If
     Next k
     For Each key In tubes.Keys
         If Not res.Exists(key) Then unmatched = unmatched & "tube " & key & " has no body; "
     Next key
     Set MatchBodies = res
+End Function
+
+' Distance (mm) from point (x, y, z) to the segment t = Array(ax, ay, az, bx, by, bz).
+Private Function DistToSegment(ByVal x As Double, ByVal y As Double, ByVal z As Double, ByVal t As Variant) As Double
+    Dim vx As Double, vy As Double, vz As Double, L2 As Double, u As Double
+    vx = t(3) - t(0): vy = t(4) - t(1): vz = t(5) - t(2)
+    L2 = vx * vx + vy * vy + vz * vz
+    If L2 > 0 Then u = ((x - t(0)) * vx + (y - t(1)) * vy + (z - t(2)) * vz) / L2
+    If u < 0 Then u = 0
+    If u > 1 Then u = 1
+    DistToSegment = Dist3(x, y, z, t(0) + u * vx, t(1) + u * vy, t(2) + u * vz)
 End Function
 
 Private Function Dist3(ByVal x1 As Double, ByVal y1 As Double, ByVal z1 As Double, _
@@ -419,6 +448,22 @@ Private Function CreateErrors(ByVal swFeatMgr As SldWorks.FeatureManager) As Str
     If s = "" Then s = "(no message)"
     CreateErrors = s
 End Function
+
+' Trim features: ours (named Trim_*) and others (default name Trim/Extend<n>,
+' or a weldment trim type name), listed by name.
+Private Sub CountTrimFeatures(ByVal swModel As SldWorks.ModelDoc2, ByRef ours As Long, ByRef foreign As String)
+    Dim f As SldWorks.Feature, tn As String
+    Set f = swModel.FirstFeature
+    Do While Not f Is Nothing
+        tn = f.GetTypeName2
+        If LCase$(Left$(f.Name, 5)) = "trim_" Then
+            ours = ours + 1
+        ElseIf LCase$(Left$(f.Name, 11)) = "trim/extend" Or InStr(1, tn, "Trim", vbTextCompare) > 0 Then
+            foreign = foreign & f.Name & " (" & tn & "), "
+        End If
+        Set f = f.GetNextFeature
+    Loop
+End Sub
 
 Private Function FindFeature(ByVal swModel As SldWorks.ModelDoc2, ByVal nm As String) As SldWorks.Feature
     Dim f As SldWorks.Feature

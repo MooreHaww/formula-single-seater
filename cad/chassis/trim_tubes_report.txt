@@ -1,0 +1,81 @@
+SOME CHECKS FAILED   (2026-11-17 00:56, 16 trims made, 14 kept, 50 in plan)
+
+PASS  Trim_FB_L_R: 2 ends against 1 boundary tube(s), coped
+PASS  Trim_FB_L_L: 2 ends against 1 boundary tube(s), coped
+PASS  Trim_FB_U_R: 3 ends against 1 boundary tube(s), coped
+PASS  Trim_FB_U_L: 3 ends against 1 boundary tube(s), coped
+PASS  Trim_FS1_L_R: existed, kept
+PASS  Trim_FS1_L_L: existed, kept
+FAIL  Trim_FS2_L_R: not made, FS2_L-FH_L_R has no matching body; 
+FAIL  Trim_FS2_L_L: not made, FS2_L-FH_L_L has no matching body; 
+PASS  Trim_FS1_U_R: 5 ends against 1 boundary tube(s), coped
+PASS  Trim_FS1_U_L: 5 ends against 1 boundary tube(s), coped
+FAIL  Trim_FS2_U_R: not made, FS2_U-FH_M_R has no matching body; 
+FAIL  Trim_FS2_U_L: not made, FS2_U-FH_M_L has no matching body; 
+PASS  Trim_FBT_R: existed, kept
+PASS  Trim_FBT_L: existed, kept
+FAIL  Trim_FH_L_R: not made, FH_L-FH_M_R has no matching body; FS2_L-FH_L_R has no matching body; 
+FAIL  Trim_FH_L_L: not made, FH_L-FH_M_L has no matching body; FS2_L-FH_L_L has no matching body; 
+FAIL  Trim_FH_M_R: not made, FH_M-FH_T_R has no matching body; FH_L-FH_M_R has no matching body; FS2_U-FH_M_R has no matching body; 
+FAIL  Trim_FH_M_L: not made, FH_M-FH_T_L has no matching body; FH_L-FH_M_L has no matching body; FS2_U-FH_M_L has no matching body; 
+FAIL  Trim_FH_T_R: not made, FH_M-FH_T_R has no matching body; FH_T-MH_B_R has no matching body; 
+FAIL  Trim_FH_T_L: not made, FH_M-FH_T_L has no matching body; FH_T-MH_B_L has no matching body; 
+PASS  Trim_MH_L_R: 5 ends against 1 boundary tube(s), coped
+PASS  Trim_MH_L_L: 5 ends against 1 boundary tube(s), coped
+FAIL  Trim_MH_M_R: not made, MH_M-MH_B_R has no matching body; 
+FAIL  Trim_MH_M_L: not made, MH_M-MH_B_L has no matching body; 
+FAIL  Trim_MH_B_R: not made, MH_B-MH_T_R has no matching body; MH_M-MH_B_R has no matching body; FH_T-MH_B_R has no matching body; 
+FAIL  Trim_MH_B_L: not made, MH_B-MH_T_L has no matching body; MH_M-MH_B_L has no matching body; FH_T-MH_B_L has no matching body; 
+FAIL  Trim_MH_T_R: not made, MH_B-MH_T_R has no matching body; MH_T-RT2_R has no matching body; 
+FAIL  Trim_MH_T_L: not made, MH_B-MH_T_L has no matching body; MH_T-RT2_L has no matching body; 
+PASS  Trim_RS1_L_R: existed, kept
+PASS  Trim_RS1_L_L: existed, kept
+PASS  Trim_RS2_L_R: existed, kept
+PASS  Trim_RS2_L_L: existed, kept
+PASS  Trim_RS1_U_R: 5 ends against 1 boundary tube(s), coped
+FAIL  Trim_RS1_U_L: not made, RS1_U-RS2_U_L has no matching body; 
+PASS  Trim_RS2_U_R: 4 ends against 1 boundary tube(s), coped
+FAIL  Trim_RS2_U_L: not made, RS1_U-RS2_U_L has no matching body; 
+PASS  Trim_RT1_R: 4 ends against 1 boundary tube(s), coped
+PASS  Trim_RT1_L: 4 ends against 1 boundary tube(s), coped
+FAIL  Trim_RT2_R: not made, MH_T-RT2_R has no matching body; 
+FAIL  Trim_RT2_L: not made, MH_T-RT2_L has no matching body; 
+PASS  Trim_RRK_R: existed, kept
+PASS  Trim_RRK_L: existed, kept
+PASS  Trim_SP1_L_R: existed, kept
+PASS  Trim_SP1_L_L: existed, kept
+PASS  Trim_SP1_U_R: 2 ends against 1 boundary tube(s), coped
+PASS  Trim_SP1_U_L: 2 ends against 1 boundary tube(s), coped
+PASS  Trim_SP2_L_R: 2 ends against 1 boundary tube(s), coped
+PASS  Trim_SP2_L_L: 2 ends against 1 boundary tube(s), coped
+PASS  Trim_SP2_U_R: existed, kept
+PASS  Trim_SP2_U_L: existed, kept
+
+PASS  bodies: 114 before, 114 after (a trim must not split tubes)
+PASS  mass: 41.30 kg before, 41.30 kg after (+0.00 kg; must not rise, 38 to 46)
+INFO  cut length after trim: 42.56 m (114 bodies in the cut list)
+PASS  saved: C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+
+Failures:
+- Trim_FS2_L_R: FS2_L-FH_L_R has no matching body; 
+- Trim_FS2_L_L: FS2_L-FH_L_L has no matching body; 
+- Trim_FS2_U_R: FS2_U-FH_M_R has no matching body; 
+- Trim_FS2_U_L: FS2_U-FH_M_L has no matching body; 
+- Trim_FH_L_R: FH_L-FH_M_R has no matching body; FS2_L-FH_L_R has no matching body; 
+- Trim_FH_L_L: FH_L-FH_M_L has no matching body; FS2_L-FH_L_L has no matching body; 
+- Trim_FH_M_R: FH_M-FH_T_R has no matching body; FH_L-FH_M_R has no matching body; FS2_U-FH_M_R has no matching body; 
+- Trim_FH_M_L: FH_M-FH_T_L has no matching body; FH_L-FH_M_L has no matching body; FS2_U-FH_M_L has no matching body; 
+- Trim_FH_T_R: FH_M-FH_T_R has no matching body; FH_T-MH_B_R has no matching body; 
+- Trim_FH_T_L: FH_M-FH_T_L has no matching body; FH_T-MH_B_L has no matching body; 
+- Trim_MH_M_R: MH_M-MH_B_R has no matching body; 
+- Trim_MH_M_L: MH_M-MH_B_L has no matching body; 
+- Trim_MH_B_R: MH_B-MH_T_R has no matching body; MH_M-MH_B_R has no matching body; FH_T-MH_B_R has no matching body; 
+- Trim_MH_B_L: MH_B-MH_T_L has no matching body; MH_M-MH_B_L has no matching body; FH_T-MH_B_L has no matching body; 
+- Trim_MH_T_R: MH_B-MH_T_R has no matching body; MH_T-RT2_R has no matching body; 
+- Trim_MH_T_L: MH_B-MH_T_L has no matching body; MH_T-RT2_L has no matching body; 
+- Trim_RS1_U_L: RS1_U-RS2_U_L has no matching body; 
+- Trim_RS2_U_L: RS1_U-RS2_U_L has no matching body; 
+- Trim_RT2_R: MH_T-RT2_R has no matching body; 
+- Trim_RT2_L: MH_T-RT2_L has no matching body; 
+
+Bodies or tubes without a match before trimming: body 1 at (443,274,98) mm, best FS2_L-FH_L_R 46.6 mm; body 8 at (427,-282,329) mm, best FS2_U-FH_M_L 39.6 mm; body 12 at (1455,-269,743) mm, best MH_T-RT2_L 41.7 mm; body 18 at (1250,274,830) mm, best MH_B-MH_T_R 34.5 mm; body 23 at (650,254,543) mm, best FH_M-FH_T_R 32.6 mm; body 38 at (443,-274,98) mm, best FS2_L-FH_L_L 46.5 mm; body 49 at (1250,309,527) mm, best MH_M-MH_B_R 74.1 mm; body 50 at (1609,-293,318) mm, best RS1_U-RS2_U_L 25.3 mm; body 51 at (1250,-274,830) mm, best MH_B-MH_T_L 34.5 mm; body 53 at (650,-289,254) mm, best FH_L-FH_M_L 67.4 mm; body 54 at (1455,269,743) mm, best MH_T-RT2_R 41.7 mm; body 59 at (970,-273,648) mm, best FH_T-MH_B_L 26.3 mm; body 75 at (426,282,329) mm, best FS2_U-FH_M_R 37.2 mm; body 90 at (650,289,253) mm, best FH_L-FH_M_R 67.3 mm; body 94 at (650,-254,543) mm, best FH_M-FH_T_L 32.6 mm; body 99 at (1250,-309,527) mm, best MH_M-MH_B_L 74.2 mm; body 100 at (970,273,648) mm, best FH_T-MH_B_R 26.3 mm; tube FS2_L-FH_L_R has no body; tube FS2_L-FH_L_L has no body; tube FS2_U-FH_M_R has no body; tube FS2_U-FH_M_L has no body; tube FH_L-FH_M_R has no body; tube FH_L-FH_M_L has no body; tube FH_M-FH_T_R has no body; tube FH_M-FH_T_L has no body; tube MH_M-MH_B_R has no body; tube MH_M-MH_B_L has no body; tube MH_B-MH_T_R has no body; tube MH_B-MH_T_L has no body; tube FH_T-MH_B_R has no body; tube FH_T-MH_B_L has no body; tube RS1_U-RS2_U_L has no body; tube MH_T-RT2_R has no body; tube MH_T-RT2_L has no body; 

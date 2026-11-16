@@ -49,11 +49,13 @@ car.F_torque_max = car.T_max * car.i_gear * car.eta / car.r_wheel;
 end
 
 function ok = selftest()
-% Hand check with the committed parameter file:
+% Hand check with the committed parameter file, masses pinned to the
+% original starting values (the file's own are the rolled-up budget):
 %   m = 230 + 70 = 300 kg
 %   wheel-force limit from torque = 230 * 3.5 * 0.92 / 0.222 = 3335.6 N
 %   rpm-limited speed = 6500/60 * 2*pi * 0.222 / 3.5 = 43.18 m/s
-car = car_from_params('C');
+p = read_car_params(); p.mass_car = 230; p.mass_driver = 70;
+car = car_from_params('C', p);
 ok = abs(car.m - 300) < 1e-9 ...
    && abs(car.F_torque_max - 230*3.5*0.92/0.222) < 1e-6 ...
    && abs(car.v_rpm_max - 6500/60*2*pi*0.222/3.5) < 1e-6 ...

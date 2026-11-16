@@ -30,15 +30,89 @@
 "overall_width"= 1420          ' outside of rear tyres (wings may be wider)
 "nose_overhang"= 650           ' front axle to nose tip
 "rear_overhang"= 750           ' rear axle to rear wing trailing edge
-"cg_height"= 300               ' car + driver, written back after Ring 2
-"cg_x_from_front_axle"= 821.5  ' = (1 - weight_dist_front) * wheelbase, written back
 
-' ---------------- Masses (kg) and distribution ------------------------------
-"mass_car"= 230                ' without driver, written back after Ring 2
-"mass_driver"= 70
-"weight_dist_front"= 0.47      ' fraction of total mass on the front axle
-"unsprung_mass_corner_front"= 9
-"unsprung_mass_corner_rear"= 10
+' ---------------- Mass and CG budget (kg, mm) ---------------------------------
+' One line per item: mass m_<item>, CG position x_<item> (from the front axle,
+' rearward positive) and z_<item> (above the ground). The first word of each
+' mass comment says where the number comes from:
+'   CALC       computed in this repo (frame_layout.m)
+'   CATALOGUE  a real part's data sheet
+'   ESTIMATE   sized from the layout or a known class of part, not yet chosen
+'   GUESS      nothing behind it but experience; replace as soon as you can
+' mass_car, cg_x_from_front_axle, cg_height, weight_dist_front and the
+' unsprung masses below are expressions over these lines, so SolidWorks and
+' MATLAB roll them up identically. matlab/mass_budget.m prints the table,
+' media/mass_budget.md and media/mass_budget.png. At the end of Ring 2 every
+' line is replaced by SolidWorks Mass Properties of the real part.
+"m_frame"= 43.3                ' CALC frame_layout.m: 116 tubes of 25.4 mm steel incl. 6.1 kg of sidepod battery structure, no welds, no brackets
+"x_frame"= 866                 ' CALC tube-mass-weighted centroid of cad/frame/frame_tubes.csv (mass_budget.m warns if this drifts from the CSV)
+"z_frame"= 349
+"m_brackets_welds"= 5.5        ' GUESS tabs, weld fill, bulkhead plates, floor close-out, battery box mounts (about 13 % of the frame)
+"x_brackets_welds"= 866
+"z_brackets_welds"= 349
+"m_battery"= 45.0              ' ESTIMATE 6 kWh in two sidepod packs with boxes at about 135 Wh/kg; measured once the cells are chosen
+"x_battery"= "battery_x_front" + "battery_length" / 2
+"z_battery"= "battery_z_bottom" + "battery_height" / 2
+"m_motor"= 12.3                ' CATALOGUE Emrax 228 class (230 Nm peak matches motor_torque_max); an Emrax 208 would be 9.4
+"x_motor"= "motor_x"
+"z_motor"= "motor_z"
+"m_inverter_hv"= 10.0          ' GUESS inverter 6, contactors, fuses, HV cable and connectors 4; mounted above the motor in the bay behind the main hoop
+"x_inverter_hv"= 1380
+"z_inverter_hv"= 500
+"m_lv_electronics"= 3.0        ' GUESS dash, loom, LV battery, shutdown circuit, sensors
+"x_lv_electronics"= 500
+"z_lv_electronics"= 450
+"m_chain_drive"= 10.3          ' ESTIMATE diff with housing 6.0, two halfshafts 2.0, sprockets and chain 2.3
+"x_chain_drive"= 1620          ' between the diff on the axle line (1550) and the motor sprocket (1850), mass-weighted
+"z_chain_drive"= 240
+"m_corners_front"= 22.2        ' ESTIMATE two corners of 11.1: tyre 4.1 (CATALOGUE Hoosier 18x6-10), rim 2.5, hub 1.0, upright 1.2, brake 1.8, bearings and nuts 0.5 (all GUESS)
+"x_corners_front"= 0
+"z_corners_front"= 240
+"m_corners_rear"= 22.2         ' ESTIMATE same build as the front corners
+"x_corners_rear"= 1550
+"z_corners_rear"= 240
+"m_susp_links_front"= 4.2      ' GUESS two corners: wishbones 0.8, pushrod 0.2, rocker 0.3, damper 0.6, tie rod 0.2
+"x_susp_links_front"= 0
+"z_susp_links_front"= 330
+"m_susp_links_rear"= 4.2       ' GUESS as front, with the toe link
+"x_susp_links_rear"= 1550
+"z_susp_links_rear"= 350
+"m_front_wing"= 6.0            ' GUESS 1.25 m2 of three-element carbon sandwich, two endplates, mounts
+"x_front_wing"= -300           ' chord stack from -600 (fw LE) to about 0
+"z_front_wing"= 150
+"m_rear_wing"= 7.0             ' GUESS 1.1 m2 of elements, two 0.5 m2 endplates, pylons
+"x_rear_wing"= 1850            ' chord stack from 1480 (rw LE) to 2300
+"z_rear_wing"= 1250            ' elements from rw_height upward, pylons below
+"m_floor_diffuser"= 6.0        ' GUESS 2 m2 sandwich floor at 2.5 kg/m2 plus diffuser strakes
+"x_floor_diffuser"= 1200
+"z_floor_diffuser"= 60
+"m_bodywork"= 8.0              ' GUESS nose, sidepods, cockpit surround, fasteners
+"x_bodywork"= 700
+"z_bodywork"= 350
+"m_cockpit"= 9.5               ' GUESS seat 1.0, harness 1.5, pedal box 2.5, steering wheel, column and rack 3.0, firewall and headrest 1.5
+"x_cockpit"= 650
+"z_cockpit"= 300
+"m_brake_hydraulics"= 2.0      ' GUESS master cylinders, balance bar, lines, fluid (calipers are in the corners)
+"x_brake_hydraulics"= 300
+"z_brake_hydraulics"= 250
+"m_cooling"= 4.0               ' GUESS motor and inverter radiator, pump, hoses, coolant
+"x_cooling"= 1000
+"z_cooling"= 350
+"m_fasteners_misc"= 4.0        ' GUESS everything not listed: bolts, rod ends, mounts, fire extinguisher, paint
+"x_fasteners_misc"= 800
+"z_fasteners_misc"= 350
+"mass_driver"= 70              ' ESTIMATE 95th percentile FS driver with helmet and suit
+"x_driver"= 840                ' ESTIMATE from the SIDE_LAYOUT stick figure: legs (30 % of mass) at X 550, torso and head at X 960
+"z_driver"= 330                ' ESTIMATE legs at Z 180, torso and head at Z 400
+
+' ---------------- Masses (kg) and distribution: rolled up from the budget ----
+' Do not type numbers here; change the budget lines above.
+"mass_car"= "m_frame" + "m_brackets_welds" + "m_battery" + "m_motor" + "m_inverter_hv" + "m_lv_electronics" + "m_chain_drive" + "m_corners_front" + "m_corners_rear" + "m_susp_links_front" + "m_susp_links_rear" + "m_front_wing" + "m_rear_wing" + "m_floor_diffuser" + "m_bodywork" + "m_cockpit" + "m_brake_hydraulics" + "m_cooling" + "m_fasteners_misc"
+"cg_x_from_front_axle"= ("m_frame" * "x_frame" + "m_brackets_welds" * "x_brackets_welds" + "m_battery" * "x_battery" + "m_motor" * "x_motor" + "m_inverter_hv" * "x_inverter_hv" + "m_lv_electronics" * "x_lv_electronics" + "m_chain_drive" * "x_chain_drive" + "m_corners_front" * "x_corners_front" + "m_corners_rear" * "x_corners_rear" + "m_susp_links_front" * "x_susp_links_front" + "m_susp_links_rear" * "x_susp_links_rear" + "m_front_wing" * "x_front_wing" + "m_rear_wing" * "x_rear_wing" + "m_floor_diffuser" * "x_floor_diffuser" + "m_bodywork" * "x_bodywork" + "m_cockpit" * "x_cockpit" + "m_brake_hydraulics" * "x_brake_hydraulics" + "m_cooling" * "x_cooling" + "m_fasteners_misc" * "x_fasteners_misc" + "mass_driver" * "x_driver") / ("mass_car" + "mass_driver")
+"cg_height"= ("m_frame" * "z_frame" + "m_brackets_welds" * "z_brackets_welds" + "m_battery" * "z_battery" + "m_motor" * "z_motor" + "m_inverter_hv" * "z_inverter_hv" + "m_lv_electronics" * "z_lv_electronics" + "m_chain_drive" * "z_chain_drive" + "m_corners_front" * "z_corners_front" + "m_corners_rear" * "z_corners_rear" + "m_susp_links_front" * "z_susp_links_front" + "m_susp_links_rear" * "z_susp_links_rear" + "m_front_wing" * "z_front_wing" + "m_rear_wing" * "z_rear_wing" + "m_floor_diffuser" * "z_floor_diffuser" + "m_bodywork" * "z_bodywork" + "m_cockpit" * "z_cockpit" + "m_brake_hydraulics" * "z_brake_hydraulics" + "m_cooling" * "z_cooling" + "m_fasteners_misc" * "z_fasteners_misc" + "mass_driver" * "z_driver") / ("mass_car" + "mass_driver")
+"weight_dist_front"= 1 - "cg_x_from_front_axle" / "wheelbase"    ' fraction of car + driver mass on the front axle
+"unsprung_mass_corner_front"= "m_corners_front" / 2
+"unsprung_mass_corner_rear"= "m_corners_rear" / 2
 
 ' ---------------- Powertrain (rear electric motor) --------------------------
 "motor_power_max"= 80000       ' W, hard cap
@@ -48,14 +122,20 @@
 "drivetrain_efficiency"= 0.92
 "motor_diameter"= 230          ' block model for packaging
 "motor_length"= 110
-"battery_length"= 180          ' block model behind the main hoop, x direction
-"battery_width"= 510
-"battery_height"= 370
-"battery_x_front"= 1280        ' front face from the front axle
-"battery_z_bottom"= 90
-"motor_x"= 1850                ' motor axis (along Y) behind the rear box, chain drive to the diff on the axle line (centre distance 300 mm)
-"motor_z"= 250
-"battery_mass"= 45
+' Battery: two identical packs in the sidepods, one each side of the driver
+' between the front hoop and the main hoop, outside the side-impact rails
+' (third session; before that one 180 x 510 x 370 block behind the main hoop,
+' which put only 35 % of the weight on the front axle). 2 x 530 x 165 x 190
+' = 33 L, marginal for 6 kWh: confirm against the chosen cells.
+"battery_length"= 530          ' x direction, each pack
+"battery_width"= 165           ' y direction, each pack
+"battery_height"= 190
+"battery_x_front"= 690         ' front face from the front axle (front hoop at 650, 40 mm ahead of the pack)
+"battery_z_bottom"= 105        ' above the lower rails (z 80, 25.4 tube) with 12 mm to spare
+"battery_y_inner"= 335         ' inner face of each pack from the centreline; 0 would mean one central pack behind the hoop
+"motor_x"= 1340                ' motor axis (along Y) in the bay behind the main hoop, ahead of the rear box; chain to the diff on the axle line, centre distance 215 mm
+"motor_z"= 270
+"battery_mass"= "m_battery"       ' kept for the CAD block part; the budget line is the source
 
 ' ---------------- Tyre and rolling resistance -------------------------------
 "tyre_mu_peak"= 1.4            ' friction coefficient at tyre_fz_ref, starting value

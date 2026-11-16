@@ -148,7 +148,7 @@ if opts.plot
     end
     fprintf(fid, '\n**Following-car penalty** (variant C with downforce scaled by q-ratio %.2f, %s): autocross +%.2f s, fast circuit +%.2f s.\n\n', ...
         qratio, qsrc, follow(1), follow(2));
-    fprintf(fid, '**Sensitivity of variant C** (lap time change for -10 % / +10 %):\n\n| Parameter | Autocross | Fast circuit |\n|---|---|---|\n');
+    fprintf(fid, '**Sensitivity of variant C** (lap time change for -10 %% / +10 %%):\n\n| Parameter | Autocross | Fast circuit |\n|---|---|---|\n');
     for jp = 1:3
         fprintf(fid, '| %s | %+.2f / %+.2f s | %+.2f / %+.2f s |\n', names{jp}, sens(jp, 1, 1), sens(jp, 2, 1), sens(jp, 1, 2), sens(jp, 2, 2));
     end

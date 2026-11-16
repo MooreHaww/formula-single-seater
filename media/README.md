@@ -12,5 +12,6 @@ Figures written by `matlab/run_all.m` (PNG, 150 dpi), renders and GIFs from Ring
 | `suspension_front.png`, `suspension_rear.png` | `suspension_plots.m` |
 | `suspension_geometry_front.png`, `suspension_geometry_rear.png` | `suspension_geometry.m` (pre-CAD kinematics from the hardpoints) |
 | `frame_layout.png` | `cad/frame_layout.m` |
+| `mass_budget.png`, `mass_budget.md` | `mass_budget.m` (itemised masses and CG from the parameter file, colour = how trusted) |
 | `aero_drag_vs_downforce.png` | `aero_plots.m` |
 | `wake/wake_metrics.png`, `wake/<variant>_<n>L_u.png` | `wake_postprocess.m` |

@@ -128,6 +128,16 @@ N.RS2_U = hpR('uwb_in_aft');
 N.RT1   = [p.r_uwb_in_fwd_x, p.r_uwb_in_fwd_y, p.r_pushrod_in_z + 20];
 N.RT2   = [p.r_uwb_in_aft_x, p.r_uwb_in_aft_y, p.r_pushrod_in_z + 20];
 N.RRK   = [p.r_pushrod_in_x, p.r_pushrod_in_y - 10, p.r_pushrod_in_z + 20];
+% sidepod battery structure (only when the packs sit beside the driver):
+% outer rails 25 mm outboard of the pack faces, in the front and main hoop planes
+sidepods = isfield(p, 'battery_y_inner') && p.battery_y_inner > 0;
+if sidepods
+    ySP = p.battery_y_inner + p.battery_width + 25;
+    N.SP1_L = [p.front_hoop_x, ySP, 80];
+    N.SP1_U = [p.front_hoop_x, ySP, 320];
+    N.SP2_L = [p.main_hoop_x, ySP, 80];
+    N.SP2_U = [p.main_hoop_x, ySP, 320];
+end
 
 % tube list: {node_a, node_b, group}. 'X' = cross member to the mirror node.
 T = {
@@ -156,12 +166,21 @@ T = {
     % main hoop braces (rearward)
     'MH_T', 'RT2', 'hoop_brace'; 'MH_B', 'RT1', 'hoop_brace'; 'MH_T', 'RT1', 'hoop_brace'
     };
+if sidepods
+    T = [T; {
+        % sidepod battery boxes: outer rails, uprights, ties to the hoops, one diagonal
+        'SP1_L', 'SP2_L', 'sidepod'; 'SP1_U', 'SP2_U', 'sidepod'; 'SP1_L', 'SP1_U', 'sidepod'; 'SP2_L', 'SP2_U', 'sidepod'
+        'FH_L', 'SP1_L', 'sidepod';  'FH_M', 'SP1_U', 'sidepod';  'MH_L', 'SP2_L', 'sidepod';  'MH_M', 'SP2_U', 'sidepod'
+        'SP1_L', 'SP2_U', 'sidepod'
+        }];
+end
 end
 
 function s = tube_sizes(p)
 s.hoop = [p.tube_main_od, p.tube_main_wall];
 s.hoop_brace = [p.tube_main_od, p.tube_main_wall];
 s.sis = [p.tube_main_od, p.tube_secondary_wall];
+s.sidepod = [p.tube_main_od, p.tube_secondary_wall];
 s.bulkhead = [p.tube_main_od, p.tube_secondary_wall];
 s.front = [p.tube_secondary_od, p.tube_secondary_wall];
 s.rear = [p.tube_secondary_od, p.tube_secondary_wall];
@@ -174,7 +193,8 @@ end
 function s = node_note(n)
 map = {'FB', 'front bulkhead'; 'FS1', 'front suspension fwd pickup'; 'FS2', 'front suspension aft pickup'; ...
     'FBT', 'front rocker mount'; 'FH', 'front hoop'; 'MH', 'main hoop'; 'RS1', 'rear suspension fwd pickup'; ...
-    'RS2', 'rear suspension aft pickup'; 'RT', 'rear top / wing mount'; 'RRK', 'rear rocker mount'};
+    'RS2', 'rear suspension aft pickup'; 'RT', 'rear top / wing mount'; 'RRK', 'rear rocker mount'; ...
+    'SP1', 'sidepod battery, front hoop plane'; 'SP2', 'sidepod battery, main hoop plane'};
 s = '';
 for k = 1:size(map, 1)
     if startsWith(n, map{k, 1}), s = map{k, 2}; end
@@ -189,8 +209,14 @@ a = p.seat_back_angle;
 sh = hip + 560 * [sind(a), cosd(a)];                  % shoulder point (x, z)
 % legs: feet on a heel rest above the lower rails, pedals ahead of x = 200
 E.box.legs    = [200, hip(1), -190, 190, 150, 430];
-E.box.battery = [p.battery_x_front, p.battery_x_front + p.battery_length, -p.battery_width / 2, p.battery_width / 2, ...
-                 p.battery_z_bottom, p.battery_z_bottom + p.battery_height];
+bx = [p.battery_x_front, p.battery_x_front + p.battery_length]; bz = [p.battery_z_bottom, p.battery_z_bottom + p.battery_height];
+if isfield(p, 'battery_y_inner') && p.battery_y_inner > 0
+    % two packs in the sidepods, mirrored about the centreline
+    E.box.battery_R = [bx, p.battery_y_inner, p.battery_y_inner + p.battery_width, bz];
+    E.box.battery_L = [bx, -(p.battery_y_inner + p.battery_width), -p.battery_y_inner, bz];
+else
+    E.box.battery = [bx, -p.battery_width / 2, p.battery_width / 2, bz];
+end
 % torso: bounding box of a 280 mm thick slab along the seat back; the back
 % surface lies in the main hoop plane, as on every FS car
 E.box.torso   = [min(hip(1), sh(1)) - 60, min(max(hip(1), sh(1)) + 60, p.main_hoop_x), -230, 230, hip(2) - 60, sh(2) + 40];
@@ -265,7 +291,9 @@ for v = 1:3
         lw = 1 + (od(k) > 25 && out.wall(k) > 2);
         plot3([a(1) b(1)], [a(2) b(2)], [a(3) b(3)], 'k-', 'LineWidth', lw);
     end
-    draw_box(E.box.legs, [0.2 0.6 0.9]); draw_box(E.box.torso, [0.2 0.6 0.9]); draw_box(E.box.battery, [0.9 0.6 0.1]);
+    draw_box(E.box.legs, [0.2 0.6 0.9]); draw_box(E.box.torso, [0.2 0.6 0.9]);
+    bf = fieldnames(E.box);
+    for j = find(startsWith(bf, 'battery'))', draw_box(E.box.(bf{j}), [0.9 0.6 0.1]); end
     draw_sphere(E.sphere.helmet, [0.2 0.6 0.9]);
     draw_cyl(E.cyl.motor, [0.8 0.2 0.2]); draw_cyl(E.cyl.diff, [0.5 0.5 0.5]);
     % wheels
@@ -321,7 +349,7 @@ d = point_box_distance([0 0 0; 15 15 15], [10 20 10 20 10 20]);
 ok = ok && abs(d(1) - sqrt(3) * 10) < 1e-9 && d(2) == 0;
 m1 = pi / 4 * (25.4^2 - 20.6^2) * 1000 * 7850e-9;
 ok = ok && abs(m1 - 1.361) < 0.002;
-ok = ok && all([o.clearance.ok]) && o.total_mass_kg > 15 && o.total_mass_kg < 45;
+ok = ok && all([o.clearance.ok]) && o.total_mass_kg > 15 && o.total_mass_kg < 50;
 if ok
     fprintf('frame_layout self-test: PASS (cross tube 400 mm, box distance %.4f mm, %d tubes %.1f kg, all clearances OK)\n', d(1), size(o.tubes, 1), o.total_mass_kg);
 else

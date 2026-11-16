@@ -41,3 +41,11 @@ RT2_R,1690,290,470,rear top / wing mount
 RT2_L,1690,-290,470,rear top / wing mount
 RRK_R,1550,290,470,rear rocker mount
 RRK_L,1550,-290,470,rear rocker mount
+SP1_L_R,650,525,80,sidepod battery, front hoop plane
+SP1_L_L,650,-525,80,sidepod battery, front hoop plane
+SP1_U_R,650,525,320,sidepod battery, front hoop plane
+SP1_U_L,650,-525,320,sidepod battery, front hoop plane
+SP2_L_R,1250,525,80,sidepod battery, main hoop plane
+SP2_L_L,1250,-525,80,sidepod battery, main hoop plane
+SP2_U_R,1250,525,320,sidepod battery, main hoop plane
+SP2_U_L,1250,-525,320,sidepod battery, main hoop plane

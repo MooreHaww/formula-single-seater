@@ -97,4 +97,22 @@ MH_B-RT1_R,MH_B_R,RT1_R,hoop_brace,25.4,2.4,283.7,0.386
 MH_B-RT1_L,MH_B_L,RT1_L,hoop_brace,25.4,2.4,283.7,0.386
 MH_T-RT1_R,MH_T_R,RT1_R,hoop_brace,25.4,2.4,565.1,0.769
 MH_T-RT1_L,MH_T_L,RT1_L,hoop_brace,25.4,2.4,565.1,0.769
-# total length 35.42 m, total mass 37.3 kg (steel 7850 kg/m3, no joints, no brackets)
+SP1_L-SP2_L_R,SP1_L_R,SP2_L_R,sidepod,25.4,1.6,600.0,0.563
+SP1_L-SP2_L_L,SP1_L_L,SP2_L_L,sidepod,25.4,1.6,600.0,0.563
+SP1_U-SP2_U_R,SP1_U_R,SP2_U_R,sidepod,25.4,1.6,600.0,0.563
+SP1_U-SP2_U_L,SP1_U_L,SP2_U_L,sidepod,25.4,1.6,600.0,0.563
+SP1_L-SP1_U_R,SP1_L_R,SP1_U_R,sidepod,25.4,1.6,240.0,0.225
+SP1_L-SP1_U_L,SP1_L_L,SP1_U_L,sidepod,25.4,1.6,240.0,0.225
+SP2_L-SP2_U_R,SP2_L_R,SP2_U_R,sidepod,25.4,1.6,240.0,0.225
+SP2_L-SP2_U_L,SP2_L_L,SP2_U_L,sidepod,25.4,1.6,240.0,0.225
+FH_L-SP1_L_R,FH_L_R,SP1_L_R,sidepod,25.4,1.6,235.0,0.221
+FH_L-SP1_L_L,FH_L_L,SP1_L_L,sidepod,25.4,1.6,235.0,0.221
+FH_M-SP1_U_R,FH_M_R,SP1_U_R,sidepod,25.4,1.6,236.9,0.222
+FH_M-SP1_U_L,FH_M_L,SP1_U_L,sidepod,25.4,1.6,236.9,0.222
+MH_L-SP2_L_R,MH_L_R,SP2_L_R,sidepod,25.4,1.6,215.0,0.202
+MH_L-SP2_L_L,MH_L_L,SP2_L_L,sidepod,25.4,1.6,215.0,0.202
+MH_M-SP2_U_R,MH_M_R,SP2_U_R,sidepod,25.4,1.6,217.1,0.204
+MH_M-SP2_U_L,MH_M_L,SP2_U_L,sidepod,25.4,1.6,217.1,0.204
+SP1_L-SP2_U_R,SP1_L_R,SP2_U_R,sidepod,25.4,1.6,646.2,0.607
+SP1_L-SP2_U_L,SP1_L_L,SP2_U_L,sidepod,25.4,1.6,646.2,0.607
+# total length 41.88 m, total mass 43.3 kg (steel 7850 kg/m3, no joints, no brackets)

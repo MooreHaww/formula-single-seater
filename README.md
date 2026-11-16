@@ -40,8 +40,8 @@ Plots: `media/cornering_speed_vs_downforce.png`, `media/laptime_contour_fast_cir
 
 Eight rings, each ending with a check and a report (`docs/ring_report_template.md`, log in `docs/log.md`):
 
-0. Learning ramp: practice parts, first MATLAB script, CFD smoke test.
-1. Concept and parameters: `params/car_params.txt`, layout sketch, variant list (`docs/concept.md`).
+0. Learning ramp: practice parts, first MATLAB script, CFD smoke test (`docs/ring0_practice/`, `cfd/ansys_quickstart.md`).
+1. Concept and parameters: `params/car_params.txt` with the itemised mass and CG budget (`matlab/mass_budget.m`), layout sketch, variant list (`docs/concept.md`).
 2. CAD: master layout, spaceframe, suspension, body and wings, CFD bodies.
 3. Motion: bump and steering sweeps (`sim/motion/`, `matlab/suspension_plots.m`).
 4. Stress: load cases (`matlab/load_cases.m`), upright, chassis torsion (`sim/stress/`).
@@ -69,18 +69,18 @@ Scripts whose input does not exist yet (motion CSVs, CFD results) run on synthet
 ## Repository layout
 
 ```
-params/     car_params.txt (single source of truth) 
+params/     car_params.txt (single source of truth, including the mass and CG budget) 
 cad/        SolidWorks parts and assemblies (git LFS), airfoils/, macros/, frame/ (node and tube CSVs), practice/
-matlab/     accel_test, suspension_geometry, load_cases, suspension_plots, aero_plots, run_all; common/, lapsim/, simulink/, cfd/, cad/ (airfoils, frame_layout)
+matlab/     accel_test, mass_budget, suspension_geometry, load_cases, suspension_plots, aero_plots, run_all; common/, lapsim/, simulink/, cfd/, cad/ (airfoils, frame_layout)
 sim/        motion/ and stress/ exports and reports
-cfd/        Fluent guide and journal, geometry/, results/
-docs/       work plan, log, concept, ring reports, per-ring write-ups, cad_playbook/ (one file per part)
+cfd/        Ansys quickstart and smoke test, Fluent half-car guide and journal, geometry/, results/
+docs/       work plan, log, concept, ring reports, ring0_practice/ (SolidWorks and MATLAB from zero), cad_playbook/ (one file per part)
 media/      figures, renders, GIFs
 ```
 
 ## Limits of the simulations
 
-- Lap sim: point mass, no weight transfer or transients, perfect driver. For comparing setups only.
+- Lap sim: point mass, no weight transfer or transients, perfect driver. For comparing setups only. Masses and CG are the itemised budget in the parameter file, a quarter of which is still guessed; with the battery in the sidepods it puts 41 % of the weight on the front axle.
 - CFD: steady RANS under 1,000,000 cells. Variant ranking is reasonable; absolute forces are rough; the far wake is the weakest number. Full trust table in `cfd/README.md`.
 - Stress: static linear; no fatigue, welds, bolts or bearings.
 - Motion: rigid links, no compliance.

@@ -108,6 +108,7 @@ function ok = selftest()
 %           front axle = 1383.2 + 854.4 = 2237.6 N
 p = read_car_params();
 p.design_corner_speed = 0; p.design_braking_speed = 0;   % no aero
+p.mass_car = 230; p.mass_driver = 70; p.weight_dist_front = 0.47; p.cg_height = 300; p.wheelbase = 1550;
 T = load_cases(struct('write', false, 'p', p));
 s = T(T.case == "static", :); c = T(T.case == "cornering", :); b = T(T.case == "braking", :);
 mg = 300 * 9.81;

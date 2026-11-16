@@ -8,6 +8,7 @@ function summary = run_all(mode)
 %   call  run('matlab/run_all.m')  or add matlab/ to the path and type run_all.
 %   Outputs go to media/ (figures, lap_times.csv, results_table.md),
 %   sim/stress/load_cases.csv and cfd/results/.
+%   Self-tests: 17 (mass_budget added in the third session).
 %   Scripts that depend on data not yet produced (motion study CSVs, CFD
 %   forces and wake planes) run on synthetic data or estimates and say so.
 
@@ -22,7 +23,7 @@ fprintf('Repo: %s\n', repo_root());
 tests = {'read_car_params', 'car_from_params', 'long_forces', 'accel_test', 'make_airfoils', ...
     'load_track', 'lapsim', 'cornering_speed_vs_downforce', 'lap_experiments', ...
     'suspension_plots', 'load_cases', 'aero_plots', 'wake_postprocess', ...
-    'suspension_geometry', 'frame_layout'};
+    'suspension_geometry', 'frame_layout', 'mass_budget'};
 hasSimulink = license('test', 'Simulink') && ~isempty(ver('simulink'));
 if hasSimulink, tests{end+1} = 'run_accel_simulink'; end
 results = struct('name', tests, 'pass', num2cell(false(size(tests))), 'msg', '');
@@ -51,6 +52,7 @@ summary.params = read_car_params();
 summary.airfoils = make_airfoils();
 summary.suspension_geometry = suspension_geometry(struct('plot', true, 'write', false));
 summary.frame = frame_layout(struct('plot', true, 'write', true));
+summary.mass = mass_budget();
 summary.accel = accel_test('C');
 summary.cornering = cornering_speed_vs_downforce();
 summary.lap = lap_experiments(struct('quick', strcmp(mode, 'quick')));
@@ -82,6 +84,8 @@ sg = summary.suspension_geometry;
 fprintf('Suspension geometry F/R: camber gain %.3f/%.3f deg/mm, bump steer %.3f/%.3f deg, RC %.0f/%.0f mm, MR %.2f/%.2f\n', ...
     sg.front.camber_gain, sg.rear.camber_gain, sg.front.bump_steer, sg.rear.bump_steer, sg.front.rc_static, sg.rear.rc_static, sg.front.motion_ratio, sg.rear.motion_ratio);
 fprintf('Frame: %d tubes, %.1f m, %.1f kg, clearance violations %d\n', size(summary.frame.tubes, 1), summary.frame.total_length_m, summary.frame.total_mass_kg, nnz(~[summary.frame.clearance.ok]));
+fprintf('Mass budget: %.1f kg car, %.1f kg with driver, CG x %.0f mm (%.1f %% front), z %.0f mm, %.0f %% of the mass is a GUESS\n', ...
+    summary.mass.mass_car, summary.mass.mass_total, summary.mass.cg_x, 100 * summary.mass.wd_front, summary.mass.cg_z, 100 * summary.mass.guess_fraction);
 fprintf('Aero source: %s\n', summary.aero.source);
 fprintf('Suspension data: %s\n', ternary(summary.suspension.front.synthetic, 'SYNTHETIC (no motion study yet)', 'from sim/motion CSVs'));
 summary.elapsed_s = toc(t0);

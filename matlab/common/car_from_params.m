@@ -39,6 +39,11 @@ car.A_ref     = p.frontal_area;
 car.ClA       = p.(['ClA_' variant]);
 car.CdA       = p.(['CdA_' variant]);
 car.aero_front= p.aero_balance_front;
+% extra fields for the four-wheel cornering model (cornering_balance.m)
+car.ride_freq_f  = p.ride_frequency_front;
+car.ride_freq_r  = p.ride_frequency_rear;
+car.m_unsprung_f = 2 * p.unsprung_mass_corner_front;
+car.m_unsprung_r = 2 * p.unsprung_mass_corner_rear;
 car.P_max     = p.motor_power_max;
 car.T_max     = p.motor_torque_max;
 car.rpm_max   = p.motor_rpm_max;

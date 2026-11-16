@@ -2,7 +2,11 @@ function res = lapsim(car, track, opts)
 %LAPSIM Quasi-steady point-mass lap time simulation (Ring 6a core).
 %   res = lapsim(car, track)        car from car_from_params, track from load_track
 %   res = lapsim(car, track, opts)  opts.ds (m, default 0.5), opts.v0 (m/s,
-%                                   open tracks only, default 0), opts.verbose
+%                                   open tracks only, default 0), opts.verbose,
+%                                   opts.four_wheel (false): corner speed limit
+%                                   from cornering_balance.m (four wheel loads,
+%                                   load transfer, limiting axle) instead of
+%                                   the point-mass m v^2 k <= mu(Fz) Fz
 %   lapsim('--selftest')
 %
 %   Method
@@ -32,6 +36,7 @@ if nargin < 3, opts = struct(); end
 if ~isfield(opts, 'ds'), opts.ds = 0.5; end
 if ~isfield(opts, 'v0'), opts.v0 = 0; end
 if ~isfield(opts, 'verbose'), opts.verbose = false; end
+if ~isfield(opts, 'four_wheel'), opts.four_wheel = false; end
 
 % ---- sample the track -------------------------------------------------------
 [s, kappa, x, y] = sample_track(track, opts.ds);
@@ -42,9 +47,17 @@ ds = diff(s);
 v_top = top_speed(car);
 v_corner = v_top * ones(n, 1);
 ak = abs(kappa);
-for i = find(ak > 1e-9).'
-    v_corner(i) = corner_speed(car, ak(i), v_top);
+% every distinct curvature is solved once (tracks are piecewise constant)
+[ku, ~, ik] = unique(ak);
+vk = v_top * ones(size(ku));
+for j = find(ku > 1e-9).'
+    if opts.four_wheel
+        vk(j) = cornering_balance(car, 1 / ku(j), struct('v_top', v_top)).v_max;
+    else
+        vk(j) = corner_speed(car, ku(j), v_top);
+    end
 end
+v_corner = vk(ik);
 
 % ---- forward / backward passes ------------------------------------------------
 if track.closed
@@ -75,7 +88,7 @@ res.ax = [diff(v.^2) ./ (2 * ds); 0];
 res.ay = v.^2 .* kappa;
 res.x = x; res.y = y;
 res.v_top = v_top; res.v_mean = s(end) / res.t_lap; res.v_max = max(v);
-res.track = track; res.car = car;
+res.track = track; res.car = car; res.four_wheel = opts.four_wheel;
 % tractive energy: positive longitudinal force times distance
 fdrv = max(0, res.ax(1:end-1) * car.m + long_forces(car, vm, 0).F_drag + long_forces(car, vm, 0).F_rr);
 res.energy_J = sum(fdrv .* ds);

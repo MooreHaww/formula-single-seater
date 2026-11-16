@@ -14,6 +14,19 @@ All forces come from `matlab/common/long_forces.m`, which is also what `accel_te
 
 Tyre: `mu = mu_peak (Fz_ref / Fz_tyre)^0.10`, so grip per newton falls as load rises. Everything else (rolling resistance, drag) is in `params/car_params.txt`.
 
+## Four-wheel cornering model (`cornering_balance.m`)
+
+The point-mass model has one tyre load, `Fz/4`, so it cannot see weight transfer or which axle gives up first. `cornering_balance(car, R)` solves the steady corner on four wheels:
+
+1. Lateral load transfer per axle, Milliken's three terms: spring part `ms ay (h_s - h_ra) k_axle / t`, geometric part `ms_axle ay h_rc / t`, unsprung part `mu_axle ay h_u / t`. Sprung CG height `h_s` comes from `cg_height` and the unsprung masses at wheel-centre height; `h_ra` is the roll axis under the sprung CG, interpolated between the roll-centre heights from `suspension_geometry` (60 / 69 mm static); `k_axle` is the roll stiffness split from the ride-frequency springs (`K = k_wheel t^2 / 2`), 38 % front with no anti-roll bar.
+2. Downforce `0.5 rho ClA v^2` split by `aero_balance_front`, added as vertical load with no lateral transfer.
+3. Wheel loads outer `= axle/2 + dFz`, inner `= axle/2 - dFz`, inner clamped at zero (lift). Tyre capacity `mu0 fz_ref^0.10 Fz^0.90` per wheel, summed per axle, so transferring load always loses grip.
+4. Demand per axle `wd_front m ay` and `(1 - wd_front) m ay` (no yaw moment). The limit speed is the largest `v` where both axles meet demand; `balance_pct = 100 (use_front - use_rear)`, positive = front axle at its limit first = understeer.
+
+`lapsim(car, track, struct('four_wheel', true))` uses it for the corner speed limit (the forward and backward passes still use the point-mass friction ellipse). `cornering_balance_study.m` sweeps front weight fraction and aero balance at 45 and 100 m, moves the driver with `mass_budget`'s `moves` option, and writes `media/cornering_balance.*`. Results in `docs/log.md` (fourth session).
+
+Assumptions the four-wheel results rest on, none measured: `tyre_load_sensitivity` 0.10 (sets the size of every transfer effect; 0 removes the weight-distribution effect on speed except through aero mismatch), `tyre_mu_peak` 1.4, `cg_height` 314 mm (25 % of the mass is a GUESS), static roll-centre heights, spring-only roll stiffness, `aero_balance_front` 0.45 with no CFD.
+
 ## Tracks
 
 | Track | Length | Type | Why |
@@ -34,7 +47,9 @@ Fast circuit closure, by hand: with main straight A, legs B (south), C (west), D
 | `lapsim` | skidpad flying lap, 75 m, corner entry | 5.122 s, 4.540 s, 11.19 m/s |
 | `cornering_speed_vs_downforce` | R 50 m, no aero / ClA 4 | 26.20 / 39.51 m/s |
 | `run_accel_simulink` | same car in Simulink | 4.540 s within 0.5 % |
+| `cornering_balance` | symmetric car (50 % front, equal tracks and roll centres, split 0.5), R 50 m, no load sensitivity: transfer per axle equals the rigid-body `0.5 m ay h / t`, loads sum to `m g`, both axles at the limit together; tyre pair at 1000 / 500 N with exponent 0.10 | 26.207 m/s, 515.0 N each axle, 2943 N, balance 0; 2089.3 N (less than 2100) |
+| `cornering_balance_study` | coarse grid: balance rises with front weight fraction and falls with front aero share at every radius; grip limit never above the point-mass limit | monotonic, 12 rows |
 
 ## Honesty limits
 
-No weight transfer, no transient behaviour, no driver error, no tyre temperature. Lap times compare setups; a real car would be slower. The following-car penalty uses the CFD dynamic pressure ratio as a plain scale on ClA, which ignores the change in balance and in the wake's spanwise shape.
+The default lap sim has no weight transfer; the four-wheel option adds steady-state transfer and axle balance to the corner limit only, with assumed tyre coefficients (see above), static roll centres and no anti-roll bars. No transient behaviour, no slip angles, no driver error, no tyre temperature. Lap times compare setups; a real car would be slower. The following-car penalty uses the CFD dynamic pressure ratio as a plain scale on ClA, which ignores the change in balance and in the wake's spanwise shape.

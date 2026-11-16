@@ -1,0 +1,17 @@
+# name: fast_circuit
+# closed: 1
+# radius_m: 0 = straight, +left, -right. Written by make_tracks.m
+length_m,radius_m,angle_deg,note
+800.010,0,0,main straight (length set for loop closure)
+188.496,-120,-90,turn 1, fast
+300.000,0,0,(length set for loop closure)
+94.248,-60,-90,turn 2, medium
+300.000,0,0,
+209.440,200,60,esses, very fast
+209.440,-200,-60,esses, very fast
+403.600,0,0,back straight
+141.372,-45,-180,hairpin
+125.664,80,90,turn 6, fast
+400.000,0,0,
+172.788,-110,-90,final corner onto the main straight
+# total_m: 3345.1, net turn angle: -360 deg

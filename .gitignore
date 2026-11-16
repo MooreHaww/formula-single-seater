@@ -1,0 +1,59 @@
+# ---- SolidWorks temp and lock files ----
+~$*
+*.~*
+*.swj
+*.swp
+*.swb
+*.sldlfp.bak
+*.bak
+*.SLDPRT.bak
+*.SLDASM.bak
+*.SLDDRW.bak
+**/_SW_Temp*
+# journal files
+swxJRNL.*
+*.swxJRNL
+
+# ---- MATLAB / Simulink ----
+*.asv
+*.autosave
+*.m~
+*.mex*
+*.mlappinstall
+*.mltbx
+slprj/
+*.slxc
+*.mexw64
+codegen/
+# rebuilt by matlab/simulink/build_accel_model.m in a second
+matlab/simulink/accel_75m.slx
+matlab/simulink/*.slx.r20*
+matlab/simulink/*.slx.autosave
+
+# ---- Ansys / Fluent ----
+cfd/cases/
+*.cas
+*.cas.h5
+*.cas.gz
+*.dat.h5
+*.dat.gz
+*.msh
+*.msh.h5
+*.trn
+*.log
+cleanup-fluent*
+*.wbpj
+*_files/
+.workbench_lock
+*.lck
+fluent-*.out.bak
+
+# ---- Generated large media we re-make (keep the PNGs that go in the README) ----
+media/wake/*_u.png
+media/views/
+
+# ---- OS / editor ----
+Thumbs.db
+desktop.ini
+.DS_Store
+*.tmp

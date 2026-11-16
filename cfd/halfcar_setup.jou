@@ -1,0 +1,79 @@
+; =============================================================================
+; halfcar_setup.jou  Fluent solver journal for one aero variant
+; STATUS: untested, needs the app. TUI prompts change between releases; run
+; it line by line the first time (File > Read > Journal, or paste into the
+; console) and fix any prompt that differs. Type a partial command followed
+; by ? to list the options at that level.
+; -----------------------------------------------------------------------------
+; Before running: mesh built in Fluent Meshing (see fluent_halfcar_setup.md),
+; saved as cases/halfcar_C.cas.h5 with boundary names inlet, outlet,
+; symmetry, side, top, ground, car, wheel_front, wheel_rear.
+; Replace C by the variant letter in the three places marked <<VARIANT>>.
+; Units: metres, seconds. Frame: x downstream, y lateral, z up, ground z = 0.
+; =============================================================================
+
+/file/read-case cases/halfcar_C.cas.h5                      ; <<VARIANT>>
+
+; ---- physics ----------------------------------------------------------------
+/define/models/steady yes
+/define/models/viscous/kw-sst yes
+/define/materials/change-create air air yes constant 1.2 no no yes constant 1.8e-05 no no no
+
+; ---- boundary conditions ----------------------------------------------------------
+; Inlet: 20 m/s normal to the boundary, TI 0.5 %, viscosity ratio 10
+/define/boundary-conditions/set/velocity-inlet inlet () vmag no 20 turb-intensity 0.005 turb-viscosity-ratio 10 q
+; Outlet: 0 Pa gauge
+/define/boundary-conditions/set/pressure-outlet outlet () gauge-pressure no 0 turb-intensity 0.005 turb-viscosity-ratio 10 q
+; Moving ground, 20 m/s in +x (translational)
+/define/boundary-conditions/set/wall ground () motion-bc yes motion-bc-moving wall-translation yes velocity-components 20 0 0 q
+; Rotating wheels about the y axis through the hub (front hub x = 0, rear x = 1.55, z = 0.2285)
+/define/boundary-conditions/set/wall wheel_front () motion-bc yes motion-bc-moving wall-rotation yes omega 87.5 x-origin 0 y-origin 0 z-origin 0.2285 ax-dir 0 1 0 q
+/define/boundary-conditions/set/wall wheel_rear ()  motion-bc yes motion-bc-moving wall-rotation yes omega 87.5 x-origin 1.55 y-origin 0 z-origin 0.2285 ax-dir 0 1 0 q
+; symmetry, side and top are symmetry zones already; car is a stationary wall
+
+; ---- reference values (for Fluent's own Cl, Cd; MATLAB uses forces) ------------
+/report/reference-values/area 1.1
+/report/reference-values/density 1.2
+/report/reference-values/velocity 20
+/report/reference-values/length 1.55
+
+; ---- solver ----------------------------------------------------------------------
+/solve/set/p-v-coupling 24                                  ; coupled
+/solve/set/pseudo-time-method/formulation 1                 ; global time step (pseudo-transient)
+/solve/set/discretization-scheme/pressure 12                ; second order
+/solve/set/discretization-scheme/mom 1
+/solve/set/discretization-scheme/k 1
+/solve/set/discretization-scheme/omega 1
+
+; ---- monitors: downforce (vector 0 0 -1) and drag (1 0 0), half car -------------------
+/solve/report-definitions/add downforce_half lift force-vector 0 0 -1 thread-names car wheel_front wheel_rear () q
+/solve/report-definitions/add drag_half drag force-vector 1 0 0 thread-names car wheel_front wheel_rear () q
+/solve/report-definitions/add downforce_fw_half lift force-vector 0 0 -1 thread-names fw* () q
+/solve/report-files/add forces_C file-name results/forces_C.out report-defs downforce_half drag_half downforce_fw_half () frequency 1 q   ; <<VARIANT>>
+/solve/report-plots/add forces_plot report-defs downforce_half drag_half () q
+/solve/monitors/residual/convergence-criteria 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4
+
+; ---- run --------------------------------------------------------------------------------
+/solve/initialize/hyb-initialization
+/solve/iterate 1500
+/file/write-case-data cases/halfcar_C_done.cas.h5          ; <<VARIANT>>
+
+; ---- wake planes: x = 1.55 + n * 2.95 for n = 0.5, 1, 2, 3 -----------------------------------
+/surface/plane-surface plane_0.5L yz-plane 3.025
+/surface/plane-surface plane_1L yz-plane 4.5
+/surface/plane-surface plane_2L yz-plane 7.45
+/surface/plane-surface plane_3L yz-plane 10.4
+
+; ---- export node data per plane (ASCII, comma separated) -------------------------------------------
+; prompts: file name, surfaces, node values (yes), variables, delimiter (comma = yes)
+/file/export/ascii results/wake/C_0.5L.csv plane_0.5L () yes x-velocity y-velocity z-velocity turb-kinetic-energy () yes
+/file/export/ascii results/wake/C_1L.csv   plane_1L   () yes x-velocity y-velocity z-velocity turb-kinetic-energy () yes
+/file/export/ascii results/wake/C_2L.csv   plane_2L   () yes x-velocity y-velocity z-velocity turb-kinetic-energy () yes
+/file/export/ascii results/wake/C_3L.csv   plane_3L   () yes x-velocity y-velocity z-velocity turb-kinetic-energy () yes
+
+; ---- pictures (adjust the view in the GUI first, then save) ----------------------------------------
+; /display/set/contours/surfaces plane_1L ()
+; /display/contour velocity-magnitude 0 25
+; /display/save-picture ../media/cfd/C_plane_1L.png
+
+; Remember: every force above is HALF the car. Double it before writing cfd/results/forces.csv.

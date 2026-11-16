@@ -1,0 +1,6 @@
+# name: accel_75m
+# closed: 0
+# radius_m: 0 = straight, +left, -right. Written by make_tracks.m
+length_m,radius_m,angle_deg,note
+75.000,0,0,FS acceleration event, 75 m from standing start
+# total_m: 75.0, net turn angle: 0 deg

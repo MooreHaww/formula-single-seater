@@ -1,0 +1,38 @@
+# name: autocross
+# closed: 0
+# radius_m: 0 = straight, +left, -right. Written by make_tracks.m
+length_m,radius_m,angle_deg,note
+60.000,0,0,start straight
+31.416,-20,-90,first corner
+30.000,0,0,
+9.425,9,60,slalom in
+18.850,-9,-120,slalom
+18.850,9,120,slalom
+18.850,-9,-120,slalom
+9.425,9,60,slalom out
+40.000,0,0,
+94.248,30,180,long constant-radius sweeper
+30.000,0,0,
+18.850,-12,-90,
+20.000,0,0,
+18.850,12,90,
+70.000,0,0,longest straight
+25.133,-8,-180,hairpin
+35.000,0,0,
+83.776,40,120,fast sweeper
+25.000,0,0,
+23.562,-15,-90,
+45.000,0,0,
+7.854,10,45,chicane
+15.708,-10,-90,chicane
+7.854,10,45,chicane
+60.000,0,0,
+58.905,25,135,
+30.000,0,0,
+28.274,-18,-90,
+45.000,0,0,
+28.274,9,180,hairpin
+40.000,0,0,
+61.087,-35,-100,
+35.000,0,0,finish straight
+# total_m: 1144.2, net turn angle: 65 deg

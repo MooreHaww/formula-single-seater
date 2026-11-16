@@ -1,0 +1,5 @@
+variant,speed_mps,downforce_N,drag_N,downforce_front_N,cells,note,ClA,CdA,L_over_D,front_balance
+A,20,48,168,21.6,0,parameter-file estimate,0.2,0.7,0.285714285714286,0.45
+B,20,672,264,302.4,0,parameter-file estimate,2.8,1.1,2.54545454545455,0.45
+C,20,960,348,432,0,parameter-file estimate,4,1.45,2.75862068965517,0.45
+D,20,912,360,410.4,0,parameter-file estimate,3.8,1.5,2.53333333333333,0.45

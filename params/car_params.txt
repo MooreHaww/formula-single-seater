@@ -1,0 +1,231 @@
+' ============================================================================
+' car_params.txt : single source of truth for the Formula Single-Seater
+' ============================================================================
+' Format: SolidWorks equation file. Link it in SolidWorks with
+'   Tools > Equations > Link to external file (tick "Link to external file",
+'   pick this file, keep "Equations" and "Global variables" ticked).
+' Numbers are in the SolidWorks document units: mm and degrees.
+' Masses, forces, coefficients and speeds are plain numbers (kg, N, m2, m/s)
+' that SolidWorks stores as unitless global variables and MATLAB reads via
+' matlab/common/read_car_params.m. Lines starting with ' are comments.
+' Changing a value here and pressing Rebuild updates the CAD; MATLAB reads the
+' same file, so the lap sim and the CAD never disagree.
+' Values marked "starting value" are typical Formula Student figures to be
+' confirmed in Ring 1. Values marked "written back" get overwritten from
+' SolidWorks Mass Properties at the end of Ring 2.
+' ============================================================================
+
+' ---------------- Vehicle layout (mm) ---------------------------------------
+"wheelbase"= 1550              ' starting value
+"track_front"= 1200            ' starting value
+"track_rear"= 1150             ' starting value
+"rim_diameter"= 254            ' 10 inch rims
+"rim_width"= 178               ' 7 inch
+"tyre_od"= 457                 ' 18 x 6.0-10 slick, unloaded outer diameter
+"tyre_width"= 180
+"tyre_rolling_radius"= 222     ' loaded radius used by the lap sim
+"ride_height_front"= 35        ' floor to ground, static
+"ride_height_rear"= 50
+"overall_length"= 2950         ' nose tip to rear wing trailing edge
+"overall_width"= 1420          ' outside of rear tyres (wings may be wider)
+"nose_overhang"= 650           ' front axle to nose tip
+"rear_overhang"= 750           ' rear axle to rear wing trailing edge
+"cg_height"= 300               ' car + driver, written back after Ring 2
+"cg_x_from_front_axle"= 821.5  ' = (1 - weight_dist_front) * wheelbase, written back
+
+' ---------------- Masses (kg) and distribution ------------------------------
+"mass_car"= 230                ' without driver, written back after Ring 2
+"mass_driver"= 70
+"weight_dist_front"= 0.47      ' fraction of total mass on the front axle
+"unsprung_mass_corner_front"= 9
+"unsprung_mass_corner_rear"= 10
+
+' ---------------- Powertrain (rear electric motor) --------------------------
+"motor_power_max"= 80000       ' W, hard cap
+"motor_torque_max"= 230        ' Nm at the motor shaft
+"motor_rpm_max"= 6500
+"gear_ratio"= 3.5              ' motor to wheel, single stage
+"drivetrain_efficiency"= 0.92
+"motor_diameter"= 230          ' block model for packaging
+"motor_length"= 110
+"battery_length"= 600          ' block model behind the driver
+"battery_width"= 420
+"battery_height"= 260
+"battery_mass"= 45
+
+' ---------------- Tyre and rolling resistance -------------------------------
+"tyre_mu_peak"= 1.4            ' friction coefficient at tyre_fz_ref, starting value
+"tyre_fz_ref"= 750             ' N, roughly one quarter of car + driver weight
+"tyre_load_sensitivity"= 0.10  ' mu = mu_peak * (fz_ref / fz) ^ load_sensitivity
+"rolling_resistance"= 0.015
+
+' ---------------- Aerodynamics: estimates until Ring 5 CFD ------------------
+' ClA and CdA in m2 (coefficient times reference area). Positive ClA is downforce.
+' A: body and wheels, no wings. B: wings at moderate angle. C: wings at maximum
+' angle plus diffuser. D: C with endplates and rear wing tuned for the wake.
+"air_density"= 1.20            ' kg/m3 at about 20 C
+"frontal_area"= 1.10           ' m2, reference area for Cl and Cd
+"ClA_A"= 0.20
+"CdA_A"= 0.70
+"ClA_B"= 2.80
+"CdA_B"= 1.10
+"ClA_C"= 4.00
+"CdA_C"= 1.45
+"ClA_D"= 3.80
+"CdA_D"= 1.50
+"aero_balance_front"= 0.45     ' fraction of downforce on the front axle
+
+' ---------------- Wings (mm, deg). Larger than FS rules allow on purpose ----
+"fw_span"= 1600
+"fw_main_chord"= 400
+"fw_flap1_chord"= 220
+"fw_flap2_chord"= 160
+"fw_ground_clearance"= 60      ' main element lowest point to ground
+"fw_endplate_height"= 350
+"fw_endplate_length"= 850
+"rw_span"= 1250
+"rw_main_chord"= 450
+"rw_flap1_chord"= 240
+"rw_flap2_chord"= 170
+"rw_height"= 1150              ' ground to main element leading edge
+"rw_endplate_height"= 550
+"rw_endplate_length"= 950
+"wing_element_gap"= 14         ' slot gap between elements
+"wing_element_overlap"= 20
+
+' Wing angles per aero configuration (deg, positive = more downforce)
+"fw_main_aoa_B"= 4
+"fw_flap1_aoa_B"= 22
+"fw_flap2_aoa_B"= 36
+"rw_main_aoa_B"= 6
+"rw_flap1_aoa_B"= 24
+"rw_flap2_aoa_B"= 40
+"fw_main_aoa_C"= 6
+"fw_flap1_aoa_C"= 30
+"fw_flap2_aoa_C"= 48
+"rw_main_aoa_C"= 9
+"rw_flap1_aoa_C"= 32
+"rw_flap2_aoa_C"= 52
+"fw_main_aoa_D"= 6
+"fw_flap1_aoa_D"= 30
+"fw_flap2_aoa_D"= 48
+"rw_main_aoa_D"= 11
+"rw_flap1_aoa_D"= 34
+"rw_flap2_aoa_D"= 56
+
+' ---------------- Floor and diffuser (mm, deg) ------------------------------
+"floor_width"= 1100
+"floor_start_from_front_axle"= 300
+"diffuser_length"= 600
+"diffuser_angle_C"= 12
+"diffuser_angle_D"= 14
+"diffuser_exit_height"= 220
+
+' ---------------- Suspension: travel, targets -------------------------------
+"wheel_travel_bump"= 30        ' mm, used by the Ring 3 motion study
+"wheel_travel_droop"= 30
+"ride_frequency_front"= 3.2    ' Hz target for the spring-rate calculation
+"ride_frequency_rear"= 3.5
+"motion_ratio_front"= 0.75     ' spring travel / wheel travel, replaced by Ring 3 result
+"motion_ratio_rear"= 0.80
+"steer_rack_travel"= 40        ' mm each way
+"steer_max_wheel_angle"= 28    ' deg, inner wheel
+
+' ---------------- Suspension hardpoints, front right corner (mm) ------------
+' Coordinate frame for the master layout part: X rearward from the front axle
+' centre, Y to the right from the car centreline, Z up from the ground.
+' Mirror in Y for the left side. Starting values; Ring 3 may move the tie rod.
+"f_lwb_in_fwd_x"= -160
+"f_lwb_in_fwd_y"= 250
+"f_lwb_in_fwd_z"= 115
+"f_lwb_in_aft_x"= 160
+"f_lwb_in_aft_y"= 250
+"f_lwb_in_aft_z"= 110
+"f_lwb_out_x"= 0
+"f_lwb_out_y"= 555
+"f_lwb_out_z"= 125
+"f_uwb_in_fwd_x"= -130
+"f_uwb_in_fwd_y"= 275
+"f_uwb_in_fwd_z"= 305
+"f_uwb_in_aft_x"= 140
+"f_uwb_in_aft_y"= 275
+"f_uwb_in_aft_z"= 300
+"f_uwb_out_x"= 10
+"f_uwb_out_y"= 525
+"f_uwb_out_z"= 335
+"f_tierod_in_x"= -70
+"f_tierod_in_y"= 250
+"f_tierod_in_z"= 150
+"f_tierod_out_x"= -70
+"f_tierod_out_y"= 550
+"f_tierod_out_z"= 165
+"f_pushrod_out_x"= 0
+"f_pushrod_out_y"= 540
+"f_pushrod_out_z"= 150
+"f_pushrod_in_x"= 0
+"f_pushrod_in_y"= 300
+"f_pushrod_in_z"= 410
+
+' ---------------- Suspension hardpoints, rear right corner (mm) -------------
+' Same frame; X values are measured from the front axle, so they sit near wheelbase.
+"r_lwb_in_fwd_x"= 1390
+"r_lwb_in_fwd_y"= 240
+"r_lwb_in_fwd_z"= 120
+"r_lwb_in_aft_x"= 1700
+"r_lwb_in_aft_y"= 240
+"r_lwb_in_aft_z"= 118
+"r_lwb_out_x"= 1550
+"r_lwb_out_y"= 530
+"r_lwb_out_z"= 130
+"r_uwb_in_fwd_x"= 1410
+"r_uwb_in_fwd_y"= 260
+"r_uwb_in_fwd_z"= 320
+"r_uwb_in_aft_x"= 1690
+"r_uwb_in_aft_y"= 260
+"r_uwb_in_aft_z"= 312
+"r_uwb_out_x"= 1560
+"r_uwb_out_y"= 505
+"r_uwb_out_z"= 340
+"r_toelink_in_x"= 1640
+"r_toelink_in_y"= 240
+"r_toelink_in_z"= 160
+"r_toelink_out_x"= 1640
+"r_toelink_out_y"= 525
+"r_toelink_out_z"= 170
+"r_pushrod_out_x"= 1550
+"r_pushrod_out_y"= 515
+"r_pushrod_out_z"= 155
+"r_pushrod_in_x"= 1550
+"r_pushrod_in_y"= 290
+"r_pushrod_in_z"= 420
+
+' ---------------- Driver envelope and cockpit (mm) --------------------------
+"driver_hip_x"= 950            ' hip point from the front axle
+"driver_hip_z"= 180
+"seat_back_angle"= 45          ' deg from vertical
+"cockpit_opening_length"= 700
+"cockpit_opening_width"= 400
+"main_hoop_x"= 1250
+"main_hoop_height"= 950
+"front_hoop_x"= 650
+"front_hoop_height"= 600
+
+' ---------------- Chassis tubes (mm) ----------------------------------------
+"tube_main_od"= 25.4
+"tube_main_wall"= 2.4
+"tube_secondary_od"= 25.4
+"tube_secondary_wall"= 1.6
+
+' ---------------- CFD (Ring 5) ----------------------------------------------
+"cfd_speed"= 20                ' m/s freestream, also moving ground speed
+"cfd_speed_check"= 30          ' m/s, speed-sensitivity run
+"wake_window_width"= 1.4       ' m, following-car frontal window
+"wake_window_height"= 1.2      ' m above ground
+"wake_plane_lengths"= 0.5      ' first wake plane, car lengths behind the rear axle (others: 1, 2, 3)
+
+' ---------------- Load cases (Ring 4) design values --------------------------
+"design_lateral_g"= 1.6        ' max cornering, re-checked after Ring 6
+"design_braking_g"= 1.5
+"design_bump_g"= 3.0
+"design_corner_speed"= 25      ' m/s for aero load in the cornering case
+"design_braking_speed"= 38     ' m/s at the start of braking

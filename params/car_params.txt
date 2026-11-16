@@ -44,12 +44,12 @@
 ' MATLAB roll them up identically. matlab/mass_budget.m prints the table,
 ' media/mass_budget.md and media/mass_budget.png. At the end of Ring 2 every
 ' line is replaced by SolidWorks Mass Properties of the real part.
-"m_frame"= 43.3                ' CALC frame_layout.m: 116 tubes of 25.4 mm steel incl. 6.1 kg of sidepod battery structure, no welds, no brackets
-"x_frame"= 866                 ' CALC tube-mass-weighted centroid of cad/frame/frame_tubes.csv (mass_budget.m warns if this drifts from the CSV)
-"z_frame"= 349
+"m_frame"= 43.0                ' CALC frame_layout.m: 114 tubes of 25.4 mm steel incl. 6.1 kg of sidepod battery structure, no welds, no brackets
+"x_frame"= 860                 ' CALC tube-mass-weighted centroid of cad/frame/frame_tubes.csv (mass_budget.m warns if this drifts from the CSV)
+"z_frame"= 348
 "m_brackets_welds"= 5.5        ' GUESS tabs, weld fill, bulkhead plates, floor close-out, battery box mounts (about 13 % of the frame)
-"x_brackets_welds"= 866
-"z_brackets_welds"= 349
+"x_brackets_welds"= 860
+"z_brackets_welds"= 348
 "m_battery"= 45.0              ' ESTIMATE 6 kWh in two sidepod packs with boxes at about 135 Wh/kg; measured once the cells are chosen
 "x_battery"= "battery_x_front" + "battery_length" / 2
 "z_battery"= "battery_z_bottom" + "battery_height" / 2

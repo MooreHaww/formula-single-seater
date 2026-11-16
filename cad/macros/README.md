@@ -1,14 +1,14 @@
 # SolidWorks macros
 
-All four are VBA modules saved as text (`.bas`, CRLF) so they diff in git. **Status:** first versions of `SaveStandardViews` and `ImportFrameNodes` ran in SolidWorks 2026 SP2.1 Student after fixes; the fixed versions in this folder, and `ImportAirfoil` and `ExportConfigsSTEP`, are untested, need the app. Every enum and member name was checked against the installed 2026 type library. Details: `docs/cad_playbook/macro_review.md`, section "Tested in SolidWorks 2026".
+All five are VBA modules saved as text (`.bas`, CRLF) so they diff in git. They can live in one macro project (`cad/macros/repo_macros.swp`); run each as `<Module>.main`. **Status:** first versions of `SaveStandardViews` and `ImportFrameNodes` ran in SolidWorks 2026 SP2.1 Student after fixes; the fixed versions in this folder, and `ImportAirfoil` and `ExportConfigsSTEP`, are untested, need the app. Every enum and member name was checked against the installed 2026 type library. Details: `docs/cad_playbook/macro_review.md`, section "Tested in SolidWorks 2026".
 
 | Macro | Does | Output |
 |---|---|---|
 | `ImportAirfoil.bas` | Picks a `cad/airfoils/*.dat` file, asks for the chord in mm, inserts a 3D curve on the Front plane | Curve feature `Airfoil_<name>_c<chord>` in the active part |
 | `ExportConfigsSTEP.bas` | Activates every configuration of the active part or assembly, rebuilds, saves STEP AP214 | `cfd/geometry/<doc>_<config>.STEP` plus `export_log.txt` with mass and CG per config |
 | `SaveStandardViews.bas` | Saves iso, front, right, top, rear, bottom PNGs of the active document, white background | `media/views/<doc>_<config>_<view>.png` |
-| `ImportFrameNodes.bas` | Draws one 3D-sketch line per tube from `cad/frame/frame_nodes.csv` and `frame_tubes.csv` One 3D sketch per tube group (`FRAME_hoop`, `FRAME_hoop_brace`, `FRAME_sis`, `FRAME_bulkhead`, `FRAME_sidepod`, `FRAME_front`, `FRAME_rear`), ready for one Structural Member each |
-| `BuildTubes.bas` | Run after `ImportFrameNodes`. For each `FRAME_<group>` sketch it builds one Structural Member from that sketch's segments (`formula` / `tube_round`, size per group from `frame_tubes.csv`, end miter). It then sets AISI 1020, updates the cut list, checks counts, length and mass, and saves. Untested, needs the app. | `SM_<group>` features, one PASS/FAIL message, saved part (`cad/chassis/chassis.SLDPRT` if it was unsaved) |
+| `ImportFrameNodes.bas` | Draws one 3D-sketch line per tube from `cad/frame/frame_nodes.csv` and `frame_tubes.csv` | One 3D sketch per tube group (`FRAME_hoop`, `FRAME_hoop_brace`, `FRAME_sis`, `FRAME_bulkhead`, `FRAME_sidepod`, `FRAME_front`, `FRAME_rear`), ready for one Structural Member each |
+| `BuildTubes.bas` | Run after `ImportFrameNodes`. For each `FRAME_<group>` sketch it builds one Structural Member from that sketch's segments (`formula` / `tube_round`, size per group from `frame_tubes.csv`, end miter). Groups that fail are skipped or built segment by segment, with every failure listed. It then sets AISI 1020, updates the cut list, checks counts, length and mass against `frame_tubes.csv`, and saves. First run: 6 of 7 groups built; the rear failure was a duplicate tube in the data, now fixed. The current version is untested. | `SM_<group>` features, one PASS/FAIL message, saved part (`cad/chassis/chassis.SLDPRT` if it was unsaved), `cad/chassis/build_tubes_report.txt` |
 
 Review notes and the order to test them in: `docs/cad_playbook/macro_review.md`.
 

@@ -88,6 +88,22 @@ The per-interface checker now covers five modules and 136 member uses, with no p
 - **Stop messages:** a stop during the build says that the members made so far are kept and the part is not saved.
 - **Still untested in the app:** the full build path (members, material, cut list, save).
 
+**Second run (2026-11-16): 6 of 7 groups built, rear refused. Cause found in the data and fixed.**
+- **Result:** on a clean part, the no-duplicate-Weldment fix worked. hoop 12, hoop_brace 10, sis 7, bulkhead 4, sidepod 18 and front 32 were built (83 cut-list items). Every one of them reported "one group refused: (no message)" and was built with the one-group-per-segment fallback. So in 2026 a branched network is not accepted as one group, and SolidWorks gives no error text for it.
+- **Rear failed:** the rear group (33 segments) was refused in both modes, again with no message.
+- **Cause:** a duplicated rear rail. `frame_tubes.csv` had `RT1-RT2_R` (RT1_R to RT2_R, 200 mm) and `RT1-RT2_L` as full tubes. The rear rocker mount node `RRK` lies on that line, 30 % along, and the rail was already present as `RRK-RT1` (60 mm) plus `RRK-RT2` (140 mm). The long rail therefore overlaid the two halves, and it also passed through `RRK_cross` at RRK without sharing the node. The resulting overlapping bodies are what SolidWorks refused. This matches the one line that stayed unhighlighted in the viewport: the upper rail near the motor area.
+- **Other checks on the CSV:** no node pair is used twice (in either direction), no tube is under 30 mm, and no rear tube runs along a line used by another group.
+- **Data fix:** in `matlab/cad/frame_layout.m` the `'RT1', 'RT2', 'rear'` entry was removed, with a comment explaining why. The frame is now **114 tubes, rear 31, 41.48 m, 42.97 kg**, centroid x 860 / z 348 mm (was 116 / 33 / 41.88 m / 43.3 kg / 866 / 349).
+- **New topology check in `frame_layout`:** it now runs `topology_check` (zero-length tubes, a node pair used twice, a node inside another tube) and warns on any finding. The self-test pins a hand case (3 findings) and requires the real frame to be clean.
+- **Knock-on updates:** `params/car_params.txt` `m_frame` 43.0, `x_frame` / `x_brackets_welds` 860, `z_frame` / `z_brackets_welds` 348. Mass budget: 228.4 kg, 41.5 % front (was 228.7 kg, 41.4 %). `run_all` 19/19 PASS; lap times move by 0.01 s at most.
+- **Macro changes:**
+  - The expected numbers (tubes per group, bodies, length) now come from `frame_tubes.csv`, not from constants in the code.
+  - A sketch whose segment count differs from the CSV fails that group's check: it is stale and must be redrawn.
+  - Problems no longer stop the run. A group that fails a check is skipped, and the others are built.
+  - A group refused in both modes is built segment by segment (`SM_<group>_<tube id>`). Every segment refused even alone is listed with its CSV tube id, nodes and length.
+  - Everything that works is saved. The full report also goes to `cad/chassis/build_tubes_report.txt`, because a message box shows only about 1000 characters.
+  - New calls: `SketchSegment.GetType` / `GetLength`, `SketchLine.GetStartPoint2` / `GetEndPoint2`, `SketchPoint.X/Y/Z`, `swSketchSegments_e.swSketchLINE`. All five macros: 158 member uses, no problems. The only public name shared between modules is `main`, which VBA allows in one project such as `repo_macros.swp`.
+
 ## Read-through before the test (history)
 
 The four `.bas` modules in `cad/macros/` were re-read for API mistakes against what I knew of the SolidWorks API up to 2025 and for Student-edition limits, before anything was executed. Items marked **fixed** were changed in the files; items marked **verify** were to be checked on first run.

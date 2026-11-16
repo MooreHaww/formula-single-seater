@@ -1,0 +1,16 @@
+ALL PASS   (2026-11-16 23:41, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT)
+
+PASS  SM_hoop: 12 of 12 segments built (12 tubes in CSV), 25.4x2.4, one group per segment
+PASS  SM_hoop_brace: 10 of 10 segments built (10 tubes in CSV), 25.4x2.4, one group per segment
+PASS  SM_sis: 7 of 7 segments built (7 tubes in CSV), 25.4x1.6, one group per segment
+PASS  SM_bulkhead: 4 of 4 segments built (4 tubes in CSV), 25.4x1.6, one group per segment
+PASS  SM_sidepod: 18 of 18 segments built (18 tubes in CSV), 25.4x1.6, one group per segment
+PASS  SM_front: 32 of 32 segments built (32 tubes in CSV), 25.4x1.6, one group per segment
+PASS  SM_rear: 31 of 31 segments built (31 tubes in CSV), 25.4x1.6, one group per segment
+PASS  cut-list bodies: 114 (114 tubes in CSV, 81 cut-list items)
+PASS  cut length: 42.57 m vs 41.48 m in CSV (+2.6 %, limit 5 %)
+PASS  mass: 41.5 kg (expected 38 to 46)
+PASS  material: AISI 1020 (SOLIDWORKS Materials)
+PASS  saved: C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+
+No failures.

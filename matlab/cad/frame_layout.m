@@ -73,6 +73,13 @@ out.envelopes = E;
 % ---- clearance check ------------------------------------------------------------------
 out.clearance = clearance_check(NL, tubes, od, E);
 
+% ---- topology check: duplicates, zero length, a node inside another tube ----------------
+% Any of these gives overlapping weldment bodies, which SolidWorks refuses.
+out.topology = topology_check(NL, tubes);
+if ~isempty(out.topology)
+    warning('frame_layout:topology', 'frame topology: %s', strjoin(out.topology, '; '));
+end
+
 % ---- write ---------------------------------------------------------------------------------
 if opts.write
     outDir = fullfile(repo_root(), 'cad', 'frame');
@@ -107,6 +114,36 @@ for k = 1:size(tubes, 1)
 end
 fprintf(fid, '# total length %.2f m, total mass %.1f kg (steel 7850 kg/m3, no joints, no brackets)\r\n', out.total_length_m, out.total_mass_kg);
 fclose(fid);
+end
+
+function msgs = topology_check(NL, tubes, tol)
+% Returns a cell of problems: zero-length tubes (< 1 mm), the same node pair
+% twice (either direction), and a node lying inside another tube (within tol
+% mm of the line, strictly between its ends). Empty means clean.
+if nargin < 3, tol = 1.0; end
+msgs = {};
+nn = fieldnames(NL); P = zeros(numel(nn), 3);
+for k = 1:numel(nn), P(k, :) = NL.(nn{k}); end
+keys = cell(size(tubes, 1), 1);
+for k = 1:size(tubes, 1)
+    a = NL.(tubes{k, 1}); b = NL.(tubes{k, 2}); d = b - a; L = norm(d);
+    name = [tubes{k, 1} '-' tubes{k, 2}];
+    if L < 1
+        msgs{end + 1} = sprintf('%s zero length', name); %#ok<AGROW>
+        continue
+    end
+    keys{k} = strjoin(sort(tubes(k, 1:2)), '|');
+    s = (P - a) * d' / L^2;                                   % position along the tube
+    dist = vecnorm(P - a - s * d, 2, 2);                      % distance from the line
+    inside = s > 1e-6 & s < 1 - 1e-6 & dist < tol;
+    for j = find(inside)'
+        msgs{end + 1} = sprintf('node %s lies inside %s (%.0f %% along)', nn{j}, name, 100 * s(j)); %#ok<AGROW>
+    end
+end
+[u, ~, ic] = unique(keys(~cellfun(@isempty, keys)));
+for j = find(accumarray(ic, 1) > 1)'
+    msgs{end + 1} = sprintf('node pair %s used twice', u{j}); %#ok<AGROW>
+end
 end
 
 function [N, T] = define_frame(p)
@@ -169,7 +206,10 @@ T = {
     'MH_L', 'RS1_L', 'rear';   'MH_M', 'RS1_U', 'rear';   'MH_L', 'RS1_U', 'rear'
     'RS1_L', 'RS2_L', 'rear';  'RS1_U', 'RS2_U', 'rear';  'RS1_L', 'RS1_U', 'rear'; 'RS2_L', 'RS2_U', 'rear'; 'RS1_L', 'RS2_U', 'rear'
     'RS1_L', 'X', 'rear';      'RS2_L', 'X', 'rear';      'RS1_U', 'X', 'rear';     'RS2_U', 'X', 'rear'
-    'RS1_U', 'RT1', 'rear';    'RS2_U', 'RT2', 'rear';    'RT1', 'RT2', 'rear';     'RT1', 'X', 'rear'; 'RT2', 'X', 'rear'
+    'RS1_U', 'RT1', 'rear';    'RS2_U', 'RT2', 'rear';    'RT1', 'X', 'rear'; 'RT2', 'X', 'rear'
+    % the RT1-RT2 top rail is the two tubes below, split at the rocker mount
+    % RRK (RRK lies on that line). A full RT1-RT2 tube on top of them was a
+    % duplicate: overlapping bodies made SolidWorks refuse the rear group.
     'RRK', 'RT1', 'rear';      'RRK', 'RT2', 'rear';      'RRK', 'X', 'rear'
     % main hoop braces (rearward)
     'MH_T', 'RT2', 'hoop_brace'; 'MH_B', 'RT1', 'hoop_brace'; 'MH_T', 'RT1', 'hoop_brace'
@@ -367,8 +407,16 @@ nCR = nnz(b == 13); nLF = nnz(b == 10);
 ok = ok && isequal(double(b(25:26)), [13 10]) && nCR == nLF && nLF == numel(fieldnames(o.nodes)) + 1 ...
         && nnz(bt == 13) == nnz(bt == 10);
 rmdir(tmp, 's');
+%   (5) topology: nodes A (0,0,0), B (100,0,0), C (30,0,0), tubes A-B, A-C,
+%       C-B, B-A -> C inside A-B at 30 %, C inside B-A at 70 %, pair A|B
+%       twice: 3 findings. The real frame has none (the duplicate RT1-RT2
+%       rail over RRK-RT1 + RRK-RT2 was removed after the SolidWorks run).
+toyN = struct('A', [0 0 0], 'B', [100 0 0], 'C', [30 0 0]);
+toyM = topology_check(toyN, {'A', 'B'; 'A', 'C'; 'C', 'B'; 'B', 'A'});
+ok = ok && numel(toyM) == 3 && contains(toyM{1}, '30 %') && contains(toyM{2}, '70 %') ...
+        && contains(toyM{3}, 'A|B used twice') && isempty(o.topology);
 if ok
-    fprintf('frame_layout self-test: PASS (cross tube 400 mm, box distance %.4f mm, %d tubes %.1f kg, all clearances OK, CSVs CRLF)\n', d(1), size(o.tubes, 1), o.total_mass_kg);
+    fprintf('frame_layout self-test: PASS (cross tube 400 mm, box distance %.4f mm, %d tubes %.1f kg, all clearances OK, CSVs CRLF, topology clean, toy case 3 findings)\n', d(1), size(o.tubes, 1), o.total_mass_kg);
 else
     error('frame_layout self-test: FAIL (mass %.1f kg, clearance violations %d)', o.total_mass_kg, nnz(~[o.clearance.ok]));
 end

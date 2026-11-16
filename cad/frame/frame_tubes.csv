@@ -82,8 +82,6 @@ RS1_U-RT1_R,RS1_U_R,RT1_R,rear,25.4,1.6,150.0,0.141
 RS1_U-RT1_L,RS1_U_L,RT1_L,rear,25.4,1.6,150.0,0.141
 RS2_U-RT2_R,RS2_U_R,RT2_R,rear,25.4,1.6,158.0,0.148
 RS2_U-RT2_L,RS2_U_L,RT2_L,rear,25.4,1.6,158.0,0.148
-RT1-RT2_R,RT1_R,RT2_R,rear,25.4,1.6,200.0,0.188
-RT1-RT2_L,RT1_L,RT2_L,rear,25.4,1.6,200.0,0.188
 RT1_cross,RT1_R,RT1_L,rear,25.4,1.6,580.0,0.545
 RT2_cross,RT2_R,RT2_L,rear,25.4,1.6,580.0,0.545
 RRK-RT1_R,RRK_R,RT1_R,rear,25.4,1.6,60.0,0.056
@@ -115,4 +113,4 @@ MH_M-SP2_U_R,MH_M_R,SP2_U_R,sidepod,25.4,1.6,217.1,0.204
 MH_M-SP2_U_L,MH_M_L,SP2_U_L,sidepod,25.4,1.6,217.1,0.204
 SP1_L-SP2_U_R,SP1_L_R,SP2_U_R,sidepod,25.4,1.6,646.2,0.607
 SP1_L-SP2_U_L,SP1_L_L,SP2_U_L,sidepod,25.4,1.6,646.2,0.607
-# total length 41.88 m, total mass 43.3 kg (steel 7850 kg/m3, no joints, no brackets)
+# total length 41.48 m, total mass 43.0 kg (steel 7850 kg/m3, no joints, no brackets)

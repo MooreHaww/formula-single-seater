@@ -79,13 +79,17 @@ Sub main()
     End If
 
     ' --- insert curve -------------------------------------------------------------
-    Dim ok As Boolean
-    ok = swModel.InsertCurveFileBegin()
+    ' InsertCurveFileBegin is a Sub on ModelDoc2 (returns nothing): call it as a
+    ' statement. Assigning it (ok = ...) is the 2026 compile error
+    ' "Expected Function or variable". Point and End return Boolean.
+    Dim ok As Boolean, nBad As Long
+    swModel.InsertCurveFileBegin
     Dim i As Long
     For i = 0 To n - 1
         ' Front plane: X along chord, Y up, Z = 0 (metres)
-        ok = swModel.InsertCurveFilePoint(xs(i) * chord_m, ys(i) * chord_m, 0#)
+        If Not swModel.InsertCurveFilePoint(xs(i) * chord_m, ys(i) * chord_m, 0#) Then nBad = nBad + 1
     Next i
+    If nBad > 0 Then Debug.Print nBad & " curve points were refused"
     ok = swModel.InsertCurveFileEnd()
     If Not ok Then
         MsgBox "InsertCurveFileEnd failed. Check that the first and last points differ slightly " & _

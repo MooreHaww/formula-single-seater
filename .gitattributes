@@ -16,7 +16,7 @@
 *.m text
 *.bas text eol=crlf
 *.txt text
-*.csv text
+*.csv text eol=crlf
 *.md text
 *.jou text
 *.dat text

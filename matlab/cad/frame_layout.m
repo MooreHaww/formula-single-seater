@@ -76,23 +76,8 @@ out.clearance = clearance_check(NL, tubes, od, E);
 % ---- write ---------------------------------------------------------------------------------
 if opts.write
     outDir = fullfile(repo_root(), 'cad', 'frame');
-    if ~isfolder(outDir), mkdir(outDir); end
-    nn = fieldnames(NL);
-    fid = fopen(fullfile(outDir, 'frame_nodes.csv'), 'w');
-    fprintf(fid, 'node,x_mm,y_mm,z_mm,note\n');
-    for k = 1:numel(nn)
-        pt = NL.(nn{k});
-        fprintf(fid, '%s,%g,%g,%g,%s\n', nn{k}, pt, node_note(nn{k}));
-    end
-    fclose(fid);
-    fid = fopen(fullfile(outDir, 'frame_tubes.csv'), 'w');
-    fprintf(fid, 'tube,node_a,node_b,group,od_mm,wall_mm,length_mm,mass_kg\n');
-    for k = 1:nT
-        fprintf(fid, '%s,%s,%s,%s,%g,%g,%.1f,%.3f\n', tubes{k, 4}, tubes{k, 1}, tubes{k, 2}, tubes{k, 3}, od(k), wall(k), L(k), mass(k));
-    end
-    fprintf(fid, '# total length %.2f m, total mass %.1f kg (steel 7850 kg/m3, no joints, no brackets)\n', out.total_length_m, out.total_mass_kg);
-    fclose(fid);
-    fprintf('frame_layout: %d nodes, %d tubes, %.1f m of tube, %.1f kg -> cad/frame/*.csv\n', numel(nn), nT, out.total_length_m, out.total_mass_kg);
+    write_csvs(outDir, out);
+    fprintf('frame_layout: %d nodes, %d tubes, %.1f m of tube, %.1f kg -> cad/frame/*.csv\n', numel(fieldnames(NL)), nT, out.total_length_m, out.total_mass_kg);
     print_clearance(out.clearance);
 end
 if opts.plot
@@ -101,6 +86,29 @@ end
 end
 
 % =============================================================================
+function write_csvs(outDir, out)
+% Writes frame_nodes.csv and frame_tubes.csv with CRLF line endings. The
+% SolidWorks VBA macro (cad/macros/ImportFrameNodes.bas) now accepts LF too,
+% but CRLF keeps Notepad, Excel and older macros happy. Mode 'w' plus an
+% explicit \r\n gives CRLF on every OS ('wt' would only do so on Windows).
+if ~isfolder(outDir), mkdir(outDir); end
+NL = out.nodes; tubes = out.tubes; nn = fieldnames(NL);
+fid = fopen(fullfile(outDir, 'frame_nodes.csv'), 'w');
+fprintf(fid, 'node,x_mm,y_mm,z_mm,note\r\n');
+for k = 1:numel(nn)
+    fprintf(fid, '%s,%g,%g,%g,%s\r\n', nn{k}, NL.(nn{k}), node_note(nn{k}));
+end
+fclose(fid);
+fid = fopen(fullfile(outDir, 'frame_tubes.csv'), 'w');
+fprintf(fid, 'tube,node_a,node_b,group,od_mm,wall_mm,length_mm,mass_kg\r\n');
+for k = 1:size(tubes, 1)
+    fprintf(fid, '%s,%s,%s,%s,%g,%g,%.1f,%.3f\r\n', tubes{k, 4}, tubes{k, 1}, tubes{k, 2}, tubes{k, 3}, ...
+        out.od(k), out.wall(k), out.length_mm(k), out.mass_kg(k));
+end
+fprintf(fid, '# total length %.2f m, total mass %.1f kg (steel 7850 kg/m3, no joints, no brackets)\r\n', out.total_length_m, out.total_mass_kg);
+fclose(fid);
+end
+
 function [N, T] = define_frame(p)
 % Right-side and centreline nodes. Names: FB front bulkhead, FS front
 % suspension box, FBT front box top (rocker mount), FH front hoop, MH main
@@ -350,8 +358,17 @@ ok = ok && abs(d(1) - sqrt(3) * 10) < 1e-9 && d(2) == 0;
 m1 = pi / 4 * (25.4^2 - 20.6^2) * 1000 * 7850e-9;
 ok = ok && abs(m1 - 1.361) < 0.002;
 ok = ok && all([o.clearance.ok]) && o.total_mass_kg > 15 && o.total_mass_kg < 50;
+%   (4) CSV line endings: the nodes header 'node,x_mm,y_mm,z_mm,note' is 24
+%       characters, so bytes 25 and 26 are CR LF (13 10); the file has as many
+%       CRs as LFs (no bare LF) and nodes + 1 lines
+tmp = tempname; write_csvs(tmp, o);
+b = fileread(fullfile(tmp, 'frame_nodes.csv')); bt = fileread(fullfile(tmp, 'frame_tubes.csv'));
+nCR = nnz(b == 13); nLF = nnz(b == 10);
+ok = ok && isequal(double(b(25:26)), [13 10]) && nCR == nLF && nLF == numel(fieldnames(o.nodes)) + 1 ...
+        && nnz(bt == 13) == nnz(bt == 10);
+rmdir(tmp, 's');
 if ok
-    fprintf('frame_layout self-test: PASS (cross tube 400 mm, box distance %.4f mm, %d tubes %.1f kg, all clearances OK)\n', d(1), size(o.tubes, 1), o.total_mass_kg);
+    fprintf('frame_layout self-test: PASS (cross tube 400 mm, box distance %.4f mm, %d tubes %.1f kg, all clearances OK, CSVs CRLF)\n', d(1), size(o.tubes, 1), o.total_mass_kg);
 else
     error('frame_layout self-test: FAIL (mass %.1f kg, clearance violations %d)', o.total_mass_kg, nnz(~[o.clearance.ok]));
 end

@@ -1,8 +1,8 @@
 Attribute VB_Name = "ImportAirfoil"
 ' ============================================================================
 ' ImportAirfoil.bas  (SolidWorks VBA macro module)
-' STATUS: untested, needs the app. Written without SolidWorks available;
-'         expect to fix small API details on first run.
+' STATUS: untested, needs the app. Audited against the 2026 SP2.1 type
+'         library after the first SolidWorks test of the other macros.
 ' ----------------------------------------------------------------------------
 ' What it does
 '   Reads a normalized airfoil file (cad/airfoils/<name>.dat, two columns
@@ -15,7 +15,20 @@ Attribute VB_Name = "ImportAirfoil"
 ' How to install
 '   SolidWorks > Tools > Macro > New..., save as cad/macros/ImportAirfoil.swp,
 '   then in the VBA editor: File > Import File... > this .bas file.
-'   Delete the empty default module. Run with Tools > Macro > Run.
+'   Delete the empty default module. Run with Tools > Macro > Run on the .swp
+'   (not the .bas).
+'
+' Repo root
+'   Found by walking up from the folder of the running .swp until a folder
+'   with params\car_params.txt is found. Save the .swp anywhere inside the
+'   repo (cad\macros is the convention); it only sets the start folder of
+'   the file dialog.
+'
+' Fixes after the 2026 test of the other macros
+'   * FeatureManager.FeatureByPositionReverse does not exist (error 438);
+'     the curve is found with ModelDocExtension.GetLastFeatureAdded.
+'   * Line Input reads an LF-only file as one line; the .dat is now read
+'     whole and split on vbLf with vbCr removed (LF and CRLF both work).
 '
 ' Notes
 '   * The API works in metres; the file is x/c, y/c; chord is asked in mm.
@@ -84,9 +97,11 @@ Sub main()
     Dim feat As SldWorks.Feature
     Dim featName As String
     featName = "(unnamed)"
-    Set feat = swModel.FeatureManager.FeatureByPositionReverse(0)
+    Set feat = swModel.Extension.GetLastFeatureAdded
     If Not feat Is Nothing Then
+        On Error Resume Next                ' name clash: keep the default name
         feat.Name = "Airfoil_" & BaseName(fileName) & "_c" & chordStr
+        On Error GoTo 0
         featName = feat.Name
     End If
     swModel.ClearSelection2 True
@@ -98,15 +113,14 @@ End Sub
 
 ' Read a Selig-format .dat: title line, then "x y" pairs. Returns the count.
 Private Function ReadDat(ByVal path As String, ByRef xs() As Double, ByRef ys() As Double) As Long
-    Dim fnum As Integer: fnum = FreeFile
+    Dim lines As Variant, li As Long
     Dim line As String, parts() As String
     Dim count As Long: count = 0
     ReDim xs(0 To 1023): ReDim ys(0 To 1023)
-    Open path For Input As #fnum
+    lines = ReadTextLines(path)
     Dim first As Boolean: first = True
-    Do While Not EOF(fnum)
-        Line Input #fnum, line
-        line = Trim$(line)
+    For li = 0 To UBound(lines)
+        line = Trim$(lines(li))
         If line = "" Then GoTo NextLine
         parts = SplitWhitespace(line)
         If first Then
@@ -120,7 +134,7 @@ Private Function ReadDat(ByVal path As String, ByRef xs() As Double, ByRef ys() 
                 If count > UBound(xs) Then
                     ReDim Preserve xs(0 To UBound(xs) * 2): ReDim Preserve ys(0 To UBound(ys) * 2)
                 End If
-                xs(count) = CDbl(parts(0)): ys(count) = CDbl(parts(1))
+                xs(count) = Val(parts(0)): ys(count) = Val(parts(1))
                 ' skip a point identical to the previous one
                 If count > 0 Then
                     If Abs(xs(count) - xs(count - 1)) < 1E-09 And Abs(ys(count) - ys(count - 1)) < 1E-09 Then
@@ -131,8 +145,7 @@ Private Function ReadDat(ByVal path As String, ByRef xs() As Double, ByRef ys() 
             End If
         End If
 NextLine:
-    Loop
-    Close #fnum
+    Next li
     If count = 0 Then
         ReadDat = 0
         Exit Function
@@ -165,16 +178,36 @@ Private Function BaseName(ByVal path As String) As String
     BaseName = s
 End Function
 
-' cad/macros/<this>.swp -> repo root is two levels up
+' Read a text file whole and split it into lines; works for LF and CRLF.
+Private Function ReadTextLines(ByVal path As String) As Variant
+    Dim fnum As Integer, txt As String, arr() As String, k As Long
+    fnum = FreeFile
+    Open path For Binary Access Read As #fnum
+    If LOF(fnum) > 0 Then
+        txt = Space$(LOF(fnum))
+        Get #fnum, , txt
+    End If
+    Close #fnum
+    arr = Split(txt, vbLf)
+    For k = 0 To UBound(arr)
+        arr(k) = Replace(arr(k), vbCr, "")
+    Next k
+    ReadTextLines = arr
+End Function
+
+' Walk up from the .swp folder until params\car_params.txt is found.
 Public Function RepoRootFromMacro() As String
     Dim p As String
     p = Application.SldWorks.GetCurrentMacroPathName
-    If p = "" Then
-        RepoRootFromMacro = CurDir$
-    Else
-        p = Left$(p, InStrRev(p, "\") - 1)          ' cad\macros
-        p = Left$(p, InStrRev(p, "\") - 1)          ' cad
-        p = Left$(p, InStrRev(p, "\") - 1)          ' repo root
-        RepoRootFromMacro = p
+    If p <> "" Then
+        p = Left$(p, InStrRev(p, "\") - 1)
+        Do While InStr(p, "\") > 0
+            If Dir(p & "\params\car_params.txt") <> "" Then
+                RepoRootFromMacro = p
+                Exit Function
+            End If
+            p = Left$(p, InStrRev(p, "\") - 1)
+        Loop
     End If
+    RepoRootFromMacro = CurDir$
 End Function

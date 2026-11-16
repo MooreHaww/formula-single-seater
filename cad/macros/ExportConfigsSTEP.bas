@@ -1,7 +1,7 @@
 Attribute VB_Name = "ExportConfigsSTEP"
 ' ============================================================================
 ' ExportConfigsSTEP.bas  (SolidWorks VBA macro module)
-' STATUS: untested, needs the app.
+' STATUS: untested, needs the app (audited against the 2026 SP2.1 type library).
 ' ----------------------------------------------------------------------------
 ' What it does
 '   For the active part or assembly, activates every configuration in turn,
@@ -14,7 +14,20 @@ Attribute VB_Name = "ExportConfigsSTEP"
 '   * On the CFD half-car body part: configurations A, B, C, D -> four STEPs.
 '   * On the full assembly for the v1.0.0 release STEP.
 '
-' How to install: see ImportAirfoil.bas (New macro, then File > Import File).
+' How to install and run: see cad/macros/README.md (Tools > Macro > New,
+'   File > Import File, then Tools > Macro > Run on the .swp, not the .bas).
+'
+' Repo root
+'   Found by walking up from the folder of the running .swp until a folder
+'   with params\car_params.txt is found. Save the .swp anywhere inside the
+'   repo (cad\macros is the convention).
+'
+' Fixes after the 2026 test of the other macros
+'   * swUserPreferenceIntegerValue_e.swStepExportGeometry is not in the 2026
+'     type library (checked against SolidWorks.Interop.swconst.dll, 2026
+'     SP2.1). A missing enum name is a compile error that On Error cannot
+'     catch, so the line is removed; set Tools > Options > Export > STEP
+'     output (solid/surface) once by hand. swStepAP (= 75) exists and stays.
 '
 ' Notes
 '   * STEP export units follow the document units (mm).
@@ -44,13 +57,8 @@ Sub main()
     outDir = repoRoot & "\cfd\geometry"
     If Dir(outDir, vbDirectory) = "" Then MkDir outDir
 
-    ' STEP AP214. The "export geometry" preference name is uncertain (verify in
-    ' the API Help: swUserPreferenceIntegerValue_e); if it does not exist the
-    ' line is skipped and the Tools > Options > Export > STEP setting applies.
+    ' STEP AP214. Solid/surface output follows Tools > Options > Export > STEP.
     swApp.SetUserPreferenceIntegerValue swUserPreferenceIntegerValue_e.swStepAP, 214
-    On Error Resume Next
-    swApp.SetUserPreferenceIntegerValue swUserPreferenceIntegerValue_e.swStepExportGeometry, 3  ' solid + surface (verify)
-    On Error GoTo 0
 
     Dim docName As String
     docName = BaseNameOf(swModel.GetPathName)
@@ -113,15 +121,19 @@ Private Function BaseNameOf(ByVal path As String) As String
     BaseNameOf = s
 End Function
 
+' Walk up from the .swp folder until params\car_params.txt is found.
 Private Function RepoRootFromMacroPath() As String
     Dim p As String
     p = Application.SldWorks.GetCurrentMacroPathName
-    If p = "" Then
-        RepoRootFromMacroPath = CurDir$
-    Else
+    If p <> "" Then
         p = Left$(p, InStrRev(p, "\") - 1)
-        p = Left$(p, InStrRev(p, "\") - 1)
-        p = Left$(p, InStrRev(p, "\") - 1)
-        RepoRootFromMacroPath = p
+        Do While InStr(p, "\") > 0
+            If Dir(p & "\params\car_params.txt") <> "" Then
+                RepoRootFromMacroPath = p
+                Exit Function
+            End If
+            p = Left$(p, InStrRev(p, "\") - 1)
+        Loop
     End If
+    RepoRootFromMacroPath = CurDir$
 End Function

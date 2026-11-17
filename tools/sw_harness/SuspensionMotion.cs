@@ -56,8 +56,8 @@ namespace SwHarness
             if (reuse) rep.Info("'" + STUDY + "' is already in the assembly with " + motorsIn() + " motors: reused and calculated again");
             // the study starts at full droop: an oscillating motor in an Animation study moves as A (1 - cos 2 pi f t),
             // from 0 to 2A and back (seen 2026-11-17), so from droop it reaches full bump at 2 s and is back at droop
-            // at 4 s. The motor's displacement is not the wheel centre's (A = 30 mm moves the front wheel centres 52 mm,
-            // the rear 50, with the upright turning in camber): the bump reached is reported.
+            // at 4 s. The motor's displacement is not the wheel centre's (A = 30 mm moves the front wheel centres about
+            // 53 mm, the rear 44 with the 2026-11-17 hardpoints; cause not found, see below): the bump reached is reported.
             // The model is put at droop before the study is made (its start state).
             var ampOf = BuildSuspension.Corners.ToDictionary(cn => cn, cn => (bump + droop) / 2);
             if (!reuse)
@@ -120,8 +120,10 @@ namespace SwHarness
                 // (an axis feature, then faces and edges of the upright's bodies, raw and through GetCorresponding;
                 // direction the layout's GROUND plane, then a planar face of the upright)
                 var locs = new List<Tuple<string, object>>();
-                // the wheel centre point first: a motor on the A_SPIN axis moved the axis' own point, and with the
-                // upright turning in camber the wheel centre reached only +14 to +23 of +30 mm (2026-11-17)
+                // the wheel centre point first (2026-11-17: tried to make the wheel centre reach the full +30 mm; it
+                // did not change anything: with the motor on P_WC the wheel centre still reaches +22.7 front, +14.2
+                // rear of a 60 mm motor stroke from droop, exactly as on A_SPIN, so the motor's location is not what
+                // limits the stroke)
                 locs.Add(Tuple.Create("P_WC point", (object)up[cn].FeatureByName("P_WC")));
                 locs.Add(Tuple.Create("A_SPIN axis", (object)up[cn].FeatureByName("A_SPIN")));
                 object info;
@@ -254,7 +256,7 @@ namespace SwHarness
                      (mono ? "" : ", NOT monotonic (see the timeline below)"));
             double reachF = top["FR"] - h0, reachR = top["RR"] - h0;
             rep.Warn(Math.Min(reachF, reachR) >= bump - 0.5, "bump reached in the study: front +" + F(reachF, "0.0") + " mm, rear +" + F(reachR, "0.0") + " mm of +" + F(bump, "0") +
-                     " (the linear motor moves its own point " + F(2 * amp, "0") + " mm; the upright turns in camber, so the wheel centre moves less. The full -" +
+                     " (the motor's stroke is " + F(2 * amp, "0") + " mm from droop; the wheel centre falls short by the same amount with the motor on the axis or on the wheel-centre point, cause not found. The full -" +
                      F(droop, "0") + "..+" + F(bump, "0") + " sweep is SuspensionCheck's)");
             // camber against travel in the study: least-squares slope, as suspension_geometry.m and SuspensionCheck
             double gain = double.NaN;

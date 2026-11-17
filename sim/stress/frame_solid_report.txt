@@ -1,110 +1,24 @@
-SOME CHECKS FAILED   (2026-11-17 23:09, harness swh.exe)  FrameSolid, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis_solid.SLDPRT
+SOME CHECKS FAILED   (2026-11-17 23:43, harness swh.exe)  FrameSolid, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis_solid.SLDPRT
 
-PASS  connectivity: 1 group(s) of tubes joined by touching pairs (88 node pairs not touching, 0 not measurable)
-FAIL  frame fused into one solid: 32 of 114 tubes united in memory, in a new part as 83 bodies (11 s); not united (kept as separate bodies, bonded only where faces touch): FH_M-FH_T_L (error 547, 0 bodies), FH_L_cross (error 547, 0 bodies), FS2_U_cross (error 547, 0 bodies), FH_T-MH_B_L (error 547, 0 bodies), FS2_L-FH_L_R (error 0, 2 bodies), FS2_U-FH_L_R (error 0, 2 bodies), FH_L-FH_M_R (error 0, 2 bodies), FH_L-MH_L_R (error 0, 2 bodies), FH_L-MH_M_R (error 0, 2 bodies), MH_L-MH_M_L (error 547, 0 bodies), MH_L_cross (error 0, 2 bodies), MH_M-RS1_U_L (error 547, 0 bodies), SP1_L-SP1_U_L (error 547, 0 bodies), SP1_L-SP2_U_L (error 0, 2 bodies), FS1_U-FS2_U_R (error 0, 2 bodies), FS2_L-FS2_U_R (error 0, 2 bodies), FBT-FS2_U_R (error 0, 2 bodies), FH_M-FH_T_R (error 547, 0 bodies), FH_T-MH_B_R (error 547, 0 bodies), MH_B-MH_T_L (error 0, 2 bodies), FH_L-SP1_L_R (error 0, 2 bodies), FH_M-MH_M_R (error 0, 2 bodies), MH_L-MH_M_R (error 0, 2 bodies), MH_L-RS1_L_R (error 0, 2 bodies), MH_L-RS1_U_R (error 0, 2 bodies), MH_L-SP2_L_R (error 0, 2 bodies), MH_M-MH_B_R (error 0, 2 bodies), MH_M-RS1_U_R (error 0, 2 bodies), MH_M-SP2_U_R (error 0, 2 bodies), RS1_L-RS1_U_L (error 547, 0 bodies), RS1_U_cross (error 0, 2 bodies), SP2_L-SP2_U_L (error 547, 0 bodies), RS1_U-RS2_U_L (error 0, 2 bodies), FB_U-FS1_U_L (error 0, 2 bodies), FS1_U-FS2_L_L (error 0, 2 bodies), FS1_U_cross (error 0, 2 bodies), FBT-FS1_U_L (error 547, 0 bodies), FB_U-FS1_U_R (error 0, 2 bodies), FS1_U-FS2_L_R (error 0, 2 bodies), FBT-FS1_U_R (error 0, 2 bodies), FS1_L-FS2_L_R (error 0, 2 bodies), FS2_L_cross (error 0, 2 bodies), FS1_L-FS2_L_L (error 0, 2 bodies), FBT_cross (error 0, 2 bodies), MH_B-MH_T_R (error 0, 2 bodies), MH_T_cross (error 0, 2 bodies), MH_T-RT2_L (error 0, 2 bodies), MH_T-RT1_L (error 0, 2 bodies), SP1_L-SP2_L_R (error 0, 2 bodies), SP1_L-SP2_U_R (error 0, 2 bodies), RS1_L-RS2_L_R (error 0, 2 bodies), RS1_L-RS1_U_R (error 0, 2 bodies), RS1_L-RS2_U_R (error 0, 2 bodies), SP2_L-SP2_U_R (error 0, 2 bodies), MH_B-RT1_R (error 0, 2 bodies), RS1_U-RS2_U_R (error 0, 2 bodies), RS1_U-RT1_R (error 0, 2 bodies), RS1_L_cross (error 547, 0 bodies), RS2_L_cross (error 0, 2 bodies), RS2_U_cross (error 547, 0 bodies), RT1_cross (error 547, 0 bodies), RS2_U-RT2_L (error 0, 2 bodies), FB_U_cross (error 0, 2 bodies), FB_L-FB_U_L (error 0, 2 bodies), FB_U-FS1_L_L (error 0, 2 bodies), FS1_L-FS1_U_L (error 0, 2 bodies), FS1_L-FS1_U_R (error 0, 2 bodies), FB_L-FB_U_R (error 0, 2 bodies), FB_U-FS1_L_R (error 0, 2 bodies), FS1_L_cross (error 0, 2 bodies), MH_T-RT2_R (error 0, 2 bodies), MH_T-RT1_R (error 0, 2 bodies), RT2_cross (error 0, 2 bodies), RRK-RT2_L (error 0, 2 bodies), RS2_L-RS2_U_R (error 0, 2 bodies), RS2_U-RT2_R (error 0, 2 bodies), RRK-RT1_R (error 0, 2 bodies), RRK_cross (error 0, 2 bodies), FB_L_cross (error 0, 2 bodies), FB_L-FS1_L_L (error 0, 2 bodies), FB_L-FS1_L_R (error 0, 2 bodies), RRK-RT2_R (error 0, 2 bodies)
-INFO  tubes left as 83 bodies (--no-combine): Simulation's global bonded contact joins the touching tubes
-PASS  study 'Torsion solid': static, solid mesh, 83 solid bodies (0 beam members seen, 0 converted to solids), material 'AISI 4130 Steel, normalized at 870C' on 83 (library C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\lang\english\sldmaterials\solidworks materials.sldmat; material before: (none))
+INFO  3 beam studies deleted in C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis_solid.SLDPRT
+INFO  tubes left as 114 bodies: Simulation's global bonded contact joins the touching tubes
+PASS  study 'Torsion solid': static, solid mesh, 114 solid bodies (114 beam members seen, 114 converted to solids), material 'AISI 4130 Steel, normalized at 870C' on 114 (library C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\lang\english\sldmaterials\solidworks materials.sldmat; material before: AISI 1020)
 PASS  16 of 16 node forces placed (front couple 526.5 Nm, rear couple the same torque the other way)
-PASS  mesh: solid, high quality, element size 5.0 mm: 512372 elements, 1033980 nodes (45 s)
-FAIL  run: error 24 (87 s)
+PASS  mesh: solid, high quality, element size 5.0 mm: 722375 elements, 1458627 nodes (39 s)
+PASS  run: ok (66 s)
+WARN  joints that move as one (uz spread within 20 mm of each node under 20 % of the largest |uz|): NOT at MH_T_R 1324244.45, MH_T_L 1324245.75
+FAIL  torsion on solids: 44 Nm/deg NOT VALID (tubes not joined) (twist 12.0878 deg under 527 Nm); MATLAB beam model 763 Nm/deg, difference -94 %
+WARN  solids and beams agree within 25 % (-94 %)
+PASS  saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis_solid.SLDPRT with the study
 
 Failures:
-- frame fused into one solid: 32 of 114 tubes united in memory, in a new part as 83 bodies (11 s); not united (kept as separate bodies, bonded only where faces touch): FH_M-FH_T_L (error 547, 0 bodies), FH_L_cross (error 547, 0 bodies), FS2_U_cross (error 547, 0 bodies), FH_T-MH_B_L (error 547, 0 bodies), FS2_L-FH_L_R (error 0, 2 bodies), FS2_U-FH_L_R (error 0, 2 bodies), FH_L-FH_M_R (error 0, 2 bodies), FH_L-MH_L_R (error 0, 2 bodies), FH_L-MH_M_R (error 0, 2 bodies), MH_L-MH_M_L (error 547, 0 bodies), MH_L_cross (error 0, 2 bodies), MH_M-RS1_U_L (error 547, 0 bodies), SP1_L-SP1_U_L (error 547, 0 bodies), SP1_L-SP2_U_L (error 0, 2 bodies), FS1_U-FS2_U_R (error 0, 2 bodies), FS2_L-FS2_U_R (error 0, 2 bodies), FBT-FS2_U_R (error 0, 2 bodies), FH_M-FH_T_R (error 547, 0 bodies), FH_T-MH_B_R (error 547, 0 bodies), MH_B-MH_T_L (error 0, 2 bodies), FH_L-SP1_L_R (error 0, 2 bodies), FH_M-MH_M_R (error 0, 2 bodies), MH_L-MH_M_R (error 0, 2 bodies), MH_L-RS1_L_R (error 0, 2 bodies), MH_L-RS1_U_R (error 0, 2 bodies), MH_L-SP2_L_R (error 0, 2 bodies), MH_M-MH_B_R (error 0, 2 bodies), MH_M-RS1_U_R (error 0, 2 bodies), MH_M-SP2_U_R (error 0, 2 bodies), RS1_L-RS1_U_L (error 547, 0 bodies), RS1_U_cross (error 0, 2 bodies), SP2_L-SP2_U_L (error 547, 0 bodies), RS1_U-RS2_U_L (error 0, 2 bodies), FB_U-FS1_U_L (error 0, 2 bodies), FS1_U-FS2_L_L (error 0, 2 bodies), FS1_U_cross (error 0, 2 bodies), FBT-FS1_U_L (error 547, 0 bodies), FB_U-FS1_U_R (error 0, 2 bodies), FS1_U-FS2_L_R (error 0, 2 bodies), FBT-FS1_U_R (error 0, 2 bodies), FS1_L-FS2_L_R (error 0, 2 bodies), FS2_L_cross (error 0, 2 bodies), FS1_L-FS2_L_L (error 0, 2 bodies), FBT_cross (error 0, 2 bodies), MH_B-MH_T_R (error 0, 2 bodies), MH_T_cross (error 0, 2 bodies), MH_T-RT2_L (error 0, 2 bodies), MH_T-RT1_L (error 0, 2 bodies), SP1_L-SP2_L_R (error 0, 2 bodies), SP1_L-SP2_U_R (error 0, 2 bodies), RS1_L-RS2_L_R (error 0, 2 bodies), RS1_L-RS1_U_R (error 0, 2 bodies), RS1_L-RS2_U_R (error 0, 2 bodies), SP2_L-SP2_U_R (error 0, 2 bodies), MH_B-RT1_R (error 0, 2 bodies), RS1_U-RS2_U_R (error 0, 2 bodies), RS1_U-RT1_R (error 0, 2 bodies), RS1_L_cross (error 547, 0 bodies), RS2_L_cross (error 0, 2 bodies), RS2_U_cross (error 547, 0 bodies), RT1_cross (error 547, 0 bodies), RS2_U-RT2_L (error 0, 2 bodies), FB_U_cross (error 0, 2 bodies), FB_L-FB_U_L (error 0, 2 bodies), FB_U-FS1_L_L (error 0, 2 bodies), FS1_L-FS1_U_L (error 0, 2 bodies), FS1_L-FS1_U_R (error 0, 2 bodies), FB_L-FB_U_R (error 0, 2 bodies), FB_U-FS1_L_R (error 0, 2 bodies), FS1_L_cross (error 0, 2 bodies), MH_T-RT2_R (error 0, 2 bodies), MH_T-RT1_R (error 0, 2 bodies), RT2_cross (error 0, 2 bodies), RRK-RT2_L (error 0, 2 bodies), RS2_L-RS2_U_R (error 0, 2 bodies), RS2_U-RT2_R (error 0, 2 bodies), RRK-RT1_R (error 0, 2 bodies), RRK_cross (error 0, 2 bodies), FB_L_cross (error 0, 2 bodies), FB_L-FS1_L_L (error 0, 2 bodies), FB_L-FS1_L_R (error 0, 2 bodies), RRK-RT2_R (error 0, 2 bodies)
-- run: error 24 (87 s)
+- torsion on solids: 44 Nm/deg NOT VALID (tubes not joined) (twist 12.0878 deg under 527 Nm); MATLAB beam model 763 Nm/deg, difference -94 %
 
+Warnings (do not fail the step):
+- joints that move as one (uz spread within 20 mm of each node under 20 % of the largest |uz|): NOT at MH_T_R 1324244.45, MH_T_L 1324245.75
+- solids and beams agree within 25 % (-94 %)
 
-Connectivity (closest distance between tube bodies sharing a node; touching = under 0.01 mm)
-  444 pairs, 356 touching, 88 apart, 0 not measurable
-  apart FS2_L-FH_L_L / FH_L-MH_L_L at FH_L_L: 0.211 mm
-  apart FS2_L-FH_L_L / FH_L-MH_M_L at FH_L_L: 12.874 mm
-  apart FS2_U-FH_L_L / FH_L-MH_L_L at FH_L_L: 12.022 mm
-  apart FS2_U-FH_L_L / FH_L-MH_M_L at FH_L_L: 14.105 mm
-  apart FH_L_cross / FH_L-SP1_L_L at FH_L_L: 1.981 mm
-  apart FS2_L-FH_L_R / FH_L-MH_L_R at FH_L_R: 0.211 mm
-  apart FS2_L-FH_L_R / FH_L-MH_M_R at FH_L_R: 12.874 mm
-  apart FS2_U-FH_L_R / FH_L-MH_L_R at FH_L_R: 12.022 mm
-  apart FS2_U-FH_L_R / FH_L-MH_M_R at FH_L_R: 14.105 mm
-  apart FH_L_cross / FH_L-SP1_L_R at FH_L_R: 1.981 mm
-  apart FS2_U-FH_M_L / FH_M-MH_M_L at FH_M_L: 0.033 mm
-  apart FH_M-FH_T_L / FH_M-SP1_U_L at FH_M_L: 9.680 mm
-  apart FS2_U-FH_M_R / FH_M-MH_M_R at FH_M_R: 0.033 mm
-  apart FH_M-FH_T_R / FH_M-SP1_U_R at FH_M_R: 9.680 mm
-  apart FB_L-FS1_L_L / FS1_L-FS2_L_L at FS1_L_L: 9.738 mm
-  apart FB_L-FS1_L_L / FS1_L-FS1_U_L at FS1_L_L: 2.764 mm
-  apart FB_U-FS1_L_L / FS1_L-FS2_L_L at FS1_L_L: 2.960 mm
-  apart FB_L-FS1_L_R / FS1_L-FS2_L_R at FS1_L_R: 9.738 mm
-  apart FB_L-FS1_L_R / FS1_L-FS1_U_R at FS1_L_R: 2.764 mm
-  apart FB_U-FS1_L_R / FS1_L-FS2_L_R at FS1_L_R: 2.960 mm
-  apart FB_U-FS1_U_L / FS1_L-FS1_U_L at FS1_U_L: 1.625 mm
-  apart FB_U-FS1_U_L / FS1_U-FS2_L_L at FS1_U_L: 16.023 mm
-  apart FB_U-FS1_U_L / FBT-FS1_U_L at FS1_U_L: 4.110 mm
-  apart FS1_U-FS2_U_L / FS1_L-FS1_U_L at FS1_U_L: 12.041 mm
-  apart FS1_L-FS1_U_L / FBT-FS1_U_L at FS1_U_L: 17.629 mm
-  apart FS1_U-FS2_L_L / FBT-FS1_U_L at FS1_U_L: 7.191 mm
-  apart FB_U-FS1_U_R / FS1_L-FS1_U_R at FS1_U_R: 1.625 mm
-  apart FB_U-FS1_U_R / FS1_U-FS2_L_R at FS1_U_R: 16.023 mm
-  apart FB_U-FS1_U_R / FBT-FS1_U_R at FS1_U_R: 4.110 mm
-  apart FS1_U-FS2_U_R / FS1_L-FS1_U_R at FS1_U_R: 12.041 mm
-  apart FS1_L-FS1_U_R / FBT-FS1_U_R at FS1_U_R: 17.629 mm
-  apart FS1_U-FS2_L_R / FBT-FS1_U_R at FS1_U_R: 7.191 mm
-  apart FS1_L-FS2_L_L / FS2_L-FH_L_L at FS2_L_L: 8.569 mm
-  apart FS2_L-FS2_U_L / FS2_L-FH_L_L at FS2_L_L: 0.475 mm
-  apart FS1_U-FS2_L_L / FS2_L-FH_L_L at FS2_L_L: 12.312 mm
-  apart FS2_L_cross / FS2_L-FH_L_L at FS2_L_L: 1.136 mm
-  apart FS1_L-FS2_L_R / FS2_L-FH_L_R at FS2_L_R: 10.857 mm
-  apart FS2_L-FS2_U_R / FS2_L-FH_L_R at FS2_L_R: 4.599 mm
-  apart FS1_U-FS2_L_R / FS2_L-FH_L_R at FS2_L_R: 12.312 mm
-  apart FS2_L_cross / FS2_L-FH_L_R at FS2_L_R: 19.957 mm
-  apart FS1_U-FS2_U_L / FS2_U-FH_M_L at FS2_U_L: 11.839 mm
-  apart FS1_U-FS2_U_L / FS2_U-FH_L_L at FS2_U_L: 9.667 mm
-  apart FS2_L-FS2_U_L / FBT-FS2_U_L at FS2_U_L: 13.044 mm
-  apart FS2_L-FS2_U_L / FS2_U-FH_M_L at FS2_U_L: 10.579 mm
-  apart FS2_L-FS2_U_L / FS2_U-FH_T_L at FS2_U_L: 2.726 mm
-  apart FS2_L-FS2_U_L / FS2_U-FH_L_L at FS2_U_L: 3.838 mm
-  apart FS2_U_cross / FS2_U-FH_M_L at FS2_U_L: 1.627 mm
-  apart FBT-FS2_U_L / FS2_U-FH_M_L at FS2_U_L: 17.992 mm
-  apart FBT-FS2_U_L / FS2_U-FH_T_L at FS2_U_L: 3.244 mm
-  apart FBT-FS2_U_L / FS2_U-FH_L_L at FS2_U_L: 22.378 mm
-  apart FS2_U-FH_T_L / FS2_U-FH_L_L at FS2_U_L: 3.005 mm
-  apart FS1_U-FS2_U_R / FS2_U-FH_M_R at FS2_U_R: 11.839 mm
-  apart FS1_U-FS2_U_R / FS2_U-FH_L_R at FS2_U_R: 9.667 mm
-  apart FS2_L-FS2_U_R / FBT-FS2_U_R at FS2_U_R: 13.044 mm
-  apart FS2_L-FS2_U_R / FS2_U-FH_M_R at FS2_U_R: 10.579 mm
-  apart FS2_L-FS2_U_R / FS2_U-FH_T_R at FS2_U_R: 2.726 mm
-  apart FS2_L-FS2_U_R / FS2_U-FH_L_R at FS2_U_R: 3.838 mm
-  apart FS2_U_cross / FS2_U-FH_M_R at FS2_U_R: 1.627 mm
-  apart FBT-FS2_U_R / FS2_U-FH_M_R at FS2_U_R: 17.992 mm
-  apart FBT-FS2_U_R / FS2_U-FH_T_R at FS2_U_R: 3.244 mm
-  apart FBT-FS2_U_R / FS2_U-FH_L_R at FS2_U_R: 22.378 mm
-  apart FS2_U-FH_T_R / FS2_U-FH_L_R at FS2_U_R: 3.005 mm
-  apart FH_T-MH_B_L / MH_B-RT1_L at MH_B_L: 0.587 mm
-  apart FH_T-MH_B_R / MH_B-RT1_R at MH_B_R: 0.587 mm
-  apart MH_L-RS1_L_L / RS1_L_cross at RS1_L_L: 0.935 mm
-  apart RS1_L-RS2_L_L / RS1_L-RS1_U_L at RS1_L_L: 0.083 mm
-  apart MH_L-RS1_L_R / RS1_L_cross at RS1_L_R: 0.935 mm
-  apart RS1_L-RS2_L_R / RS1_L-RS1_U_R at RS1_L_R: 0.083 mm
-  apart MH_L-RS1_U_L / RS1_U-RS2_U_L at RS1_U_L: 9.303 mm
-  apart MH_L-RS1_U_L / RS1_U-RT1_L at RS1_U_L: 14.434 mm
-  apart RS1_U-RS2_U_L / RS1_U-RT1_L at RS1_U_L: 8.387 mm
-  apart RS1_L-RS1_U_L / RS1_U-RT1_L at RS1_U_L: 11.059 mm
-  apart MH_L-RS1_U_R / RS1_U-RS2_U_R at RS1_U_R: 9.303 mm
-  apart MH_L-RS1_U_R / RS1_U-RT1_R at RS1_U_R: 14.434 mm
-  apart RS1_U-RS2_U_R / RS1_U-RT1_R at RS1_U_R: 8.387 mm
-  apart RS1_L-RS1_U_R / RS1_U-RT1_R at RS1_U_R: 11.059 mm
-  apart RS1_U-RS2_U_L / RS2_L-RS2_U_L at RS2_U_L: 0.061 mm
-  apart RS2_L-RS2_U_L / RS2_U-RT2_L at RS2_U_L: 11.063 mm
-  apart RS1_L-RS2_U_L / RS2_U-RT2_L at RS2_U_L: 12.138 mm
-  apart RS1_U-RS2_U_R / RS2_L-RS2_U_R at RS2_U_R: 0.061 mm
-  apart RS2_L-RS2_U_R / RS2_U-RT2_R at RS2_U_R: 11.063 mm
-  apart RS1_L-RS2_U_R / RS2_U-RT2_R at RS2_U_R: 12.138 mm
-  apart RS1_U-RT1_L / MH_T-RT1_L at RT1_L: 2.084 mm
-  apart RRK-RT1_L / MH_B-RT1_L at RT1_L: 8.212 mm
-  apart RRK-RT1_L / MH_T-RT1_L at RT1_L: 1.812 mm
-  apart RS1_U-RT1_R / MH_T-RT1_R at RT1_R: 2.084 mm
-  apart RRK-RT1_R / MH_B-RT1_R at RT1_R: 8.212 mm
-  apart RRK-RT1_R / MH_T-RT1_R at RT1_R: 1.812 mm
-  connected groups: 1
-Model: 83 solid bodies, volume 5056.6 cm3 = 39.69 kg of steel
+Model: 114 solid bodies, volume 5058.5 cm3 = 39.71 kg of steel
 
 Loads (one weld-seam edge per pickup node, N vertical)
   FS1_L_L    +250.0 N on an edge 65 mm long, 13 to 39 mm from the node
@@ -123,4 +37,62 @@ Loads (one weld-seam edge per pickup node, N vertical)
   RS2_L_R    +216.8 N on an edge 35 mm long, 11 to 11 mm from the node
   RS1_U_R    +216.8 N on an edge 70 mm long, 11 to 11 mm from the node
   RS2_U_R    +216.8 N on an edge 76 mm long, 13 to 18 mm from the node
+
+Displacement at the frame nodes (mesh nodes within 20 mm): uz mean, uz spread, mm
+  FB_L_R       1.3415    0.1181
+  FB_L_L       2.1182    0.1248
+  FB_U_R       1.3463    0.1203
+  FB_U_L       2.1230    0.1241
+  FS1_L_R    -12.8123  109.4969
+  FS1_L_L      2.0816    0.1352
+  FS1_U_R    -42.6241  159.1986
+  FS1_U_L      2.0517    0.1024
+  FBT_R        0.8916    0.1036
+  FBT_L        1.9788    0.0801
+  FS2_U_R    -17.1298   55.5667
+  FS2_U_L     20.3191   56.0576
+  FS2_L_R      8.9694   67.7355
+  FS2_L_L      1.7476    0.0561
+  FH_L_R       0.2827    0.4879
+  FH_L_L       1.4043    0.0873
+  FH_M_R       0.4123    0.3611
+  FH_M_L       1.4544    0.3078
+  FH_T_R       4.0490   16.6583
+  FH_T_L      -2.2713   16.1551
+  SP1_L_R     -0.2266    0.0677
+  SP1_L_L      1.7736    0.1874
+  SP1_U_R     -0.1957    0.1093
+  SP1_U_L      1.8376    0.1596
+  MH_L_R     -14.2834   72.8179
+  MH_L_L      12.5976   74.3927
+  MH_M_R     -18.0202   79.6223
+  MH_M_L      14.9400   84.6429
+  MH_B_R      -0.0797    0.0603
+  MH_B_L       1.1089    0.0799
+  MH_T_R   24842.41611324244.4467
+  MH_T_L   17423.53801324245.7530
+  SP2_L_R     -0.8226    0.2105
+  SP2_L_L      1.2360    0.2112
+  SP2_U_R     -0.8217    0.1956
+  SP2_U_L      1.1874    0.1961
+  RS1_L_R     45.0821  327.5555
+  RS1_L_L    -44.0164  327.9016
+  RS1_U_R     79.5777  164.4171
+  RS1_U_L    -77.7495  169.2583
+  RT1_R       -0.5195    0.4564
+  RT1_L        0.7122    0.5198
+  RRK_R       -0.6604    0.1565
+  RRK_L        0.4722    0.1349
+  RS2_U_R     34.2072   78.7061
+  RS2_U_L    -40.6120   78.0152
+  RT2_R       -0.6704    0.4198
+  RT2_L        0.5467    0.4879
+  RS2_L_R    116.9290  240.8633
+  RS2_L_L   -116.3388  233.8022
+
+Torsion, free-free with inertia relief, couples at the wishbone nodes (frame_fe: 'equal and opposite couples front and rear')
+  front couple 526.5 Nm, front twist 2.30133 deg, rear twist -9.78648 deg
+  -> torsional stiffness 44 Nm/deg -- NOT VALID: some tubes are not joined at their nodes (see the uz spreads above), they float on the soft springs; peak von Mises 1143.3 MPa (at a loaded seam: a line load, so a local peak)
+  mesh 722375 elements, 1458627 nodes, 5.0 mm, run 66 s
+  MATLAB beam model (frame_fe, same case): 763 Nm/deg; solids -94 %
 

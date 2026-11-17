@@ -1,11 +1,11 @@
-ALL PASS (1 warning)   (2026-11-17 21:44, harness swh.exe)  SuspensionMotion, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
+ALL PASS (1 warning)   (2026-11-17 23:26, harness swh.exe)  SuspensionMotion, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
 
 INFO  motion studies before: 1
 INFO  study types this installation offers (GetSupportedStudyTypes = 7): swMotionStudyTypeAssembly, swMotionStudyTypePhysicalSimulation, swMotionStudyTypeCosmosMotion
 PASS  study 'Bump sweep' made, type Animation, active True, duration 4.0 s
 PASS  Drive mates suppressed in the study: 4 of 4
 INFO  study type for the motors: swMotionStudyTypeAssembly
-INFO  motor location / direction SolidWorks took: A_SPIN axis / GROUND plane
+INFO  motor location / direction SolidWorks took: P_WC point / GROUND plane
 PASS  linear motors on the uprights: 4 of 4, oscillating 30 mm at 0.25 Hz
 INFO  Calculate returned True
 PASS  the study moves every wheel up from full droop (192 mm at 0 s) and back (4 s), one way at a time, left and right alike: start/end miss 0.00 mm, left-right difference at the top 0.00 mm

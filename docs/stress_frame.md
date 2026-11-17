@@ -155,7 +155,7 @@ That is a load on the geometry, not on a joint. Face loads were not used, becaus
 
 **The result is not valid:**
 - **Stiffness:** the solid model gives 18 to 43 Nm/deg depending on the run, against 763 for the beam model.
-- **Joint check:** the step looks at the mesh nodes within 20 mm of each frame node. In every run, one or two tubes do not move with their node; their displacement spreads are huge. A different pair failed each run: FH_M–MH_M_R in one, RS1_L in another. Those tubes are not joined to the frame and float on the soft springs.
+- **Joint check:** the step looks at the mesh nodes within 20 mm of each frame node. In every run, one or two tubes do not move with their node; their displacement spreads are huge. A different set failed in each of the four runs: around FH_M_R/MH_M_R, then RS1_L, then MH_T. Those tubes are not joined to the frame and float on the soft springs.
 
 **Why:**
 - **Geometry check:** the trimmed weldment tubes touch their neighbours. The closest distance is under 0.01 mm for 356 of the 444 tube pairs that share a node, and all 114 tubes form one connected group.

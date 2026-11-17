@@ -6,7 +6,11 @@ function res = lapsim(car, track, opts)
 %                                   opts.four_wheel (false): corner speed limit
 %                                   from cornering_balance.m (four wheel loads,
 %                                   load transfer, limiting axle) instead of
-%                                   the point-mass m v^2 k <= mu(Fz) Fz
+%                                   the point-mass m v^2 k <= mu(Fz) Fz;
+%                                   opts.aero_front ('car'): front aero share,
+%                                   'car' = the car struct's value, 'target' =
+%                                   aero_balance_target from car_params.txt,
+%                                   or a number
 %   lapsim('--selftest')
 %
 %   Method
@@ -37,6 +41,21 @@ if ~isfield(opts, 'ds'), opts.ds = 0.5; end
 if ~isfield(opts, 'v0'), opts.v0 = 0; end
 if ~isfield(opts, 'verbose'), opts.verbose = false; end
 if ~isfield(opts, 'four_wheel'), opts.four_wheel = false; end
+if ~isfield(opts, 'aero_front'), opts.aero_front = 'car'; end
+if ischar(opts.aero_front) || isstring(opts.aero_front)
+    switch char(opts.aero_front)
+        case 'car'      % the car struct's own value (variant table or parameter file)
+        case 'target'   % aero_balance_target from the parameter file
+            if ~isfield(car, 'aero_front_target') || isnan(car.aero_front_target)
+                error('lapsim:noTarget', 'opts.aero_front = ''target'' needs car.aero_front_target (aero_balance_target in car_params.txt)');
+            end
+            car.aero_front = car.aero_front_target;
+        otherwise
+            error('lapsim:aeroFront', 'opts.aero_front must be ''car'', ''target'' or a number');
+    end
+else
+    car.aero_front = opts.aero_front;
+end
 
 % ---- sample the track -------------------------------------------------------
 [s, kappa, x, y] = sample_track(track, opts.ds);
@@ -181,7 +200,7 @@ function ok = selftest()
 %        t = sqrt(2*75/a) = 4.539 s
 %  (3) A 100 m straight then the skidpad circle: entry speed into the circle
 %      must equal the circle speed (backward pass brakes for it).
-car = car_from_params('A');
+car = car_from_params('A', [], 'params');   % hand car: start from the parameter-file guesses, not the variant table
 car.ClA = 0; car.CdA = 0; car.crr = 0; car.lsens = 0; car.mu0 = 1.4; car.wd_front = 0.47;
 car.P_max = 1e9; car.F_torque_max = 1e9; car.v_rpm_max = 1e9; car.m = 300; car.g = 9.81;
 R = 9.125; mu = 1.4; g = 9.81;
@@ -200,6 +219,15 @@ r3 = lapsim(car, tr3, struct('ds', 0.25));
 iCircle = find(r3.s >= 100, 1);
 e3 = abs(r3.v(iCircle) - sqrt(mu * g * R)) / sqrt(mu * g * R);
 ok = e1 < 0.005 && e2 < 0.005 && e3 < 0.01 && max(r3.v) > r3.v(iCircle);
+%  (4) opts.aero_front: 'target' must give exactly the lap of a car whose
+%      aero_front was set to aero_balance_target by hand, and a number must
+%      override the car's value (traction-limited 75 m with downforce: more
+%      rear aero share = more rear grip = a shorter time).
+c4 = car_from_params('C'); c4.aero_front = 0.45;
+c5 = c4; c5.aero_front = c4.aero_front_target;
+tT = lapsim(c4, tr2, struct('aero_front', 'target')).t_lap; tH = lapsim(c5, tr2).t_lap;
+tRear = lapsim(c4, tr2, struct('aero_front', 0.30)).t_lap; tFront = lapsim(c4, tr2, struct('aero_front', 0.60)).t_lap;
+ok = ok && abs(tT - tH) < 1e-12 && tRear < tFront;
 if ok
     fprintf('lapsim self-test: PASS (skidpad %.3f s vs hand %.3f s; 75 m %.3f s vs hand %.3f s; circle entry %.2f m/s vs %.2f)\n', ...
         r1.t_lap, lapHand, r2.t_lap, tHand, r3.v(iCircle), sqrt(mu * g * R));

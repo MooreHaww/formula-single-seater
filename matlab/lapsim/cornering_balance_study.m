@@ -35,13 +35,20 @@ if ~isfield(opts, 'plot'), opts.plot = true; end
 if ~isfield(opts, 'write'), opts.write = true; end
 if ~isfield(opts, 'radii'), opts.radii = [45 100]; end
 if ~isfield(opts, 'wd'), opts.wd = [0.35 NaN 0.47]; end   % NaN = the file's own value, filled below
-if ~isfield(opts, 'aero'), opts.aero = [0.35 0.45 0.55]; end
 if ~isfield(opts, 'variant'), opts.variant = 'C'; end
 if ~isfield(opts, 'driver_forward_mm'), opts.driver_forward_mm = 100; end
 if ~isfield(opts, 'laps'), opts.laps = true; end
 p = read_car_params();
 opts.wd(isnan(opts.wd)) = p.weight_dist_front;
 base = car_from_params(opts.variant, p);
+% aero reference = the car's own front share (variant table or parameter
+% file); target = aero_balance_target (ESTIMATE/target in car_params.txt)
+aeroRef = base.aero_front; aeroTarget = base.aero_front_target;
+if ~isfield(opts, 'aero')
+    opts.aero = unique(round([0.35, aeroTarget, aeroRef, 0.55], 4));
+    opts.aero = opts.aero(~isnan(opts.aero));
+end
+out.aero_front_ref = aeroRef; out.aero_front_target = aeroTarget;
 
 % roll-centre heights from the suspension kinematics (static), else defaults
 try
@@ -54,7 +61,7 @@ end
 out.h_rc = [base.h_rc_f, base.h_rc_r];
 out.h_rc_source = rcSource;
 
-aeroLabel = @(a) ternary(a < p.aero_balance_front - 1e-9, "rear-heavy", ternary(a > p.aero_balance_front + 1e-9, "front-heavy", "as filed"));
+aeroLabel = @(a) ternary(abs(a - aeroRef) < 1e-9, "as filed", ternary(abs(a - aeroTarget) < 1e-9, "target", ternary(a < aeroRef, "rear-heavy", "front-heavy")));
 
 rows = {};
 for R = opts.radii
@@ -105,13 +112,39 @@ if opts.laps
     out.lap = cell2table(lapRows, 'VariableNames', {'case', 'track', 't_point_mass_s', 't_four_wheel_s', 'cost_of_load_transfer_s'});
 end
 
+% ---- aero balance target: how close is it to neutral, what is it worth ---------------
+% At the file's weight distribution: the neutral front aero share per radius
+% (both axles at their limit together), and the corner speed and balance at
+% the reference share and at the target share.
+tg = struct(); tg.rows = {};
+for R = opts.radii
+    car = base;
+    o0 = cornering_balance(car, R, struct('find_neutral', true));
+    car.aero_front = aeroTarget;
+    o1 = cornering_balance(car, R);
+    tg.rows(end+1, :) = {R, o0.aero_front_neutral, aeroRef, o0.v_grip * 3.6, o0.balance_pct, aeroTarget, o1.v_grip * 3.6, o1.balance_pct}; %#ok<AGROW>
+end
+tg.T = cell2table(tg.rows, 'VariableNames', {'radius_m', 'aero_front_neutral', 'aero_front_ref', 'v_grip_ref_kmh', 'balance_ref_pct', 'aero_front_target', 'v_grip_target_kmh', 'balance_target_pct'});
+if opts.laps
+    tracks = {'autocross', 'fast_circuit'};
+    lr = {};
+    for t = 1:2
+        tr = load_track(tracks{t});
+        r0 = lapsim(base, tr, struct('four_wheel', true));
+        r1 = lapsim(base, tr, struct('four_wheel', true, 'aero_front', 'target'));
+        lr(end+1, :) = {tracks{t}, r0.t_lap, r1.t_lap, r1.t_lap - r0.t_lap}; %#ok<AGROW>
+    end
+    tg.lap = cell2table(lr, 'VariableNames', {'track', 't_ref_s', 't_target_s', 'gain_s'});
+end
+out.target = tg;
+
 % ---- assumptions the conclusions rest on --------------------------------------------
 out.assumptions = {
     sprintf('tyre: mu_peak %.2f at %.0f N, load sensitivity exponent %.2f (file starting values, no tyre data)', p.tyre_mu_peak, p.tyre_fz_ref, p.tyre_load_sensitivity)
     sprintf('cg_height %.0f mm from the mass budget (%.0f %% of the mass is a GUESS)', p.cg_height, 100 * mb0.guess_fraction)
     sprintf('roll-centre heights %.0f / %.0f mm (%s), held fixed with roll', 1000 * base.h_rc_f, 1000 * base.h_rc_r, rcSource)
     sprintf('roll stiffness split %.0f %% front from ride frequencies %.1f / %.1f Hz; no anti-roll bars, tyre stiffness ignored', 100 * out.roll_stiff_front, p.ride_frequency_front, p.ride_frequency_rear)
-    sprintf('aero: ClA %.1f, CdA %.2f, balance %.2f front, no CFD yet; downforce adds load without lateral transfer', base.ClA, base.CdA, p.aero_balance_front)
+    sprintf('aero: ClA %.2f, CdA %.2f, balance %.2f front as filed, target %.2f (ESTIMATE/target), no CFD yet; downforce adds load without lateral transfer', base.ClA, base.CdA, aeroRef, aeroTarget)
     'steady state only: no yaw moment, no slip angles, no camber, no transient, no driver'
     'unsprung mass 22.2 kg per axle at wheel-centre height (all GUESS lines)'
     };
@@ -153,6 +186,8 @@ for R = unique(T.radius_m).'
             s.lateral_g(i), s.limiting_axle(i), s.balance_pct(i), s.v_point_mass_kmh(i));
     end
 end
+fprintf('  Aero balance target (aero_balance_target %.2f, as filed %.2f):\n', out.aero_front_target, out.aero_front_ref); disp(out.target.T);
+if isfield(out.target, 'lap'), disp(out.target.lap); end
 fprintf('  Driver forward:\n'); disp(out.driver.T);
 if isfield(out, 'lap'), fprintf('  Lap times, point-mass vs four-wheel corner limit:\n'); disp(out.lap); end
 fprintf('  Assumptions:\n'); fprintf('    - %s\n', out.assumptions{:});
@@ -168,6 +203,18 @@ for i = 1:height(T)
     fprintf(fid, '| %d | %.1f %% | %.2f (%s) | %.1f | %.1f%s | %.2f | %s | %+.1f | %.0f / %.0f / %.0f / %.0f%s | %.1f |\n', ...
         T.radius_m(i), 100 * T.wd_front(i), T.aero_front(i), T.aero_label(i), T.v_grip_kmh(i), T.v_max_kmh(i), ternary(T.power_limited(i), ' (power)', ''), ...
         T.lateral_g(i), T.limiting_axle(i), T.balance_pct(i), T.Fz_FO_N(i), T.Fz_FI_N(i), T.Fz_RO_N(i), T.Fz_RI_N(i), ternary(T.inner_lift(i), ' lift', ''), T.v_point_mass_kmh(i));
+end
+g = out.target.T;
+fprintf(fid, '\n## Aero balance target\n\n`aero_balance_target` = %.2f in `params/car_params.txt` (ESTIMATE/target, not a result). The neutral share is the front aero fraction at which both axles reach their grip limit together at the file''s weight distribution (%.1f %% front); it moves with the assumed tyre load sensitivity, CG height and roll stiffness split.\n\n| R (m) | neutral front aero | as filed | v grip (km/h) | balance (%%) | target | v grip (km/h) | balance (%%) |\n|---|---|---|---|---|---|---|---|\n', out.aero_front_target, 100 * p.weight_dist_front);
+for i = 1:height(g)
+    fprintf(fid, '| %d | %.3f | %.2f | %.1f | %+.1f | %.2f | %.1f | %+.1f |\n', g.radius_m(i), g.aero_front_neutral(i), g.aero_front_ref(i), g.v_grip_ref_kmh(i), g.balance_ref_pct(i), g.aero_front_target(i), g.v_grip_target_kmh(i), g.balance_target_pct(i));
+end
+if isfield(out.target, 'lap')
+    gl = out.target.lap;
+    fprintf(fid, '\nLap time with the four-wheel corner limit, front aero share as filed against the target:\n\n| track | as filed (s) | target (s) | change (s) |\n|---|---|---|---|\n');
+    for i = 1:height(gl)
+        fprintf(fid, '| %s | %.2f | %.2f | %+.2f |\n', gl.track{i}, gl.t_ref_s(i), gl.t_target_s(i), gl.gain_s(i));
+    end
 end
 d = out.driver.T;
 fprintf(fid, '\n## Driver %d mm forward (mass_budget moves, CG height follows)\n\n| case | R (m) | front weight | CG z (mm) | v grip (km/h) | v max (km/h) | limits | balance (%%) |\n|---|---|---|---|---|---|---|---|\n', opts.driver_forward_mm);
@@ -198,7 +245,7 @@ for r = 1:numel(radii)
         plot(100 * s.wd_front, s.v_grip_kmh, '-o', 'Color', cols(a, :), 'LineWidth', 2, 'MarkerFaceColor', cols(a, :), ...
             'DisplayName', sprintf('aero %.2f front (%s)', aeros(a), s.aero_label(1)));
     end
-    s = T(T.radius_m == R & abs(T.aero_front - p.aero_balance_front) < 1e-9, :);
+    s = T(T.radius_m == R & abs(T.aero_front - out.aero_front_ref) < 1e-9, :);
     plot(100 * s.wd_front, s.v_point_mass_kmh, 'k--', 'LineWidth', 1.2, 'DisplayName', 'point-mass lap sim (no transfer)');
     yl = ylim;
     vt = s.v_max_kmh(1); if any(s.power_limited), plot(xlim, [1 1] * max(T.v_max_kmh(T.radius_m == R)), 'k:', 'DisplayName', 'power-limited top speed'); end %#ok<NASGU>
@@ -254,9 +301,17 @@ for R = [45 100]
 end
 ok = ok && all(T.v_grip_kmh <= T.v_point_mass_kmh + 1e-6 | T.power_limited);
 ok = ok && height(o.driver.T) == 4 && o.driver.wd(2) > o.driver.wd(1);
+%   (5) aero balance target: feeding the solved neutral share back into
+%       cornering_balance must give balance 0 at that radius, and because
+%       balance falls as the front share rises, the balance at the target
+%       must have the sign of (neutral - target).
+g = o.target.T; g = g(g.radius_m == 45, :);
+c = car_from_params('C'); c.h_rc_f = o.h_rc(1); c.h_rc_r = o.h_rc(2); c.aero_front = g.aero_front_neutral;
+bN = cornering_balance(c, 45).balance_pct;
+ok = ok && abs(bN) < 0.01 && (sign(g.balance_target_pct) == sign(g.aero_front_neutral - g.aero_front_target) || abs(g.balance_target_pct) < 0.01);
 if ok
-    fprintf('cornering_balance_study self-test: PASS (%d rows; balance rises with front weight and falls with front aero; driver forward %.1f -> %.1f %% front)\n', ...
-        height(T), 100 * o.driver.wd(1), 100 * o.driver.wd(2));
+    fprintf('cornering_balance_study self-test: PASS (%d rows; balance rises with front weight and falls with front aero; driver forward %.1f -> %.1f %% front; neutral front aero at 45 m %.3f, target %.2f gives %+.1f %%)\n', ...
+        height(T), 100 * o.driver.wd(1), 100 * o.driver.wd(2), g.aero_front_neutral, g.aero_front_target, g.balance_target_pct);
 else
     error('cornering_balance_study self-test: FAIL');
 end

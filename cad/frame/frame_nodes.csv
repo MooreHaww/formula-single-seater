@@ -3,14 +3,14 @@ FB_L_R,-300,200,80,front bulkhead
 FB_L_L,-300,-200,80,front bulkhead
 FB_U_R,-300,200,380,front bulkhead
 FB_U_L,-300,-200,380,front bulkhead
-FS1_L_R,-160,250,128,front suspension fwd pickup
-FS1_L_L,-160,-250,128,front suspension fwd pickup
-FS2_L_R,160,250,124,front suspension aft pickup
-FS2_L_L,160,-250,124,front suspension aft pickup
-FS1_U_R,-130,270,305,front suspension fwd pickup
-FS1_U_L,-130,-270,305,front suspension fwd pickup
-FS2_U_R,140,270,300,front suspension aft pickup
-FS2_U_L,140,-270,300,front suspension aft pickup
+FS1_L_R,-160,255,151.5,front suspension fwd pickup
+FS1_L_L,-160,-255,151.5,front suspension fwd pickup
+FS2_L_R,160,255,147.5,front suspension aft pickup
+FS2_L_L,160,-255,147.5,front suspension aft pickup
+FS1_U_R,-130,271.5,278,front suspension fwd pickup
+FS1_U_L,-130,-271.5,278,front suspension fwd pickup
+FS2_U_R,140,271.5,273,front suspension aft pickup
+FS2_U_L,140,-271.5,273,front suspension aft pickup
 FBT_R,0,280,430,front rocker mount
 FBT_L,0,-280,430,front rocker mount
 FH_L_R,650,290,80,front hoop
@@ -27,18 +27,18 @@ MH_B_R,1250,310,620,main hoop
 MH_B_L,1250,-310,620,main hoop
 MH_T_R,1250,250,980,main hoop
 MH_T_L,1250,-250,980,main hoop
-RS1_L_R,1485,280,135,rear suspension fwd pickup
-RS1_L_L,1485,-280,135,rear suspension fwd pickup
-RS2_L_R,1700,280,131,rear suspension aft pickup
-RS2_L_L,1700,-280,131,rear suspension aft pickup
-RS1_U_R,1490,290,320,rear suspension fwd pickup
-RS1_U_L,1490,-290,320,rear suspension fwd pickup
-RS2_U_R,1690,290,312,rear suspension aft pickup
-RS2_U_L,1690,-290,312,rear suspension aft pickup
-RT1_R,1490,290,470,rear top / wing mount
-RT1_L,1490,-290,470,rear top / wing mount
-RT2_R,1690,290,470,rear top / wing mount
-RT2_L,1690,-290,470,rear top / wing mount
+RS1_L_R,1485,287,134.5,rear suspension fwd pickup
+RS1_L_L,1485,-287,134.5,rear suspension fwd pickup
+RS2_L_R,1700,287,130.5,rear suspension aft pickup
+RS2_L_L,1700,-287,130.5,rear suspension aft pickup
+RS1_U_R,1490,320,306,rear suspension fwd pickup
+RS1_U_L,1490,-320,306,rear suspension fwd pickup
+RS2_U_R,1690,320,298,rear suspension aft pickup
+RS2_U_L,1690,-320,298,rear suspension aft pickup
+RT1_R,1490,320,470,rear top / wing mount
+RT1_L,1490,-320,470,rear top / wing mount
+RT2_R,1690,320,470,rear top / wing mount
+RT2_L,1690,-320,470,rear top / wing mount
 RRK_R,1550,290,470,rear rocker mount
 RRK_L,1550,-290,470,rear rocker mount
 SP1_L_R,650,525,80,sidepod battery, front hoop plane

@@ -3,7 +3,7 @@ function setup_paths()
 root = repo_root();
 folders = {'matlab', fullfile('matlab', 'common'), fullfile('matlab', 'lapsim'), ...
     fullfile('matlab', 'lapsim', 'tracks'), fullfile('matlab', 'simulink'), ...
-    fullfile('matlab', 'cfd'), fullfile('matlab', 'cad')};
+    fullfile('matlab', 'cfd'), fullfile('matlab', 'cad'), fullfile('matlab', 'aero'), fullfile('matlab', 'stress')};
 for k = 1:numel(folders)
     d = fullfile(root, folders{k});
     if isfolder(d), addpath(d); end

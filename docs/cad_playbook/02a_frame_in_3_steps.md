@@ -1,5 +1,7 @@
 # 02a The whole frame from an empty part, in 3 steps
 
+> **Since 2026-11-17 all of this is one command:** `python tools/sw_run.py rebuild` (with SolidWorks open, nothing to click). It makes a new chassis part and runs ImportFrameNodes, BuildTubes, TrimTubes twice (the second run must change nothing) and CheckChassis, then the layout and the assembly, and writes the same report files. One step alone: `python tools/sw_run.py BuildTubes`, and so on. See `tools/README.md`. The manual macro route below still works and is kept for reference.
+
 The short version of `02_chassis.md` steps 1 to 3 and 9 to 10. Status: `ImportFrameNodes` has run in SolidWorks 2026 (single-sketch version); the per-group version and `BuildTubes` are untested, need the app.
 
 **Once per PC (already done on the main PC, 2026-11-16):**
@@ -26,4 +28,4 @@ It does not stop at the first problem. A group that fails a check (sketch missin
 
 ## Step 4: trim (after ALL PASS)
 
-Tools > Macro > Run > `repo_macros.swp`, pick `TrimTubes.main` (import `TrimTubes.bas` into the project first). It makes 50 `Trim_<node>` features from `cad/frame/frame_trims.csv` (172 tube ends cut against the stronger tube at each node) and saves. Expect "ALL PASS": bodies still 114, mass lower than before and within 38 to 46 kg. Same carry-on rules as step 3; the full list is in `cad/chassis/trim_tubes_report.txt`. Untested, needs the app.
+Tools > Macro > Run > `repo_macros.swp`, pick `TrimTubes.main` (import `TrimTubes.bas` into the project first). It makes 50 `Trim_<node>` features from `cad/frame/frame_trims.csv` (172 tube ends cut against the stronger tube at each node) and saves. Expect "ALL PASS": bodies 114 after the run, mass lower than before and within 38 to 46 kg. Overrun tube ends that a trim leaves as small separate bodies ("stubs") are removed in the same run (`StubsDeleted_<n>`). Running it again changes nothing. Same carry-on rules as step 3; the full list is in `cad/chassis/trim_tubes_report.txt`. Untested, needs the app.

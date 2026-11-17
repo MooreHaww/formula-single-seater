@@ -1,0 +1,17 @@
+18:04:59 CreateNewStudy3 beam: True error 0, MeshType 3
+18:04:59 beams 110
+18:05:01 joints recalculated, end edit 0
+18:05:06 mesh 0
+18:05:09 nearest vertex 11.1 mm, nearest body box 0.0 mm (Trim_FS1_L_R_b2)
+18:05:09   AddForce2 SketchPoint sel 0: True error 0
+18:05:09   AddRestraint SketchPoint: False error 1
+18:05:09   AddForce2 SketchPoint sel 1: False error 18
+18:05:10   AddForce2 SketchPoint sel 2: False error 19
+18:05:10   AddForce2 Vertex sel 0: False error 11
+18:05:10   AddRestraint Vertex: False error 16
+18:05:10   AddForce2 Vertex sel 1: False error 11
+18:05:10   AddForce2 Vertex sel 2: False error 11
+18:05:10   AddForce2 Body2 sel 0: True error 0
+18:05:10   AddRestraint Body2: False error 1
+18:05:10   AddForce2 Body2 sel 1: False error 18
+18:05:10   AddForce2 Body2 sel 2: True error 0

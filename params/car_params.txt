@@ -51,11 +51,9 @@
 "x_brackets_welds"= 860
 "z_brackets_welds"= 348
 "m_battery"= 45.0              ' ESTIMATE 6 kWh in two sidepod packs with boxes at about 135 Wh/kg; measured once the cells are chosen
-"x_battery"= "battery_x_front" + "battery_length" / 2
-"z_battery"= "battery_z_bottom" + "battery_height" / 2
+' x_battery, z_battery: further down, after the battery geometry (SolidWorks solves equations top-down)
 "m_motor"= 12.3                ' CATALOGUE Emrax 228 class (230 Nm peak matches motor_torque_max); an Emrax 208 would be 9.4
-"x_motor"= "motor_x"
-"z_motor"= "motor_z"
+' x_motor, z_motor: further down, after motor_x and motor_z
 "m_inverter_hv"= 10.0          ' GUESS inverter 6, contactors, fuses, HV cable and connectors 4; mounted above the motor in the bay behind the main hoop
 "x_inverter_hv"= 1380
 "z_inverter_hv"= 500
@@ -105,15 +103,6 @@
 "x_driver"= 840                ' ESTIMATE from the SIDE_LAYOUT stick figure: legs (30 % of mass) at X 550, torso and head at X 960
 "z_driver"= 330                ' ESTIMATE legs at Z 180, torso and head at Z 400
 
-' ---------------- Masses (kg) and distribution: rolled up from the budget ----
-' Do not type numbers here; change the budget lines above.
-"mass_car"= "m_frame" + "m_brackets_welds" + "m_battery" + "m_motor" + "m_inverter_hv" + "m_lv_electronics" + "m_chain_drive" + "m_corners_front" + "m_corners_rear" + "m_susp_links_front" + "m_susp_links_rear" + "m_front_wing" + "m_rear_wing" + "m_floor_diffuser" + "m_bodywork" + "m_cockpit" + "m_brake_hydraulics" + "m_cooling" + "m_fasteners_misc"
-"cg_x_from_front_axle"= ("m_frame" * "x_frame" + "m_brackets_welds" * "x_brackets_welds" + "m_battery" * "x_battery" + "m_motor" * "x_motor" + "m_inverter_hv" * "x_inverter_hv" + "m_lv_electronics" * "x_lv_electronics" + "m_chain_drive" * "x_chain_drive" + "m_corners_front" * "x_corners_front" + "m_corners_rear" * "x_corners_rear" + "m_susp_links_front" * "x_susp_links_front" + "m_susp_links_rear" * "x_susp_links_rear" + "m_front_wing" * "x_front_wing" + "m_rear_wing" * "x_rear_wing" + "m_floor_diffuser" * "x_floor_diffuser" + "m_bodywork" * "x_bodywork" + "m_cockpit" * "x_cockpit" + "m_brake_hydraulics" * "x_brake_hydraulics" + "m_cooling" * "x_cooling" + "m_fasteners_misc" * "x_fasteners_misc" + "mass_driver" * "x_driver") / ("mass_car" + "mass_driver")
-"cg_height"= ("m_frame" * "z_frame" + "m_brackets_welds" * "z_brackets_welds" + "m_battery" * "z_battery" + "m_motor" * "z_motor" + "m_inverter_hv" * "z_inverter_hv" + "m_lv_electronics" * "z_lv_electronics" + "m_chain_drive" * "z_chain_drive" + "m_corners_front" * "z_corners_front" + "m_corners_rear" * "z_corners_rear" + "m_susp_links_front" * "z_susp_links_front" + "m_susp_links_rear" * "z_susp_links_rear" + "m_front_wing" * "z_front_wing" + "m_rear_wing" * "z_rear_wing" + "m_floor_diffuser" * "z_floor_diffuser" + "m_bodywork" * "z_bodywork" + "m_cockpit" * "z_cockpit" + "m_brake_hydraulics" * "z_brake_hydraulics" + "m_cooling" * "z_cooling" + "m_fasteners_misc" * "z_fasteners_misc" + "mass_driver" * "z_driver") / ("mass_car" + "mass_driver")
-"weight_dist_front"= 1 - "cg_x_from_front_axle" / "wheelbase"    ' fraction of car + driver mass on the front axle
-"unsprung_mass_corner_front"= "m_corners_front" / 2
-"unsprung_mass_corner_rear"= "m_corners_rear" / 2
-
 ' ---------------- Powertrain (rear electric motor) --------------------------
 "motor_power_max"= 80000       ' W, hard cap
 "motor_torque_max"= 230        ' Nm at the motor shaft
@@ -137,6 +126,26 @@
 "motor_z"= 270
 "battery_mass"= "m_battery"       ' kept for the CAD block part; the budget line is the source
 
+' ---------------- Budget positions of the battery and motor -----------------
+' Here, after the geometry they are computed from: SolidWorks solves top-down.
+"x_battery"= "battery_x_front" + "battery_length" / 2
+"z_battery"= "battery_z_bottom" + "battery_height" / 2
+"x_motor"= "motor_x"
+"z_motor"= "motor_z"
+
+' ---------------- Masses (kg) and distribution: rolled up from the budget ----
+' Do not type numbers here; change the budget lines above.
+"mass_car"= "m_frame" + "m_brackets_welds" + "m_battery" + "m_motor" + "m_inverter_hv" + "m_lv_electronics" + "m_chain_drive" + "m_corners_front" + "m_corners_rear" + "m_susp_links_front" + "m_susp_links_rear" + "m_front_wing" + "m_rear_wing" + "m_floor_diffuser" + "m_bodywork" + "m_cockpit" + "m_brake_hydraulics" + "m_cooling" + "m_fasteners_misc"
+"cg_x_moment_1"= "m_frame" * "x_frame" + "m_brackets_welds" * "x_brackets_welds" + "m_battery" * "x_battery" + "m_motor" * "x_motor" + "m_inverter_hv" * "x_inverter_hv" + "m_lv_electronics" * "x_lv_electronics" + "m_chain_drive" * "x_chain_drive" + "m_corners_front" * "x_corners_front" + "m_corners_rear" * "x_corners_rear" + "m_susp_links_front" * "x_susp_links_front"    ' sum of mass x x, first 10 budget lines (split: SolidWorks drops equations longer than about 500 characters)
+"cg_x_moment_2"= "m_susp_links_rear" * "x_susp_links_rear" + "m_front_wing" * "x_front_wing" + "m_rear_wing" * "x_rear_wing" + "m_floor_diffuser" * "x_floor_diffuser" + "m_bodywork" * "x_bodywork" + "m_cockpit" * "x_cockpit" + "m_brake_hydraulics" * "x_brake_hydraulics" + "m_cooling" * "x_cooling" + "m_fasteners_misc" * "x_fasteners_misc" + "mass_driver" * "x_driver"
+"cg_x_from_front_axle"= ("cg_x_moment_1" + "cg_x_moment_2") / ("mass_car" + "mass_driver")
+"cg_z_moment_1"= "m_frame" * "z_frame" + "m_brackets_welds" * "z_brackets_welds" + "m_battery" * "z_battery" + "m_motor" * "z_motor" + "m_inverter_hv" * "z_inverter_hv" + "m_lv_electronics" * "z_lv_electronics" + "m_chain_drive" * "z_chain_drive" + "m_corners_front" * "z_corners_front" + "m_corners_rear" * "z_corners_rear" + "m_susp_links_front" * "z_susp_links_front"    ' sum of mass x z, first 10 budget lines (split: SolidWorks drops equations longer than about 500 characters)
+"cg_z_moment_2"= "m_susp_links_rear" * "z_susp_links_rear" + "m_front_wing" * "z_front_wing" + "m_rear_wing" * "z_rear_wing" + "m_floor_diffuser" * "z_floor_diffuser" + "m_bodywork" * "z_bodywork" + "m_cockpit" * "z_cockpit" + "m_brake_hydraulics" * "z_brake_hydraulics" + "m_cooling" * "z_cooling" + "m_fasteners_misc" * "z_fasteners_misc" + "mass_driver" * "z_driver"
+"cg_height"= ("cg_z_moment_1" + "cg_z_moment_2") / ("mass_car" + "mass_driver")
+"weight_dist_front"= 1 - "cg_x_from_front_axle" / "wheelbase"    ' fraction of car + driver mass on the front axle
+"unsprung_mass_corner_front"= "m_corners_front" / 2
+"unsprung_mass_corner_rear"= "m_corners_rear" / 2
+
 ' ---------------- Tyre and rolling resistance -------------------------------
 "tyre_mu_peak"= 1.4            ' friction coefficient at tyre_fz_ref, starting value
 "tyre_fz_ref"= 750             ' N, roughly one quarter of car + driver weight
@@ -157,7 +166,8 @@
 "CdA_C"= 1.45
 "ClA_D"= 3.80
 "CdA_D"= 1.50
-"aero_balance_front"= 0.45     ' fraction of downforce on the front axle
+"aero_balance_front"= 0.45     ' GUESS fraction of downforce on the front axle, the first-session placeholder; used only where params/aero_variants.csv has no row
+"aero_balance_target"= 0.40    ' ESTIMATE/target, not a result: front aero share to trim the wings toward. Reason: the four-wheel cornering study (media/cornering_balance.md) puts the car closest to neutral at R 45 m with about 0.40 front aero at 41.5 % front weight (0.45 leaves the rear axle limiting, about -10 %). Depends on assumed tyre numbers (mu 1.4, load sensitivity 0.10); re-derive when the weight distribution, tyres or CFD change
 
 ' ---------------- Wings (mm, deg). Larger than FS rules allow on purpose ----
 "fw_span"= 1600
@@ -165,6 +175,8 @@
 "fw_flap1_chord"= 220
 "fw_flap2_chord"= 160
 "fw_ground_clearance"= 60      ' main element lowest point to ground
+"fw_le_x"= -960                ' ESTIMATE main element leading edge from the front axle, used by the aero estimate and the CFD geometry. The playbook and cad/generate/build_parts.py still put it at -600, where the flap stack (to about X +55 at C) runs through the front tyres (X -228 to +228 at Y 510 to 690); -960 clears the tyres by 40 mm at the longest stack (B, 692 mm)
+"fw_flap_inner_y"= 300         ' ESTIMATE front flaps span from here to the endplate; between the two sides only the main element runs under the nose (nose half-width is 230 at X -300). Used by the aero estimate and the CFD geometry; the playbook and build_parts.py have full-span flaps, which pass through the nose
 "fw_endplate_height"= 350
 "fw_endplate_length"= 850
 "rw_span"= 1250
@@ -197,6 +209,23 @@
 "rw_flap1_aoa_D"= 34
 "rw_flap2_aoa_D"= 56
 
+' Wake devices of variant D and the rear wing pylon (mm, deg). ESTIMATE: first
+' sizes chosen for the pre-CFD model (matlab/aero/aero_estimate.m) and the CFD
+' geometry (cad/generate/cfd_variants.py); nothing here is optimised.
+"beam_span"= 1400              ' D only: beam wing, wider than the rear wing, free tips (no endplates) so it sheds tip vortices
+"beam_chord"= 200              ' single element, rw_flap1 section
+"beam_aoa_D"= 12
+"beam_x_le"= 1690              ' leading edge from the front axle   (was 1800: moved inside the rear pylon chord 1683..1895 so the beam leading and trailing edges do not cut the pylon faces, where the Fluent surface mesh failed)
+"beam_z_le"= 600               ' above the rear tyres (top at 451), below the rear wing
+"vg_count_rw"= 3               ' D only: strakes on the outer face of each rear endplate
+"vg_count_fw"= 2               ' D only: strakes on the outer face of each front endplate
+"vg_length"= 150
+"vg_height"= 40                ' how far a strake stands out from the endplate
+"vg_angle"= 20                 ' strake incidence to the flow, leading edge down
+"rw_pylon_y"= 150              ' rear wing pylon centre from the centreline (one each side)
+"rw_pylon_thickness"= 16
+"rw_pylon_chord"= 260
+
 ' ---------------- Floor and diffuser (mm, deg) ------------------------------
 "floor_width"= 1100
 "floor_start_from_front_axle"= 300
@@ -223,35 +252,35 @@
 ' The block between the markers is generated by matlab/suspension_geometry.m
 ' (suspension_geometry(struct('write', true))). Edit the hardpoints there, not here.
 ' ==== BEGIN hardpoints (generated, do not edit by hand) ====
-'  Suspension hardpoints written by matlab/suspension_geometry.m on 2026-11-16
+'  Suspension hardpoints written by matlab/suspension_geometry.m on 2026-11-17
 '  Right-hand corners; mirror in Y. Frame: X rearward from the front axle, Y right, Z up from the ground, mm.
-'  Results: camber gain F -0.0393 / R -0.0477 deg/mm, bump steer F 0.011 / R 0.006 deg, RC F 60 / R 69 mm, MR F 0.706 / R 0.773
+'  Results: camber gain F -0.0391 / R -0.0429 deg/mm, bump steer F 0.010 / R 0.009 deg, RC F 60 / R 75 mm, MR F 0.706 / R 0.772
 
 '  ---- front right corner ----
 "f_lwb_in_fwd_x"= -160
-"f_lwb_in_fwd_y"= 250
-"f_lwb_in_fwd_z"= 128
+"f_lwb_in_fwd_y"= 255
+"f_lwb_in_fwd_z"= 151.5
 "f_lwb_in_aft_x"= 160
-"f_lwb_in_aft_y"= 250
-"f_lwb_in_aft_z"= 124
-"f_lwb_out_x"= 0
-"f_lwb_out_y"= 568
-"f_lwb_out_z"= 120
+"f_lwb_in_aft_y"= 255
+"f_lwb_in_aft_z"= 147.5
+"f_lwb_out_x"= 1.5
+"f_lwb_out_y"= 561.5
+"f_lwb_out_z"= 150
 "f_uwb_in_fwd_x"= -130
-"f_uwb_in_fwd_y"= 270
-"f_uwb_in_fwd_z"= 305
+"f_uwb_in_fwd_y"= 271.5
+"f_uwb_in_fwd_z"= 278
 "f_uwb_in_aft_x"= 140
-"f_uwb_in_aft_y"= 270
-"f_uwb_in_aft_z"= 300
-"f_uwb_out_x"= 18
+"f_uwb_in_aft_y"= 271.5
+"f_uwb_in_aft_z"= 273
+"f_uwb_out_x"= 14.5
 "f_uwb_out_y"= 545
-"f_uwb_out_z"= 340
+"f_uwb_out_z"= 306
 "f_tierod_in_x"= -70
 "f_tierod_in_y"= 245
-"f_tierod_in_z"= 165
-"f_tierod_out_x"= -70
-"f_tierod_out_y"= 550
-"f_tierod_out_z"= 170
+"f_tierod_in_z"= 181.5
+"f_tierod_out_x"= -85.5
+"f_tierod_out_y"= 535
+"f_tierod_out_z"= 190.5
 "f_pushrod_out_x"= 0
 "f_pushrod_out_y"= 540
 "f_pushrod_out_z"= 150
@@ -261,32 +290,32 @@
 
 '  ---- rear right corner ----
 "r_lwb_in_fwd_x"= 1485
-"r_lwb_in_fwd_y"= 280
-"r_lwb_in_fwd_z"= 135
+"r_lwb_in_fwd_y"= 287
+"r_lwb_in_fwd_z"= 134.5
 "r_lwb_in_aft_x"= 1700
-"r_lwb_in_aft_y"= 280
-"r_lwb_in_aft_z"= 131
-"r_lwb_out_x"= 1550
-"r_lwb_out_y"= 545
-"r_lwb_out_z"= 130
+"r_lwb_in_aft_y"= 287
+"r_lwb_in_aft_z"= 130.5
+"r_lwb_out_x"= 1540.5
+"r_lwb_out_y"= 527
+"r_lwb_out_z"= 123
 "r_uwb_in_fwd_x"= 1490
-"r_uwb_in_fwd_y"= 290
-"r_uwb_in_fwd_z"= 320
+"r_uwb_in_fwd_y"= 320
+"r_uwb_in_fwd_z"= 306
 "r_uwb_in_aft_x"= 1690
-"r_uwb_in_aft_y"= 290
-"r_uwb_in_aft_z"= 312
+"r_uwb_in_aft_y"= 320
+"r_uwb_in_aft_z"= 298
 "r_uwb_out_x"= 1565
-"r_uwb_out_y"= 522
-"r_uwb_out_z"= 360
+"r_uwb_out_y"= 491
+"r_uwb_out_z"= 322.5
 "r_toelink_in_x"= 1660
 "r_toelink_in_y"= 280
-"r_toelink_in_z"= 165
-"r_toelink_out_x"= 1660
-"r_toelink_out_y"= 525
-"r_toelink_out_z"= 170
+"r_toelink_in_z"= 173.5
+"r_toelink_out_x"= 1641.5
+"r_toelink_out_y"= 485
+"r_toelink_out_z"= 173
 "r_pushrod_out_x"= 1550
 "r_pushrod_out_y"= 515
-"r_pushrod_out_z"= 155
+"r_pushrod_out_z"= 132.5
 "r_pushrod_in_x"= 1550
 "r_pushrod_in_y"= 300
 "r_pushrod_in_z"= 450

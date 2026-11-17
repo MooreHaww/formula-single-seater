@@ -37,9 +37,12 @@ if ~isfield(opts, 'plot'), opts.plot = true; end
 if ~isfield(opts, 'write'), opts.write = false; end
 if ~isfield(opts, 'travel'), opts.travel = -30:1:30; end
 if isfield(opts, 'p'), p = opts.p; else, p = read_car_params(); end
-hp = hardpoints_from_params(p);
+% opts.hp: hardpoints to use instead of the ones in the params (suspension_optimise.m);
+% opts.corners: subset of {'front', 'rear'}
+if isfield(opts, 'hp'), hp = opts.hp; else, hp = hardpoints_from_params(p); end
+if ~isfield(opts, 'corners'), opts.corners = {'front', 'rear'}; end
 out = struct();
-for c = {'front', 'rear'}
+for c = opts.corners
     corner = c{1};
     out.(corner) = sweep_corner(hp.(corner), opts.travel, p);
     if opts.plot
@@ -91,6 +94,9 @@ ref = h.lwb_out;
 Lfix = [norm(h.lwb_out - h.lwb_in_fwd); norm(h.lwb_out - h.lwb_in_aft); ...
         norm(h.uwb_out - h.uwb_in_fwd); norm(h.uwb_out - h.uwb_in_aft); ...
         norm(h.tie_out - h.tie_in)];
+% h.tie_len: tie-rod length to hold when tie_in has been moved by the rack
+% (steering, suspension_optimise.m); otherwise the length at the design position
+if isfield(h, 'tie_len'), Lfix(5) = h.tie_len; end
 n = numel(travel);
 q = zeros(6, 1);                % [translation; rotation vector] of the upright
 camber = zeros(n, 1); toe = camber; dy = camber; pushrod = camber; rc_h = camber; wcz = camber;

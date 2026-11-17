@@ -4,6 +4,9 @@
 |---|---|
 | `load_cases.csv` | Written by `matlab/load_cases.m`: per-wheel Fx, Fy, Fz at the contact patch and the hub moments for static, cornering, braking, bump and combined cases. |
 | `upright_*.docx` / `*.html` | SolidWorks Simulation study reports (Simulation > Report). Keep the two mesh sizes. |
+| `frame_fe_report.txt` | Written by `matlab/stress/frame_fe.m`, the beam FE model of the frame: torsion (three set-ups) and the driving cases, free-free with inertia relief. Method, load cases, boundary conditions and results: `docs/stress_frame.md`. |
+| `frame_solid_report.txt` | Written by `swh FrameSolid`: the torsion case on the frame as solids in SOLIDWORKS Simulation, compared with `frame_fe`. |
+| `results/` | SOLIDWORKS Simulation result files of the FrameSolid study. |
 | `chassis_torsion.*` | Beam-mesh torsion study report: rear suspension points fixed, equal and opposite vertical forces at the front suspension points. Stiffness = (F x track) / twist angle, in Nm/deg. |
 
 ## Applying a load case in SolidWorks Simulation

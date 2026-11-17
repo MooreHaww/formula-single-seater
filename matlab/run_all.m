@@ -8,7 +8,8 @@ function summary = run_all(mode)
 %   call  run('matlab/run_all.m')  or add matlab/ to the path and type run_all.
 %   Outputs go to media/ (figures, lap_times.csv, results_table.md),
 %   sim/stress/load_cases.csv and cfd/results/.
-%   Self-tests: 19 (cornering_balance and cornering_balance_study added in the fourth session).
+%   Self-tests: 24 plus the Simulink one (aero_estimate and read_aero_variants added with the pre-CFD aero model,
+%   suspension_optimise with the rim-limited hardpoints, frame_fe the frame beam model).
 %   Scripts that depend on data not yet produced (motion study CSVs, CFD
 %   forces and wake planes) run on synthetic data or estimates and say so.
 
@@ -23,7 +24,8 @@ fprintf('Repo: %s\n', repo_root());
 tests = {'read_car_params', 'car_from_params', 'long_forces', 'accel_test', 'make_airfoils', ...
     'load_track', 'lapsim', 'cornering_speed_vs_downforce', 'lap_experiments', ...
     'suspension_plots', 'load_cases', 'aero_plots', 'wake_postprocess', ...
-    'suspension_geometry', 'frame_layout', 'frame_trims', 'mass_budget', 'cornering_balance', 'cornering_balance_study'};
+    'suspension_geometry', 'suspension_optimise', 'frame_layout', 'frame_trims', 'frame_fe', 'mass_budget', 'cornering_balance', 'cornering_balance_study', ...
+    'aero_estimate', 'read_aero_variants'};
 hasSimulink = license('test', 'Simulink') && ~isempty(ver('simulink'));
 if hasSimulink, tests{end+1} = 'run_accel_simulink'; end
 results = struct('name', tests, 'pass', num2cell(false(size(tests))), 'msg', '');
@@ -54,11 +56,13 @@ summary.suspension_geometry = suspension_geometry(struct('plot', true, 'write', 
 summary.frame = frame_layout(struct('plot', true, 'write', true));
 summary.trims = frame_trims();
 summary.mass = mass_budget();
+summary.aero_estimate = aero_estimate();
 summary.accel = accel_test('C');
 summary.cornering = cornering_speed_vs_downforce();
 summary.balance = cornering_balance_study();
 summary.lap = lap_experiments(struct('quick', strcmp(mode, 'quick')));
 summary.loads = load_cases();
+summary.frame_fe = frame_fe();
 summary.suspension = suspension_plots();
 summary.aero = aero_plots();
 summary.wake = wake_postprocess();
@@ -82,10 +86,13 @@ T = summary.cornering;
 for R = [60 120]
     fprintf('Max speed, R = %3d m corner, A / C: %.0f / %.0f km/h\n', R, T.v_max_kmh(T.radius_m == R & T.variant == "A"), T.v_max_kmh(T.radius_m == R & T.variant == "C"));
 end
-B = summary.balance.T; B = B(B.radius_m == 45 & abs(B.aero_front - summary.params.aero_balance_front) < 1e-6, :);
+B = summary.balance.T; B = B(B.radius_m == 45 & abs(B.aero_front - summary.balance.aero_front_ref) < 1e-6, :);
 [~, ib] = min(abs(B.wd_front - summary.params.weight_dist_front)); b45 = B(ib, :);
 fprintf('Four-wheel corner limit, R = 45 m, as filed (%.1f %% front, aero %.2f): %.0f km/h, %s axle limits, balance %+.0f %% (point-mass %.0f km/h)\n', ...
     100 * b45.wd_front, b45.aero_front, b45.v_max_kmh, b45.limiting_axle, b45.balance_pct, b45.v_point_mass_kmh);
+G = summary.balance.target.T; G = G(G.radius_m == 45, :);
+fprintf('Aero balance target %.2f front (ESTIMATE/target): neutral share at R = 45 m is %.3f; at the target %.0f km/h, balance %+.1f %%\n', ...
+    G.aero_front_target, G.aero_front_neutral, G.v_grip_target_kmh, G.balance_target_pct);
 L = summary.balance.lap;
 fprintf('Load transfer costs on the lap (four-wheel vs point-mass, as filed): autocross %+.2f s, fast circuit %+.2f s\n', ...
     L.cost_of_load_transfer_s(strcmp(L.case, 'as filed') & strcmp(L.track, 'autocross')), L.cost_of_load_transfer_s(strcmp(L.case, 'as filed') & strcmp(L.track, 'fast_circuit')));

@@ -1,0 +1,15 @@
+ALL PASS   (2026-11-17 21:42, harness swh.exe)  SuspensionAssembly, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
+
+PASS  Drive_FR: wheel centre at z 222.00 mm (222)
+PASS  Drive_FL: wheel centre at z 222.00 mm (222)
+PASS  Drive_RR: wheel centre at z 222.00 mm (222)
+PASS  Drive_RL: wheel centre at z 222.00 mm (222)
+PASS  components inserted: 24, mates made: 60
+PASS  assembly features (mates) with errors: 0
+PASS  FR: static pose, upright points within 0.000 mm of the hardpoints
+PASS  FL: static pose, upright points within 0.000 mm of the hardpoints
+PASS  RR: static pose, upright points within 0.000 mm of the hardpoints
+PASS  RL: static pose, upright points within 0.000 mm of the hardpoints
+PASS  saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
+
+No failures.

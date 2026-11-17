@@ -74,7 +74,7 @@ function ok = selftest()
 %   a     = 1.4 * 0.53 * 9.81 = 7.279 m/s^2
 %   t_100 = 27.778 / 7.279   = 3.816 s
 %   t_75  = sqrt(2*75/7.279) = 4.539 s
-car = car_from_params('A');
+car = car_from_params('A', [], 'params');   % hand car: start from the parameter-file guesses, not the variant table
 car.ClA = 0; car.CdA = 0; car.crr = 0; car.lsens = 0; car.mu0 = 1.4; car.wd_front = 0.47;
 car.P_max = 1e9; car.F_torque_max = 1e9; car.v_rpm_max = 1e9; car.m = 300; car.g = 9.81;
 r = accel_test(car, struct('plot', false));

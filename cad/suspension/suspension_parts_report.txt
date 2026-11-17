@@ -1,0 +1,28 @@
+ALL PASS   (2026-11-17 21:40, harness swh.exe)  SuspensionParts, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\suspension
+
+PASS  FR_lwb: 3 points, 2 members, tube 15.9x0.9
+PASS  FR_uwb: 3 points, 2 members, tube 15.9x0.9
+PASS  FR_upright: 8 points, 4 members, axis A_SPIN, tube 25.4x1.6
+PASS  FR_hub: 2 points, 1 members, axis A_SPIN, tube 25.4x1.6
+PASS  FR_tie: 2 points, 1 members, tube 15.9x0.9
+PASS  FR_push: 2 points, 1 members, axis A_ROD, tube 15.9x0.9
+PASS  FL_lwb: 3 points, 2 members, tube 15.9x0.9
+PASS  FL_uwb: 3 points, 2 members, tube 15.9x0.9
+PASS  FL_upright: 8 points, 4 members, axis A_SPIN, tube 25.4x1.6
+PASS  FL_hub: 2 points, 1 members, axis A_SPIN, tube 25.4x1.6
+PASS  FL_tie: 2 points, 1 members, tube 15.9x0.9
+PASS  FL_push: 2 points, 1 members, axis A_ROD, tube 15.9x0.9
+PASS  RR_lwb: 3 points, 2 members, tube 15.9x0.9
+PASS  RR_uwb: 3 points, 2 members, tube 15.9x0.9
+PASS  RR_upright: 8 points, 4 members, axis A_SPIN, tube 25.4x1.6
+PASS  RR_hub: 2 points, 1 members, axis A_SPIN, tube 25.4x1.6
+PASS  RR_tie: 2 points, 1 members, tube 15.9x0.9
+PASS  RR_push: 2 points, 1 members, axis A_ROD, tube 15.9x0.9
+PASS  RL_lwb: 3 points, 2 members, tube 15.9x0.9
+PASS  RL_uwb: 3 points, 2 members, tube 15.9x0.9
+PASS  RL_upright: 8 points, 4 members, axis A_SPIN, tube 25.4x1.6
+PASS  RL_hub: 2 points, 1 members, axis A_SPIN, tube 25.4x1.6
+PASS  RL_tie: 2 points, 1 members, tube 15.9x0.9
+PASS  RL_push: 2 points, 1 members, axis A_ROD, tube 15.9x0.9
+
+No failures.

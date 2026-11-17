@@ -1,0 +1,5 @@
+variant,speed_mps,downforce_N,drag_N,downforce_front_N,cells,note
+A,20,-7.04892,100.464,-21.3454,271859,CFD A NOT converged
+B,20,822.998,310.661,369.61,900187,CFD B force-converged
+C,20,956.263,392.253,427.76,955009,CFD C force-converged
+D,20,1007.9,424.433,388.017,1042343,CFD D force-converged

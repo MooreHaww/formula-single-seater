@@ -1,0 +1,15 @@
+ALL PASS (1 warning)   (2026-11-17 21:29, harness swh.exe)  CheckChassis, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+
+PASS  bodies: 114 (114 tubes in frame_tubes.csv)
+PASS  one body per tube: 114 of 114 matched
+PASS  cut-list bodies: 114 in 103 items
+PASS  cut length: 41.24 m vs 41.64 m centreline sum in CSV (limit 5 %)
+PASS  mass: 39.96 kg (38 to 46)
+PASS  trim rows done: 141 with a Trim_<node> feature without error, 35 none needed (already cut by the structural members), 176 rows in frame_trims.csv
+PASS  features with rebuild errors (all features, FeatureManager.GetFeatures): 0
+WARN  tube pairs at a shared node: 444 checked, largest overlap 328 mm3, 0 not measurable, 2 above 200 mm3: MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 328 mm3; MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 328 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
+
+No failures.
+Warnings (do not fail the step):
+- tube pairs at a shared node: 444 checked, largest overlap 328 mm3, 0 not measurable, 2 above 200 mm3: MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 328 mm3; MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 328 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
+

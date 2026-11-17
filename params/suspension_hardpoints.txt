@@ -1,32 +1,32 @@
-'  Suspension hardpoints written by matlab/suspension_geometry.m on 2026-11-16
+'  Suspension hardpoints written by matlab/suspension_geometry.m on 2026-11-17
 '  Right-hand corners; mirror in Y. Frame: X rearward from the front axle, Y right, Z up from the ground, mm.
-'  Results: camber gain F -0.0393 / R -0.0477 deg/mm, bump steer F 0.011 / R 0.006 deg, RC F 60 / R 69 mm, MR F 0.706 / R 0.773
+'  Results: camber gain F -0.0391 / R -0.0429 deg/mm, bump steer F 0.010 / R 0.009 deg, RC F 60 / R 75 mm, MR F 0.706 / R 0.772
 
 '  ---- front right corner ----
 "f_lwb_in_fwd_x"= -160
-"f_lwb_in_fwd_y"= 250
-"f_lwb_in_fwd_z"= 128
+"f_lwb_in_fwd_y"= 255
+"f_lwb_in_fwd_z"= 151.5
 "f_lwb_in_aft_x"= 160
-"f_lwb_in_aft_y"= 250
-"f_lwb_in_aft_z"= 124
-"f_lwb_out_x"= 0
-"f_lwb_out_y"= 568
-"f_lwb_out_z"= 120
+"f_lwb_in_aft_y"= 255
+"f_lwb_in_aft_z"= 147.5
+"f_lwb_out_x"= 1.5
+"f_lwb_out_y"= 561.5
+"f_lwb_out_z"= 150
 "f_uwb_in_fwd_x"= -130
-"f_uwb_in_fwd_y"= 270
-"f_uwb_in_fwd_z"= 305
+"f_uwb_in_fwd_y"= 271.5
+"f_uwb_in_fwd_z"= 278
 "f_uwb_in_aft_x"= 140
-"f_uwb_in_aft_y"= 270
-"f_uwb_in_aft_z"= 300
-"f_uwb_out_x"= 18
+"f_uwb_in_aft_y"= 271.5
+"f_uwb_in_aft_z"= 273
+"f_uwb_out_x"= 14.5
 "f_uwb_out_y"= 545
-"f_uwb_out_z"= 340
+"f_uwb_out_z"= 306
 "f_tierod_in_x"= -70
 "f_tierod_in_y"= 245
-"f_tierod_in_z"= 165
-"f_tierod_out_x"= -70
-"f_tierod_out_y"= 550
-"f_tierod_out_z"= 170
+"f_tierod_in_z"= 181.5
+"f_tierod_out_x"= -85.5
+"f_tierod_out_y"= 535
+"f_tierod_out_z"= 190.5
 "f_pushrod_out_x"= 0
 "f_pushrod_out_y"= 540
 "f_pushrod_out_z"= 150
@@ -36,32 +36,32 @@
 
 '  ---- rear right corner ----
 "r_lwb_in_fwd_x"= 1485
-"r_lwb_in_fwd_y"= 280
-"r_lwb_in_fwd_z"= 135
+"r_lwb_in_fwd_y"= 287
+"r_lwb_in_fwd_z"= 134.5
 "r_lwb_in_aft_x"= 1700
-"r_lwb_in_aft_y"= 280
-"r_lwb_in_aft_z"= 131
-"r_lwb_out_x"= 1550
-"r_lwb_out_y"= 545
-"r_lwb_out_z"= 130
+"r_lwb_in_aft_y"= 287
+"r_lwb_in_aft_z"= 130.5
+"r_lwb_out_x"= 1540.5
+"r_lwb_out_y"= 527
+"r_lwb_out_z"= 123
 "r_uwb_in_fwd_x"= 1490
-"r_uwb_in_fwd_y"= 290
-"r_uwb_in_fwd_z"= 320
+"r_uwb_in_fwd_y"= 320
+"r_uwb_in_fwd_z"= 306
 "r_uwb_in_aft_x"= 1690
-"r_uwb_in_aft_y"= 290
-"r_uwb_in_aft_z"= 312
+"r_uwb_in_aft_y"= 320
+"r_uwb_in_aft_z"= 298
 "r_uwb_out_x"= 1565
-"r_uwb_out_y"= 522
-"r_uwb_out_z"= 360
+"r_uwb_out_y"= 491
+"r_uwb_out_z"= 322.5
 "r_toelink_in_x"= 1660
 "r_toelink_in_y"= 280
-"r_toelink_in_z"= 165
-"r_toelink_out_x"= 1660
-"r_toelink_out_y"= 525
-"r_toelink_out_z"= 170
+"r_toelink_in_z"= 173.5
+"r_toelink_out_x"= 1641.5
+"r_toelink_out_y"= 485
+"r_toelink_out_z"= 173
 "r_pushrod_out_x"= 1550
 "r_pushrod_out_y"= 515
-"r_pushrod_out_z"= 155
+"r_pushrod_out_z"= 132.5
 "r_pushrod_in_x"= 1550
 "r_pushrod_in_y"= 300
 "r_pushrod_in_z"= 450

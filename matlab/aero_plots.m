@@ -8,9 +8,11 @@ function S = aero_plots(opts)
 %     variant, speed_mps, downforce_N, drag_N, downforce_front_N, cells, note
 %   Half-car runs must already be doubled to full-car forces (the Fluent
 %   journal reports full-car values via the symmetry setting; check the
-%   guide). Rows with the same variant and different speed or cells are the
+%   guide). downforce_front_N is the aero load on the FRONT AXLE (from the
+%   vertical force and the pitching moment, see cfd/README.md), not the force
+%   on the front wing. Rows with the same variant and different speed or cells are the
 %   speed and mesh checks and get reported as percent changes.
-%   If the file is missing, the parameter-file estimates are plotted instead
+%   If the file is missing, the estimates in params/aero_variants.csv are plotted instead
 %   and labelled as such, so the plot exists before the CFD does.
 %
 %   Outputs per variant: ClA = DF / (0.5 rho v^2), CdA = D / (0.5 rho v^2),
@@ -31,17 +33,18 @@ if isfile(opts.file)
 else
     v = p.cfd_speed; q = 0.5 * rho * v^2;
     vars = ["A"; "B"; "C"; "D"];
-    F = table(vars, repmat(v, 4, 1), q * [p.ClA_A; p.ClA_B; p.ClA_C; p.ClA_D], q * [p.CdA_A; p.CdA_B; p.CdA_C; p.CdA_D], ...
-        q * p.aero_balance_front * [p.ClA_A; p.ClA_B; p.ClA_C; p.ClA_D], zeros(4, 1), repmat("parameter-file estimate", 4, 1), ...
+    cars = arrayfun(@(s) car_from_params(char(s), p), vars);      % variant table (pre-CFD estimate) or the parameter-file guesses
+    F = table(vars, repmat(v, 4, 1), q * [cars.ClA].', q * [cars.CdA].', q * ([cars.aero_front] .* [cars.ClA]).', zeros(4, 1), string({cars.aero_source}).', ...
         'VariableNames', {'variant', 'speed_mps', 'downforce_N', 'drag_N', 'downforce_front_N', 'cells', 'note'});
-    src = 'ESTIMATES (no CFD yet)';
-    warning('aero_plots:estimates', 'No %s, plotting the parameter-file estimates', opts.file);
+    src = 'ESTIMATES (no CFD yet), params/aero_variants.csv';
+    warning('aero_plots:estimates', 'No %s, plotting the estimates in params/aero_variants.csv', opts.file);
 end
 q = 0.5 * rho * F.speed_mps.^2;
 F.ClA = F.downforce_N ./ q;
 F.CdA = F.drag_N ./ q;
 F.L_over_D = F.downforce_N ./ F.drag_N;
 F.front_balance = F.downforce_front_N ./ F.downforce_N;
+F.front_balance(abs(F.ClA) < 0.5) = NaN;    % a share of a near-zero total (variant A) means nothing
 S.table = F; S.source = src;
 
 % baseline rows: for each variant the row at cfd_speed with the most cells

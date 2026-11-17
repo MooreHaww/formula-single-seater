@@ -73,7 +73,7 @@ end
 end
 
 function car = test_car()
-car = car_from_params('A');
+car = car_from_params('A', [], 'params');   % hand car: start from the parameter-file guesses, not the variant table
 car.ClA = 0; car.CdA = 0; car.lsens = 0; car.mu0 = 1.4; car.wd_front = 0.47;
 car.m = 300; car.g = 9.81; car.crr = 0.015; car.P_max = 80000; car.eta = 0.92;
 car.F_torque_max = 3336;

@@ -1,0 +1,58 @@
+{
+ "variant": "B",
+ "tag": "",
+ "speed_mps": 20.0,
+ "density": 1.2,
+ "viscosity": 1.8e-05,
+ "iterations_requested": 1500,
+ "started": "2026-11-17 18:33:28",
+ "half_model": true,
+ "zones": {
+  "wall": [
+   "ground",
+   "car_body",
+   "car_fw",
+   "car_floor",
+   "car_rw",
+   "wheel_rear",
+   "wheel_front"
+  ],
+  "velocity_inlet": [
+   "inlet"
+  ],
+  "pressure_outlet": [
+   "outlet"
+  ],
+  "symmetry": [
+   "symmetry",
+   "top",
+   "side"
+  ]
+ },
+ "wheel_omega_rad_s": 90.09009009009009,
+ "report_defs": [
+  "drag_total",
+  "downforce_total",
+  "drag_wheels",
+  "downforce_wheels",
+  "drag_car_body",
+  "downforce_car_body",
+  "drag_car_floor",
+  "downforce_car_floor",
+  "drag_car_fw",
+  "downforce_car_fw",
+  "drag_car_rw",
+  "downforce_car_rw",
+  "pitch_moment_total"
+ ],
+ "force_convergence_criterion": "set: 0.2 % over 100 iterations after the first 300, on downforce_total and drag_total",
+ "solve_seconds": 4799.2,
+ "wake_files": [
+  "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\results\\wake\\B_0.5L.csv",
+  "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\results\\wake\\B_1L.csv",
+  "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\results\\wake\\B_2L.csv",
+  "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\results\\wake\\B_3L.csv"
+ ],
+ "cells": 900187,
+ "finished": "2026-11-17 19:54:02"
+}

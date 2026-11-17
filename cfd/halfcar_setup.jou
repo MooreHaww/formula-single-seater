@@ -1,3 +1,4 @@
+; SUPERSEDED 2026-11-17 by cfd/fluent_halfcar.py (PyFluent, tested on this PC). Kept for reference only.
 ; =============================================================================
 ; halfcar_setup.jou  Fluent solver journal for one aero variant
 ; STATUS: untested, needs the app. TUI prompts change between releases; run

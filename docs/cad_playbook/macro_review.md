@@ -1,5 +1,14 @@
 # Macro review
 
+## Superseded by the terminal harness (2026-11-17)
+
+The six build steps now run from `python tools/sw_run.py` as C# ports of these macros (`tools/sw_harness/`, see `tools/README.md`). Bugs the port found that are still in the `.bas` files:
+
+- **`Not <API result>`**: COM returns `1` for True in some calls, and VBA's `Not 1` is `-2`, which is truthy. `BuildLayout.bas` therefore reported axes it had made as "refused" and left planes "value only". The same pattern is in `ImportAirfoil.bas` (line 90) and `BuildTubes.bas` (line 193). Use `If x = False`.
+- **Errored trims.** `InsertWeldmentTrimFeature2` returns a feature even when it is in error (it cuts nothing, and the feature walk skips it). The v3 chassis built by hand on 2026-11-17 had 24 good trims of 50. The C# TrimTubes checks `GetErrorCode2`, deletes the bad feature and retries tube by tube.
+- **`EquationMgr.Add3`** returns -1 for every form; `Add2` works. Equation lines longer than about 500 characters are dropped without a message.
+
+
 The section below records the first real test. The older read-through tables after it are kept for history; where the test contradicted them, the row says so.
 
 ## Tested in SolidWorks 2026 (2026-11-16)
@@ -229,3 +238,34 @@ Scriptability of what is left, from the 2026 DLLs:
 - **Re-run:** rows whose `Trim_<node>` exists are kept, as before. New guard: if the part has trim features that are not named `Trim_*` (default `Trim/Extend<n>`, or a type name containing "Trim"), the macro stops and changes nothing, so it can never trim the same ends twice. The report now also gives the type name of the trim features.
 - **Structural members shown as "25.4x2.4 (1)" etc.:** TrimTubes renames only the features it creates itself. BuildTubes read back `SM_<group>` after each rename, and its report confirms all seven. So SolidWorks itself changed the names to the profile-based default on a later rebuild or save. The file is compressed, so the names could not be read from it to confirm this. The names matter for a BuildTubes re-run: it found existing members only by `SM_<group>`, so it would have built all 114 tubes again. **Fixed:** BuildTubes now also treats any feature built from the `FRAME_<group>` sketch (`Feature.GetChildren`) as the existing member, keeps it, and reports it as "existed as <name>". TrimTubes does not depend on member names.
 - **Checker:** 334 member uses in eight macros, no problems.
+
+
+### TrimTubes second run (2026-11-17): the old module ran; 16 trims applied twice; v3
+
+- **The fixed code did not run.** The report has the old format: unmatched lines read `best <tube> 46.6 mm`, with no `, next ...`, and there is no final "Trim features found by name" line. The scores are the old midpoint scores (46.6, 39.6, 74.1 ...), the same as in run 1. Most likely the import created a second module (`TrimTubes1`), because a module named `TrimTubes` was still in the project, and `TrimTubes.main` stayed the old code. The 17 centroids are the same in both runs, so the part did not change between runs; the segment-distance test was made on these real centroids.
+- **Made and kept:** "made" = trim features inserted in the run, "kept" = rows whose `Trim_<node>` was found by name. The 14 kept rows are FS1_L, FBT, RS1_L, RS2_L, RRK, SP1_L and SP2_U (both sides). The 16 made rows are exactly the other 16 of the first run's 30 (FB_L, FB_U, FS1_U, MH_L, RT1, SP1_U and SP2_L on both sides, plus RS1_U_R and RS2_U_R). So 16 first-run trims had lost their `Trim_` name, and the old code trimmed those rows a second time. Mass +0.00 kg: the second trims found nothing left to cut. The part now has 46 trim features, 16 of them duplicates.
+- **v3** (version stamp in the message box and the report header: "TrimTubes v3, 2026-11-17 ... radius 12 mm, tie margin 8 mm"):
+  - **Done record that does not depend on names:** after each trim it writes the custom property `TrimDone_<node>` (value: the feature's name at creation). A row counts as done if `Trim_<node>` exists (top level or sub-feature) or the record exists.
+  - **Guard:** if the part has more trim features (name `Trim_*`, `Trim/Extend*`, or a type name containing "Trim") than rows known to be done, it stops and changes nothing. The report then lists every trim feature with its type and the top-level feature tree.
+  - **Diagnostics in every report, read from the part before any change:** per tube, its centreline end points, the nearest body (index, name, centroid, distance to the segment), the next body and OK / NO MATCH; per unmatched body, its name, centroid, and nearest and next tube with distances.
+  - **Checker:** 356 member uses and 70 enum uses, no problems.
+
+### TrimTubes v3 clean run (2026-11-17): 50 of 50 trims, 114 -> 116 bodies; v4
+
+- **Result:** after a clean rebuild (ImportFrameNodes 114 lines, BuildTubes ALL PASS), v3 matched every body before trimming and made all 50 trims. The mass went from 41.46 to 41.05 kg. The only FAIL: 116 bodies after, against 114.
+- **Which trims:** v3 did not count bodies per trim, so the report cannot name them. Checked from the data:
+  - In no row does a boundary tube touch the trimmed tube away from the node end (cylinder test along every trimmed tube). So no trim cuts through the middle of a tube.
+  - The pre-trim table shows that BuildTubes' simple cut lets many tubes run past their node: centroid shifts along the tube of up to 42 mm, which means up to about 80 mm of tube beyond the node (FS2_L-FH_L, FS2_U-FH_M, FH_L-FH_M, FH_M-FH_T, MH_M-MH_B, MH_B-MH_T).
+  - Likely cause: where such an overrun goes through the boundary tube, the coped trim removes only the part inside the boundary, and the piece on the far side stays as its own body. This is not proven until v4 lists the extra bodies.
+- **v4:**
+  - Counts the bodies after every trim. The report gets a "SPLIT Trim_<node>" line and a list of the trims that changed the count: tubes involved, and new body names with centroids and volumes.
+  - **Stub cleanup.** After the trims, a body is deleted only if all of these hold: it is not the largest body of its nearest tube; it is 20 cm3 or less and a quarter of that tube or less; and its centroid is within 60 mm of one of the tube's end nodes. It is removed with one Delete/Keep Body feature, `StubsDeleted_<n>`, and listed in the custom property `TrimStubs_<n>`. Any other extra body is listed as EXTRA and left alone.
+  - A re-run where all rows are done still does the cleanup, so the saved chassis is repaired without a rebuild.
+  - The body check is now: bodies after = tubes in `frame_tubes.csv` (114).
+  - Saves only if something changed.
+  - The report has the tube/body table before and after the run.
+  - **Checker:** 375 member uses and 76 enum uses, no problems.
+- **Effect of the two extra bodies until repaired:**
+  - none for BuildLayout or BuildAssembly: the chassis is one component;
+  - mass: at most about 0.03 kg (two stubs of 20 cm3 or less);
+  - the stress model: two loose short bodies would become stray beam or solid elements, so repair before the Ring 4 torsion study.

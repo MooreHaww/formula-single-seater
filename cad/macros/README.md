@@ -1,5 +1,7 @@
 # SolidWorks macros
 
+**Since 2026-11-17 the frame, layout and assembly are built from the terminal, not from these macros.** `python tools/sw_run.py rebuild` drives SolidWorks 2026 over COM and runs every step with no VBA editor, no F5 and no message boxes. The build logic was ported to C# (`tools/sw_harness/*.cs`), which the script compiles against the installed interop DLLs. See `tools/README.md`. The `.bas` files below are kept as the reference the C# was ported from and for running one step by hand. Known bug in the `.bas` (fixed in the C# port): an API call that returns COM `1` for True makes `Not result` truthy in VBA. This is why `BuildLayout.bas` reported axes as refused and left planes "value only". Write `If result = False` instead of `If Not result` when using them.
+
 All eight are VBA modules saved as text (`.bas`, CRLF) so they diff in git. They can live in one macro project (`cad/macros/repo_macros.swp`); run each as `<Module>.main`. **Status:** first versions of `SaveStandardViews` and `ImportFrameNodes` ran in SolidWorks 2026 SP2.1 Student after fixes; the fixed versions in this folder, and `ImportAirfoil` and `ExportConfigsSTEP`, are untested, need the app. Every enum and member name was checked against the installed 2026 type library. Details: `docs/cad_playbook/macro_review.md`, section "Tested in SolidWorks 2026".
 
 | Macro | Does | Output |

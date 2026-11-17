@@ -2,6 +2,150 @@
 
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
+
+## Summary, 2026-11-17 night: CFD of variants A to D done (aero session)
+
+**Status: finished, nothing waits on you. No commits.** Details are in the entry "2026-11-17 (day), CFD/aero" at the bottom.
+
+**Done:**
+1. **Variant C now meshes.** The slots are 8 mm wider, the front flaps start at Y 300 (outboard of the nose), and there are smaller fixes, all listed in `cfd/geometry_notes.md`. The aero estimate was updated to match.
+2. **Student limit measured:** 1,048,576 cells. Above that, Fluent Meshing exits without writing the mesh.
+3. **All four variants meshed with the same settings:** A 272k, B 900k, C 955k, D 1,042k cells. D needed its own geometry fix (beam wing inside the pylon, thicker fins).
+4. **All four solved,** 1500 iterations each, 4.5 h in total. Forces converged for B, C and D. A's downforce is near zero and swings slightly, so A is marked NOT converged.
+
+   | | ClA | CdA | front share |
+   |---|---|---|---|
+   | A | -0.03 | 0.42 | n/a |
+   | B | 3.43 | 1.29 | 0.45 |
+   | C | 3.98 | 1.63 | 0.45 |
+   | D | 4.20 | 1.77 | 0.38 |
+
+5. **`cfd/postprocess.py`** writes the results table, plots and wake metrics (`media/cfd/cfd_results.md`) and puts the CFD rows into `params/aero_variants.csv`. The lap sim now runs on them, with a before/after table against the estimate in `media/results_table.md`.
+6. **Lap sim:** with CFD drag, B (moderate wings) is fastest on the fast circuit (79.7 s against C 82.4 s and D 84.3 s), and D is fastest in autocross (60.5 s, C 60.8 s).
+7. MATLAB self-tests 24 of 24 PASS.
+
+**For the other session:**
+- `sim/stress/load_cases.csv` was regenerated with the CFD downforce, because the old file made `frame_fe`'s self-test fail. Your stress results from before 21:45 used about 10 % more downforce on C.
+- Your nose and sidepod differences against the CFD hull (top of this file) are noted, not built into the CFD geometry. The CFD would need re-meshing to take them, and the nose slots and open sidepods would add surface faces against a mesh that is already near the limit.
+
+**Untested / not done:**
+- No mesh-sensitivity run (`--scale 2.6 --tag coarse` on C, about 1.5 h).
+- No y+ check (needs the Fluent GUI on `cfd/cases/halfcar_C.cas.h5`).
+- Residuals fell only 1 to 2 orders.
+- The force-based stop never triggered.
+
+**First thing tomorrow:** open `media/cfd/cfd_results.md` and `media/cfd/cfd_convergence.png`, then run the C mesh check (`.venv/Scripts/python cfd/fluent_halfcar.py all C --scale 2.6 --tag coarse`).
+
+**Three biggest risks:**
+1. **Only the ranking is trustworthy.** There are 2 prism layers (wall functions), coarse body surfaces, one mesh per variant, and no mesh study. Absolute ClA, CdA and balance can be off by tens of percent, and the lap-time differences between B, C and D (1 to 4 s) are of the same order as that uncertainty.
+2. **Balance:** B and C are front-heavy (0.45 against the 0.40 target), and only D is near it. Any setup decision on flap angles should wait for the mesh check.
+3. **Mesh fragility:** the slots and trailing edges break the surface mesh at small changes, and D sits 0.6 % under the cell limit. Any geometry change (the other session's nose and sidepods, flap angles) may need another round of geometry fixes. The far wake (2 to 3 lengths) is the weakest result.
+
+
+## Summary, 2026-11-17 evening: bodywork clashes, tube overlaps, suspension, Motion and Simulation
+
+**Status: finished, nothing waits on you.** `python tools/sw_run.py rebuild` now runs **21 steps, all PASS, in 20 minutes** (20:00 to 20:21). The first step restarts SolidWorks itself. No commits. `cfd/`, `cad/step/cfd/` and `cad/generate/cfd_variants.py` were not touched.
+
+**For the CFD session (disagreements, reported, not changed; details in the entry at the bottom):**
+1. **Nose:** the parts' nose is bigger than the CFD hull: ±293 mm wide at the front bulkhead tubes, against about ±263 mm, and its top is at Z 696, against 600. The parts' nose wraps the real frame with 10 mm clearance, and now has 12 slots where the front suspension links pass through. The CFD hull has neither.
+2. **Sidepods:**
+   - The top is at Z 372 here, against 342 in CFD.
+   - The full section runs over X 624..1276, against 660..1240.
+   - The tail ends at X 1301, against 1295.
+   - The inner face is at |y| 333, against 300.
+   - The pod is open at the bottom here, solid in CFD.
+   - The frame tube SP2_U would stick out of the CFD pod.
+3. **Floor:** a 10 mm plate here, a solid floor in CFD. The diffuser roof is 10 mm thick here, 12 in CFD.
+4. **Wings:** positions and sizes agree. CFD adds to the same wings: 8 mm wider slots, trailing edges cut at 97 % chord, endplates moved 20 mm, and pylons.
+
+**Done:**
+1. **Bodywork clashes fixed** in `cad/generate/build_parts.py`. Assembly interference went from 290 cm³ to **none** (BuildAssembly), and the independent clearance check (BuildBodies) passes. The rules are below.
+2. **Tube overlaps at the 10 joints:**
+   - The trim plan has a simple rule: the stronger wall runs through, then the straighter tube, and every other tube is coped against all tubes that rank above it. The plan has 174 rows.
+   - Tube ends that reached more than 15 mm past their node are now mitred.
+   - Chassis 39.70 kg (was 41.46 before trimming).
+   - Two mirrored pairs still overlap by 322 mm³ each: MH_B-MH_T / MH_T-RT2 at MH_T. That is under 3 g each, left as a CheckChassis warning.
+3. **Suspension corners:**
+   - 24 parts (lower and upper wishbones, upright, hub, tie rod or toe link, pushrod) built from the layout hardpoints and mated into the assembly; the wheels follow the uprights.
+   - SolidWorks matches `suspension_geometry.m`: camber gain F −0.0393 / R −0.0477 deg/mm, bump steer F 0.011 / R 0.006 deg, roll centre F 60.0 / R 69.4 mm (MATLAB 69.0), motion ratio F 0.707 / R 0.773.
+   - Report: `cad/suspension/suspension_report.txt`.
+4. **Motion study "Bump sweep"** (Animation, one linear motor per upright):
+   - Front camber gain −0.0388 deg/mm, against −0.0393 from MATLAB.
+   - The wheels reach −30 / +22 mm at the front and −30 / +20 mm at the rear: the motor's own point moves 60 mm, but the upright turns in camber, so the wheel centre moves less. That is a WARN; the full ±30 sweep is SuspensionCheck's.
+   - Report: `cad/suspension/suspension_motion_report.txt`.
+5. **Simulation studies "Torsion", "Braking", "Cornering":** set up, loaded, meshed and run through the API, but **not solved**. This is an API limit on this install, and the reasons are in the next list.
+
+**Design findings for you (warnings, not changed):**
+- **Outer ball joints do not fit inside the 13-inch rim:**
+  - FR upper ball joint at radius 121 mm from the spindle, RR upper at 140 mm, RR toe link at 121 mm. Each needs radius + 12 mm (joint housing) to stay within the barrel's 116 mm inner radius.
+  - That is where every remaining suspension clash comes from: rim against RR upper wishbone 1300 to 1435 mm³, rim against rear upright 483, and smaller ones at the front.
+  - Moving only those points ruins the kinematics. Tried in MATLAB: camber gain F −0.027 / R −0.012 deg/mm, bump steer 0.54 / 1.01°, roll centre 44 / 24 mm.
+  - So the hardpoints need a new optimisation run in `suspension_geometry.m` with a rim-package constraint, or a 15-inch rim. Not done: it is a design decision.
+- **Roll camber:** at 1° of roll the outer front wheel is at −0.92°, the inner at −2.10°. Rear outer −0.48°, inner −1.53°.
+
+**What could not be done through the API (SolidWorks 2026 SP2.1 Student), and what was tried:**
+- **Simulation loads on the beam frame.** The weldment is meshed as 110 beams. Loads and fixtures on a beam model go on its joints, and the API hands out no joint objects (`CWJoints` can only recalculate them). Tried at one node (`python tools/sw_run.py ChassisStatics probe`):
+  - AddForce2 with every selection type on the node's sketch point, the nearest tube vertex (11 mm off), and the tube body. The sketch point is accepted as a plain point load, but the solver then reports "No load or prescribed displacement is defined": the load never reaches the joint.
+  - AddRestraint refuses all three entities.
+  - Selecting a joint the way the UI does (`SelectByID2` type "SIMULATION") hung SolidWorks for 30 min. I killed and restarted it; nothing was lost, because only throwaway changes were open.
+  - Torsion was rebuilt as a balanced pair of couples with inertia relief so that it needs no fixture. It still fails only on the loads.
+  - The studies are kept with their forces in `chassis.SLDPRT`. The link forces at every pickup are in `sim/stress/chassis_statics_report.txt`.
+  - Two ways it would work: someone picks the joints in each study, about a minute per study; or the frame is modelled as solids, with forces on tube faces (not tried: the 0.9 to 1.6 mm walls need a very fine mesh).
+- **Motion study, two API quirks:**
+  - Keys on mate distances never become timeline keys.
+  - Once a motion study has been deleted from an assembly, every motor is refused in that assembly, even after save and reopen. Every combination of location, direction and study type was tried. The step therefore reuses an existing study and never deletes a driven one; in the fresh assembly a rebuild makes, the motors are accepted.
+
+**Rules I decided (applied in `build_parts.py`, `check_clearances.py`, `BuildSuspension.cs`, `frame_trims.m`, `Mitre.cs`):**
+- Body panel to frame tube outer surface **≥ 10 mm**: room for brackets and for the tolerance of a hand-welded frame. Panels are 2 mm skin.
+- Any part to a tyre **≥ 25 mm**: at static, at full bump (+30) and full droop (−30), and for the fronts also at full steering lock (±28°). This covers tyre growth, camber change and flex.
+- Body to a moving suspension link: a slot of link radius (15.9 mm OD) **+ 5 mm** all round, swept over the travel ±35 mm. The tie rod's inner end is also swept over the rack travel of ±40 mm.
+- Parts may touch each other but not overlap. Endplates hold the wings and the floor carries the sidepods.
+- **Tube joints:**
+  - The thicker wall runs through.
+  - On equal walls, the tube that runs straight through the node (within 18°) runs through.
+  - Then the group order, then the longer tube.
+  - Each lower-ranked tube is coped against all higher-ranked tubes at the node, except collinear ones (within 3°).
+  - A tube end that reaches more than 15 mm past its node is cut on the bisector plane with its most in-line neighbour.
+- **Suspension package:**
+  - Outer ball joint centre + 12 mm housing must fit within the rim barrel's inner radius (rim diameter / 2 − 11 mm).
+  - A link touching the chassis within 40 mm of its inner pivot counts as the bracket, not a clash.
+
+**Harness changes:**
+- New steps: `restart-sw`, `SuspensionParts`, `SuspensionAssembly`, `SuspensionCheck`, `SuspensionMotion`, `ChassisStatics`. Diagnostics: `mitre`, `makeprofile`, `ChassisStatics probe`.
+- `restart-sw` is the first step of `rebuild`. After several rebuilds in one session SolidWorks reached 7 GB and 14,700 handles, and then failed to open freshly written parts, with no error code.
+- Solver files go to `sim/stress/results/` (git-ignored).
+
+## Morning summary, 2026-11-17: the CAD rebuild runs from one command (superseded by the summary above)
+
+**Run this, with SolidWorks open (nothing to click):**
+
+```
+python tools/sw_run.py rebuild
+```
+
+It takes about 10 minutes. It closes every open document without saving, moves the old chassis, layout and assembly to `old/` folders (nothing is deleted), and builds everything again.
+
+**Runs with no manual action (all PASS in the full rebuild, attempts 2 and 3 below):**
+- new chassis part
+- ImportFrameNodes
+- BuildTubes
+- TrimTubes (48 trims, 4 rows none needed, 2 stubs deleted, 114 bodies, 41.46 to 40.79 kg)
+- TrimTubes again (changes nothing)
+- CheckChassis
+- new layout part
+- BuildLayout (axes, equations and equation-driven planes fixed; checked again after closing and reopening)
+- DrivenTest (wheelbase +50 and main hoop +20 on a copy: the planes follow)
+- BuildAssembly (24 components, 19 parts mated, saved)
+- SaveStandardViews for the chassis, layout and assembly (now in car axes)
+
+Each step writes its report file, and every run adds one line to `cad/harness_runs.log`. One step alone: `python tools/sw_run.py BuildLayout`, and so on (list in `tools/README.md`). The VBA editor, module imports and F5 are no longer needed. The `.bas` files are kept for reference only.
+
+**Nothing fails. Two warnings are design questions for you, not harness faults:**
+1. **Tube overlaps after trimming** (CheckChassis WARN): 20 tube pairs (10 joints, mirrored) still overlap by more than 200 mm³, about 0.08 kg in all. In each pair both tubes are marked "trimmed" in `frame_trims.csv`, so neither is cut against the other. Largest: FS2_L-FH_L / FH_L-MH_L at FH_L (1135 mm³), and MH_B-MH_T / MH_T-RT2 at MH_T (1058 mm³; most likely the spike visible above the main hoop top in `media/views/chassis_Default_As_Machined_side.png`, not yet confirmed). The fix belongs in `matlab/cad/frame_trims.m`: choose which tube runs through at those nodes. It matters for the Ring 4 stress model.
+2. **Bodies clash with the frame and wheels** (BuildAssembly WARN): 18 component pairs, 290 cm³ in all, listed in `cad/build_assembly_report.txt`. The biggest: the front-wing main element inside the nose (87 cm³), front-wing flap 1 inside each front tyre (43 cm³ each), the nose skin crossed by front tubes in 48 places (38 cm³), and the sidepods into the rear tyres (9 cm³ each). These are geometry fixes in `cad/generate/build_parts.py`. The car's mass in the assembly (155 kg) counts the imported STEP bodies at SolidWorks' default density, because they have no material.
+
+**If something stops it:** the step is reported as NEEDS A PERSON (exit 3), with the text of the SolidWorks dialog that stayed open for 90 s. Nothing like that happened tonight.
+
 ## Machine
 
 Read on 2026-11-16 from PowerShell (`Get-CimInstance Win32_Processor / Win32_ComputerSystem / Win32_VideoController`, `nvidia-smi`):
@@ -121,3 +265,129 @@ What that means for the plan: Fluent in Ansys Student uses at most 4 cores regar
   - Re-run guard: the macro stops if trim features exist that are not named `Trim_*`.
   - The structural members lost their `SM_` names in SolidWorks (now "25.4x2.4 (1)" and so on). TrimTubes does not touch them. BuildTubes now also finds an existing member as a child of its `FRAME_<group>` sketch, so a re-run no longer builds the tubes twice.
   - Untested in the app. No commits.
+
+- **TrimTubes second run (owner):** the old module ran (old report format and old scores), most likely because the import added `TrimTubes1` next to the old `TrimTubes`. 16 of the first run's 30 trims had lost their `Trim_` names and were applied a second time (mass +0.00 kg). The part now has 46 trim features. v3 adds a version stamp, a done record per row (custom property `TrimDone_<node>`), a guard that stops when there are more trim features than known-done rows, and a full tube/body distance table in the report. Recommended: a diagnostic run on the current part, then a clean rebuild (ImportFrameNodes, BuildTubes, TrimTubes v3). Untested in the app. No commits.
+- **Clean rebuild and TrimTubes v3 (owner):** ImportFrameNodes 114, BuildTubes ALL PASS, TrimTubes 50 of 50 made, mass 41.46 to 41.05 kg, but 116 bodies against 114. No row has a boundary that touches the trimmed tube away from the node end, so the likely cause is overrun tube ends left as stubs beyond the boundary (BuildTubes' simple cut overruns up to about 80 mm). TrimTubes v4: body count after every trim (names the splitting trim), stub cleanup with one Delete/Keep Body feature (strict size and position rules; anything else is listed, not deleted), cleanup also on a re-run where all rows are done, body check = 114. Untested in the app. No commits.
+
+### 2026-11-17 (overnight), terminal harness: the CAD builds without the VBA editor
+
+The owner asked for a harness: one command that drives SolidWorks 2026 from the terminal, handles documents and message boxes itself, and rebuilds everything with checks after every step.
+
+- **Approach:** the macros were ported to C# (`tools/sw_harness/*.cs`). `tools/sw_run.py` compiles them with the .NET SDK's Roslyn compiler against the installed interop DLLs and runs them out of process over COM. Nothing new is installed. Python with pywin32 was tried first and dropped: late binding turns argument-less methods into properties, `makepy` fails on the SolidWorks type library, and typed object arrays cannot be passed. VBA cannot run without the editor and a `.swp` built by hand. Reasons in `tools/README.md`.
+- **Dialogs:** the API calls are silent (`OpenDoc6` and `SaveAs3` with the Silent options). A watcher logs the text of every SolidWorks dialog box. A box open for 90 s stops the step as NEEDS A PERSON. Only progress boxes appeared ("Open Progress", "Calculating interferences").
+- **Findings, by step:**
+  - **BuildTubes:** every structural member was refused at first. An `object[]` handed to `StructuralMemberGroup.Segments` is dropped silently (it reads back null). `SketchSegment[]` and `StructuralMemberGroup[]` work. After that: ALL PASS, 114 bodies, 42.57 m, 41.5 kg.
+  - **TrimTubes:**
+    - `InsertWeldmentTrimFeature2` returns a feature even when it is in error (code 1). Such a feature cuts nothing and is skipped by the `FirstFeature` walk, but `FeatureByName` finds it. The v3 chassis built by hand had only 24 good trims of 50.
+    - The cause is one tube in the row that its structural member had already shaped against the boundary (0 mm³ overlap).
+    - Fix: check the error, delete the bad feature, try each tube alone, and make the row from the tubes that work. A row with nothing to cut is recorded as "none needed" (the 4 SP rows). A tube left out that still overlaps gets a second trim against the boundary plus the tubes it runs into (`Trim_MH_L_R_2`).
+    - `Body2` handles go stale after every delete or rebuild, so bodies are re-matched by centroid before every call (this was the cause of `RPC_E_SERVERFAULT`).
+    - The 2 stubs are the overrun of FH_M-MH_M beyond the main hoop, measured at 600 to 660 mm along a 600 mm tube. They are deleted.
+  - **BuildLayout:**
+    - The "axis refused" and "value only" planes came from `If Not result` on a COM True that came back as `1` (VBA's `Not 1` is truthy).
+    - `EquationMgr.Add3` returns -1 for every form; `Add2` works.
+    - SolidWorks silently drops equation lines longer than about 500 characters. 3 equation lines did not load. The two CG lines were 754 and 765 characters long, and a 442-character line loads. After the split, every line loads. **`params/car_params.txt` changed:** each of the two long CG lines is now split into two partial sums (`cg_x_moment_1/2`, `cg_z_moment_1/2`), with a comment explaining why. MATLAB reads 266 names, 0 values changed (mass_car 228.40, cg_x 907.50, cg_h 313.65, wd 0.4145; `mass_budget` file check agrees).
+    - The layout is checked again after it is closed and reopened, and `car_params.txt` is byte-compared before and after (SolidWorks does not write it).
+    - Incident, repaired at once: one of my patch scripts truncated `car_params.txt`. It was restored from the copy taken before the step and checked byte for byte. Patch scripts now build and check the whole text before they open the file for writing.
+  - **SaveStandardViews:** the car is modelled Z up (GROUND = Front plane), so SolidWorks' "Top" view showed the car upside down from the side, and its iso view lay the car on its side. The views are now set in car axes (iso from front-left above, front, side, top, rear, bottom) and read back to check. `ModelView.Orientation3` stores screen right, screen up and the direction toward the viewer as the columns of its 3x3.
+  - **BuildAssembly:** the 18 STEP bodies are imported to `cad/body/*.SLDPRT` (again whenever a STEP file is newer than its part), 19 parts are mated to GROUND/CENTRE/FRONT_AXLE, and 4 left-wheel copies are added. A second run adds nothing. Interference is reported per component pair as a warning (see the summary at the top).
+- **Rebuild attempts (`python tools/sw_run.py rebuild`):**
+  1. 12:12: stopped at the first TrimTubes, 48 of 50 rows. RS1_U_L/R: each of the three tubes that work trims cleanly alone, but the three together gave a trim in error. The same rows had passed in the run before, so SolidWorks is not fully repeatable here. Fix: when the kept tubes error together, the row is grown one tube at a time and stays error-free; a tube that does not fit gets its own `Trim_<node>_<k>`.
+  2. 12:18: **all 15 steps PASS** in 11 minutes (RS1_U went through the normal path this time, so the new fallback was not exercised).
+  3. 12:29: **all 15 steps PASS** in 10 minutes. The new fallback was used at RS1_U_R: of the three tubes that trim alone, two went into one trim, and the third (MH_M-RS1_U_R) then errored on its own with 0 mm³ of overlap with the boundary, so it needs no cut. A second TrimTubes run changed nothing, as in attempt 2.
+- Docs: `tools/README.md` (new), `cad/macros/README.md` and `docs/cad_playbook/02a_frame_in_3_steps.md` (point to the harness), `docs/cad_playbook/macro_review.md` (the `Not 1` bug is still in `ImportAirfoil.bas` line 90 and `BuildTubes.bas` line 193; the `.bas` files were not changed). `.gitignore`: `tools/sw_harness/bin/` (compiled exe and copied SolidWorks DLLs).
+- Files kept: the hand-built v3 chassis is `cad/chassis/old/chassis_20261117_082013.SLDPRT` and the v1 layout is `cad/layout/old/master_layout_20261117_085039.SLDPRT`. Copies made by my own test runs were removed. Each `rebuild` moves one copy each of the chassis, layout and assembly into the `old/` folders; clear them when you like.
+- Not touched: `cfd/`, `cad/step/cfd/`. No commits.
+
+### 2026-11-17 (day), CFD/aero: estimate, half-car geometry, Fluent meshes and runs for A to D
+
+Brief: aero balance target, pre-CFD aero model, CFD geometry, scripted Fluent setup, lap-sim link; then (second brief) fix the variant C surface mesh, mesh all variants under the Student limit, run them, post-process, and say plainly that only the ranking is trustworthy. Not touched: `cad/macros/*`, `tools/`, `cad/chassis/*`, `matlab/cad/frame_layout.m`, `m_frame`. No commits.
+
+- **Balance target:** `aero_balance_target` = 0.40 front in `params/car_params.txt` (ESTIMATE/target: the cornering study finds the neutral front aero share at 0.39 to 0.40 at R 45 m with 41.5 % front weight; it rests on mu 1.4 and load sensitivity 0.10). The lap sim (`opts.aero_front = 'target'`) and the cornering study read it.
+- **Variant table:** `params/aero_variants.csv` (ClA, CdA, front share, range, source) is what the lap sim reads (`car_from_params` default). `aero_estimate(struct('write_variants', true))` writes the estimate rows and never overwrites rows whose source starts with CFD; `cfd/postprocess.py --update-variants` writes CFD rows. `params/aero_variants_estimate.csv` keeps the estimate for the before/after table (`lap_experiments` section 5, `media/results_table.md`).
+- **Pre-CFD estimate** (`matlab/aero/aero_estimate.m`, `docs/aero_estimate.md`), all ESTIMATES: ClA A -0.10, B 3.23, C 4.40, D 4.59 m2; CdA 0.53 / 1.15 / 1.44 / 1.52; front share B 0.52, C 0.48, D 0.43. B and C are front-heavy against the 0.40 target; reaching it needs the front flaps about 12 to 13 deg flatter (C: ClA 4.40 -> 4.05). Interpretation I took: the front wing sits at `fw_le_x` -960 mm (the playbook's -600 puts the flaps through the front tyres) and its flaps start at `fw_flap_inner_y` 300 mm (outboard of the nose); both are new parameters marked ESTIMATE.
+- **CFD geometry** (`cad/generate/cfd_variants.py`, `cfd/geometry_notes.md`): half car, all checks pass (35 of 35). Changes made to get Fluent to mesh it, each recorded in the notes: slots 8 mm wider than `wing_element_gap`, trailing edges cut at 97 % chord, nose tip raised, rear endplate 20 mm back, floor top Z 75 and a filler on the diffuser roof (sliver faces at Y = 0, found as a second `symmetry` face in `faces_C.csv`), and for D the beam wing moved inside the pylon chord (`beam_x_le` 1800 -> 1690) and 10 mm endplate fins.
+- **Student limit measured:** Fluent Meshing refused a 1,393,684-cell mesh: "can only be used with meshes containing less than 1048576 cells or 1048576 unmeshed faces", and exited without writing it. So the limit is 1,048,576 cells.
+- **Mesh settings** (same for all variants, `cfd/fluent_halfcar_setup.md`): wing faces 12 mm and minimum 2.5 mm cannot change (coarser wings or a larger minimum break the slots: "breakout detected", self-intersections); cells follow the surface faces (about 4.8 per face), not the refinement boxes, and the volume growth rate had no effect. What fits: non-wing sizes x2 and **2 prism layers**. Cells: A 271,859, B 900,187, C 955,009, D 1,042,343 (0.6 % under). Eleven other settings were tried on D before its geometry was changed; a 3 mm minimum trailing-edge thickness made things worse and is off (`TE_MIN_MM` = 0).
+- **Consequence of 2 prism layers:** wall functions, y+ roughly 30 to 150 (not checked yet), separation on the flaps and in the diffuser less reliable. With the coarse non-wing surfaces this is the main reason only the ranking is trusted.
+- **Solver:** about 3 s per iteration at 1 M cells on 4 cores; 1500 iterations is about 75 minutes per variant.
+- **Post-processing** (`cfd/postprocess.py`, self-test PASS with hand values: ClA 4.1667 for 1000 N at 20 m/s, front share 0.50 from the pitching moment, uniform-wake deficit 0.2 / q-ratio 0.64 / TI 0.10 / upwash 7.13 deg, Gaussian wake read back): averages the last 200 iterations, doubles to the full car, front axle load = DF - M / wheelbase, force-convergence flag (drift < 1 % between the last two windows, band < 2 %), wake planes interpolated onto a 10 mm grid (area weighted, unlike the node average in `matlab/cfd/wake_postprocess.m`).
+- **Git:** `.gitignore` now also ignores `cfd/**/*.dat`, `*.h5`, `*.cdat`, `*.cxa`, `fluent*.trn`, `*.pmdb` (Fluent's CAD cache next to the STEP files), `*.prev.*`, `.venv/`, `__pycache__/`; `cfd/cases/` and `*.log` were already ignored. Not `*.dat` everywhere: the airfoils in `cad/airfoils/` are `.dat` files. Stray logs moved into `cfd/cases/`. `cfd/requirements.txt` lists the venv packages.
+- MATLAB self-tests 22 of 22 PASS after the changes.
+- **Runs** (17:09 to 21:39, 1500 iterations each, `cfd/fluent_halfcar_setup.md` "What has run"). Full car, from `media/cfd/cfd_results.md`:
+
+  | | ClA | CdA | L/D | front share | forces |
+  |---|---|---|---|---|---|
+  | A | -0.03 | 0.42 | - | n/a | NOT converged by the 2 % band test (downforce near zero swings by ClA +-0.006); drag converged |
+  | B | 3.43 | 1.29 | 2.65 | 0.45 | converged |
+  | C | 3.98 | 1.63 | 2.44 | 0.45 | converged |
+  | D | 4.20 | 1.77 | 2.37 | 0.38 | converged |
+
+  Every value is inside the pre-CFD estimate's range, with the same ranking. The estimate was about 10 % high on downforce for C and D, 12 to 16 % low on drag, and 0.03 to 0.07 too far forward on balance. Components for C: front wing ClA 2.00, rear wing 2.09, floor 0.40, body -0.39 (lift), wheels -0.12. Residuals fell only 1.2 to 2.2 orders (forces flat from about iteration 200). Fluent accepted the force-based stop but it never triggered (cause not found), so every run took the full count. B and D each needed a second launch attempt (gRPC "Connection refused").
+- **Wake** at 1 car length, following-car window: q-ratio A 0.74, B 0.66, C 0.64, D 0.65 (estimate 0.72 / 0.56 / 0.52 / 0.54); turbulence intensity C 0.062, D 0.063. D's beam wing and fins lift the wake centre (Z 1.38 m against 0.91 for C) but do not make the window flow measurably more turbulent. Far planes have about 750 mesh nodes per half plane: comparison only.
+- **Post-processing fixes after the real runs:**
+  - Near-zero downforce: the convergence band is measured against at least ClA 0.1 m2 (self-test case added).
+  - The "estimate" column now reads `params/aero_variants_estimate.csv`; it had shown the CFD rows.
+  - Estimate front share n/a for A.
+  - Wake plots on common axes.
+  - `aero_plots` front balance NaN for |ClA| < 0.5.
+  - `lap_experiments` takes the following-car q-ratio from `cfd/results/wake_cfd.csv`. It is now 0.64 from CFD (was an assumed 0.70); penalty autocross +2.20 s, fast circuit +1.26 s.
+- **Variant table:** `postprocess.py --update-variants --force` wrote CFD rows for A to D. `--force` matters only for A. A keeps the estimate's front share, because a share of a near-zero total means nothing.
+- **Lap sim with CFD aero** (point mass, `media/results_table.md`): autocross A 66.51, B 61.48, C 60.83, D 60.48 s; fast circuit A 84.12, **B 79.71**, C 82.44, D 84.25 s. Against the estimate, C and D lose 3 to 4 s on the fast circuit (more drag, less downforce), so the moderate wing B is the best there and D only in autocross.
+- **Load cases regenerated:** `sim/stress/load_cases.csv` (`matlab/load_cases.m`, variant C downforce). The new CFD ClA made `frame_fe`'s self-test FAIL: braking left a vertical acceleration of 1.41 m/s2, because the old file still had the estimate's downforce. With the file regenerated, all cases balance to 0.1 %. `frame_fe.m` itself was not touched. Stress studies run on the old file used about 10 % more downforce on C.
+- MATLAB self-tests **24 of 24 PASS** at the end; `postprocess.py --selftest` PASS.
+
+### 2026-11-17 (evening), bodywork clashes, tube overlaps, suspension corners, Motion and Simulation through the harness
+
+Brief:
+1. Fix the bodywork clashes, without changing the wings the CFD session uses.
+2. Decide the tube overlaps at the 10 joints.
+3. Build the suspension corners and check the geometry.
+4. Set up the Motion and Simulation studies through the harness, keeping `rebuild` one command.
+
+The summary and the rules are at the top of this file. Not touched: `cfd/`, `cad/step/cfd/`, `cad/generate/cfd_variants.py`. No commits.
+
+- **Bodies** (`cad/generate/build_parts.py`, checked by `check_clearances.py` and by SolidWorks interference in BuildAssembly):
+  - **Nose:** sections are taken from the real frame plus 10 mm. It is open at the front hoop. 12 slots are cut where the front links pass. Each slot is the convex hull of the link's extreme positions (scipy ConvexHull to a polyhedral solid), which took the build from 9.5 min with 240 swept cylinders to 4 s.
+  - **Sidepods:** they clear the tubes outboard of |y| 300 by 10 mm, are open inboard and at the bottom, and are 25 mm clear of the rear tyre over travel.
+  - **Floor:** raked from the front to the rear ride height, stepped in to |y| 455 from X 1290 for the rear tyre at droop. Strakes hang under the diffuser roof.
+  - **Front wing:** its main element leading edge is at `fw_le_x`, the value the CFD session already uses. At the playbook's −600 the flaps ran through the front tyres.
+  - Result: interference none (was 290 cm³ in 18 pairs). Clearance check ALL PASS.
+- **Trim plan** (`matlab/cad/frame_trims.m`, self-test PASS with S checked against H1+H2+Q):
+  - 174 rows at 50 nodes.
+  - TrimTubes made 136 trims, 38 needed none, and 22 mitre cuts on its pre- and post-pass. The second run changes nothing.
+  - New `tools/sw_harness/Mitre.cs`. The cut plane is built from 3 sketch points with selection marks 0/1/2, because a line-and-point plane was refused. The cut is InsertCutSurface, since a weldment trim with a plane gave error 1.
+  - CheckChassis: 444 node pairs. Largest overlap 322 mm³, in 2 pairs above 200 mm³ (was 20 pairs, largest 1135).
+- **Suspension** (`BuildSuspension.cs`):
+  - The parts are drawn in car coordinates and inserted at the origin.
+  - Wishbone pivots and the tie-rod inner end sit on the layout's `HP_` / `HPL_` points; the other joints are point-to-point mates.
+  - The pushrod slides through `pushrod_in`: there is no rocker in the params yet.
+  - A `Drive_<corner>` distance mate holds the wheel-centre height. The tyre and rim are locked to the hub.
+  - 60 mates, 0 errors, left and right mirror within 0.0000°.
+  - The sweep runs −30..+30 mm in 5 mm steps.
+  - The new tube profile `15.9x0.9` was made by `makeprofile`, a copy of 25.4x1.6 with its two dimensions changed.
+- **Motion** (`SuspensionMotion.cs`):
+  - Animation study with an oscillating linear motor per upright, on the A_SPIN axis along GROUND. The Drive mates are suppressed in the study only.
+  - Found by trial:
+    - An oscillating motor moves as A(1 − cos 2πft), so the study starts at full droop.
+    - Poses must be read along the timeline in order, after `Stop()`; reads after `Calculate` while it plays, or after big time jumps, were out of order.
+    - `ActivateMotionStudy("Model")` returns to the model, so the static pose can be restored.
+    - Calibrating A per corner (`ModifyDefinition`) works, but at A ≈ 35 mm the animation stops short at the top on some corners, so one fixed A is used.
+  - Run twice (create, then reuse): the same timeline to 0.1 mm.
+- **Simulation** (`ChassisStatics.cs`):
+  - The add-in is reached through `GetAddInObject("SldWorks.Simulation")`; `cosworks.dll` is not at the documented path, but the object is there.
+  - Three static beam studies are made (110 beams, 12,256 elements); the link forces come from six-link statics per upright, with zero residual.
+  - The runs end with "No load" (see the top). Solver output is in `sim/stress/results/`; older solver files were moved to `cad/chassis/old/sim_results/`.
+- **Rebuild attempts:**
+  1. 18:22: stopped at SuspensionMotion. My check assumed a sine motion, and the reads were out of order.
+  2. 18:48: stopped at SuspensionAssembly. AddComponent5 refused 2 RL parts; a retry was added.
+  3. 19:06: the same step, 5 RL parts refused. OpenDoc6 returned nothing, with no error code, in a SolidWorks that had run several rebuilds (7 GB, 14,700 handles). Fixed with the new first step, `restart-sw`.
+  4. 19:25: stopped at SuspensionMotion (sign and stroke checks).
+  5. **20:00: all 21 steps PASS in 20 min.** A second SuspensionMotion run on the saved study passes with the same numbers.
+- SolidWorks crashed or hung three times in this work:
+  - `GetMotionStudyNames` (RPC disconnect);
+  - `SetTime` on a deleted study;
+  - `SelectByID2("SIMULATION")`.
+  
+  Each was restarted. Only unsaved throwaway changes were lost, and none of these calls is used any more.
+- Docs: `tools/README.md` (steps and outcomes), this log. `.gitignore`: `sim/stress/results/`, `cad/chassis/old/sim_results/`.

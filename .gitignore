@@ -57,3 +57,26 @@ Thumbs.db
 desktop.ini
 .DS_Store
 *.tmp
+
+# ---- terminal harness: compiled exe and the SolidWorks interop DLLs copied next to it ----
+tools/sw_harness/bin/
+
+# ---- CFD / Python (aero session) ----
+# Fluent outputs: meshes, cases, data, transcripts and solver logs never go in git
+cfd/**/*.dat
+*.h5
+*.cdat
+*.cxa
+fluent*.trn
+# Fluent Meshing CAD cache written next to imported STEP files
+*.pmdb
+cfd/cases/
+# previous copies kept by cfd/fluent_halfcar.py when it would overwrite a file
+*.prev.*
+# project Python environment (recreate: see cfd/requirements.txt)
+.venv/
+__pycache__/
+
+# ---- SolidWorks Simulation solver files (re-made by: python tools/sw_run.py ChassisStatics) ----
+sim/stress/results/
+cad/chassis/old/sim_results/

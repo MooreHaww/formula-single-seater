@@ -1,0 +1,24 @@
+ALL PASS   (2026-11-17 18:05, harness swh.exe)  ChassisStatics, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+
+PASS  Simulation add-in: C:\Program Files\SOLIDWORKS Corp\Simulation\cosworks.dll NOT FOUND, LoadAddIn returned -99, CosmosWorks object version 891107
+PASS  frame nodes found as sketch points: 50 of 50
+INFO  CreateNewStudy3 beam: True error 0, MeshType 3
+INFO  beams 110
+INFO  joints recalculated, end edit 0
+INFO  mesh 0
+INFO  nearest vertex 11.1 mm, nearest body box 0.0 mm (Trim_FS1_L_R_b2)
+INFO    AddForce2 SketchPoint sel 0: True error 0
+INFO    AddRestraint SketchPoint: False error 1
+INFO    AddForce2 SketchPoint sel 1: False error 18
+INFO    AddForce2 SketchPoint sel 2: False error 19
+INFO    AddForce2 Vertex sel 0: False error 11
+INFO    AddRestraint Vertex: False error 16
+INFO    AddForce2 Vertex sel 1: False error 11
+INFO    AddForce2 Vertex sel 2: False error 11
+INFO    AddForce2 Body2 sel 0: True error 0
+INFO    AddRestraint Body2: False error 1
+INFO    AddForce2 Body2 sel 1: False error 18
+INFO    AddForce2 Body2 sel 2: True error 0
+
+No failures.
+

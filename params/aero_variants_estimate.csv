@@ -1,0 +1,5 @@
+variant,ClA,CdA,aero_front,ClA_lo,ClA_hi,CdA_lo,CdA_hi,source,note
+A,-0.101,0.534,1.642,-0.29,0.1,0.43,0.67,ESTIMATE pre-CFD,"matlab/aero/aero_estimate.m, range = RSS of the assumption ranges; total near zero so the front share is a ratio of small numbers (front -0.17 m2, rear 0.06 m2)"
+B,3.229,1.15,0.522,2.43,3.84,0.91,1.4,ESTIMATE pre-CFD,"matlab/aero/aero_estimate.m, range = RSS of the assumption ranges"
+C,4.398,1.444,0.48,3.33,5.22,1.09,1.76,ESTIMATE pre-CFD,"matlab/aero/aero_estimate.m, range = RSS of the assumption ranges"
+D,4.588,1.517,0.426,3.51,5.38,1.14,1.83,ESTIMATE pre-CFD,"matlab/aero/aero_estimate.m, range = RSS of the assumption ranges"

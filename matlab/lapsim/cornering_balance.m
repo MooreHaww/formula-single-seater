@@ -53,7 +53,11 @@ function out = cornering_balance(car, R, opts)
 %   v_max = min of the two, power_limited, lat_g, Fz (1x4 N: FO FI RO RI at
 %   v_max), dFz_f, dFz_r, use_f, use_r, balance_pct, limiting_axle,
 %   inner_lift, v_point_mass (the old single-track answer for comparison),
-%   geo (derived geometry: ms, h_s, h_ra, kf, ...).
+%   geo (derived geometry: ms, h_s, h_ra, kf, ...), aero_front (used),
+%   aero_front_target (car.aero_front_target = aero_balance_target in the
+%   parameter file), and with opts.find_neutral = true aero_front_neutral:
+%   the front aero share at which both axles reach their limit together in
+%   this corner (grip limit, no power cap).
 
 if ischar(car) && strcmp(car, '--selftest')
     out = selftest();
@@ -96,6 +100,42 @@ if w.use(1) >= w.use(2), out.limiting_axle = "front"; else, out.limiting_axle = 
 out.inner_lift = w.inner_lift;
 out.v_point_mass = min(point_mass_speed(car, R), v_top);
 out.geo = geo;
+out.aero_front = car.aero_front;
+if isfield(car, 'aero_front_target'), out.aero_front_target = car.aero_front_target; else, out.aero_front_target = NaN; end
+if isfield(opts, 'find_neutral') && opts.find_neutral
+    out.aero_front_neutral = neutral_aero_front(car, geo, R);
+end
+end
+
+% ------------------------------------------------------------------------
+function af = neutral_aero_front(car, geo, R)
+% Front aero share at which both axles reach 100 % use together at the grip
+% limit of this corner (balance 0). Balance falls monotonically as the front
+% share rises (more front load, less front use), so bisection on [0.05 0.95].
+% NaN if the car has no downforce or no share in that range is neutral.
+if car.ClA <= 0, af = NaN; return, end
+lo = 0.05; hi = 0.95;
+if balance_at(car, geo, R, lo) < 0 || balance_at(car, geo, R, hi) > 0, af = NaN; return, end
+for it = 1:40
+    mid = (lo + hi) / 2;
+    if balance_at(car, geo, R, mid) > 0, lo = mid; else, hi = mid; end
+end
+af = (lo + hi) / 2;
+end
+
+function b = balance_at(car, geo, R, a)
+car.aero_front = a;
+lo = 0; hi = 150;
+if margin(car, geo, hi, R) < 0
+    for it = 1:50
+        mid = (lo + hi) / 2;
+        if margin(car, geo, mid, R) >= 0, lo = mid; else, hi = mid; end
+    end
+else
+    lo = hi;
+end
+[~, w] = margin(car, geo, lo, R);
+b = w.use(1) - w.use(2);
 end
 
 % ------------------------------------------------------------------------
@@ -193,7 +233,7 @@ function ok = selftest()
 % (3) Same car with load sensitivity 0.10: the limit speed must drop below
 %     26.207 m/s, and with the roll stiffness moved to the front (0.7) the
 %     front axle must limit (understeer, balance > 0).
-car = car_from_params('A');
+car = car_from_params('A', [], 'params');   % hand car: start from the parameter-file guesses, not the variant table
 car.ClA = 0; car.CdA = 0; car.crr = 0; car.lsens = 0; car.mu0 = 1.4; car.fz_ref = 750;
 car.m = 300; car.g = 9.81; car.wd_front = 0.5; car.h_cg = 0.3; car.track_f = 1.2; car.track_r = 1.2; car.L = 1.55;
 car.h_rc_f = 0.05; car.h_rc_r = 0.05; car.m_unsprung_f = 10; car.m_unsprung_r = 10; car.h_unsprung = 0.25;
@@ -215,6 +255,15 @@ car3 = car2; car3.roll_stiff_front = 0.7;
 o3 = cornering_balance(car3, 50, struct('v_top', 1e9));
 ok = ok && o2.v_grip < vHand - 0.05 && abs(o2.balance_pct) < 1e-6 ...
     && o3.balance_pct > 0 && o3.limiting_axle == "front" && o3.v_grip < o2.v_grip;
+% (4) Neutral aero share: the symmetric car (50 % front, equal tracks, roll
+%     centres and stiffness) with downforce is neutral at exactly 50 % front
+%     aero by symmetry; at 30 % front aero the front axle must limit, and
+%     feeding the solved share back must give balance 0.
+car4 = car2; car4.ClA = 3; car4.aero_front = 0.30;
+o4 = cornering_balance(car4, 50, struct('v_top', 1e9, 'find_neutral', true));
+car5 = car4; car5.aero_front = o4.aero_front_neutral;
+o5 = cornering_balance(car5, 50, struct('v_top', 1e9));
+ok = ok && abs(o4.aero_front_neutral - 0.5) < 1e-6 && o4.balance_pct > 0 && abs(o5.balance_pct) < 1e-4;
 if ok
     fprintf('cornering_balance self-test: PASS (symmetric: v %.3f m/s, dFz %.1f N both axles, loads sum %.1f N; tyre pair %.1f N; with load sensitivity %.3f m/s, front-stiff balance %+.1f %%)\n', ...
         o1.v_grip, o1.dFz_f, sum(o1.Fz), cap, o2.v_grip, o3.balance_pct);

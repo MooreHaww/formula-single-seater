@@ -1,6 +1,6 @@
 # Ansys Student quickstart: install, then a single-wing smoke test
 
-**Status: untested, needs the app.** Written from memory of Ansys Student 2024 R2 to 2025 R2 for the 2026 R1 Student release without it installed. Product names, dialog labels and limits marked **verify** must be checked against the installed version (Help > Ansys Help, or the Student page's own notes) before trusting them; correct this file as you go.
+**Status (2026-11-17):** Ansys Student 2026 R1 is installed at `C:\Program Files\ANSYS Inc\ANSYS Student\v261` (`AWP_ROOT261` set) and PyFluent 0.44 drives its meshing and solver with the Student licence (no GUI needed). The install steps and the smoke test below are still untested by clicking. Originally written from memory of Ansys Student 2024 R2 to 2025 R2 for the 2026 R1 Student release without it installed. Product names, dialog labels and limits marked **verify** must be checked against the installed version (Help > Ansys Help, or the Student page's own notes) before trusting them; correct this file as you go.
 
 Why this exists: before the half-car case in `fluent_halfcar_setup.md` (900,000 cells, hours per run) you want one small run on a shape with a known answer, to learn the Workbench and Fluent clicks and to see what a converged, believable result looks like. The shape is the practice wing element from `docs/ring0_practice/06_airfoil_import.md` (NACA 0012, 300 mm chord, 500 mm span) exported as STEP.
 
@@ -17,9 +17,9 @@ Why this exists: before the half-car case in `fluent_halfcar_setup.md` (900,000 
 
 | Limit | Student value | Where it bites |
 |---|---|---|
-| Fluent and CFX cells / nodes | **1,024,000** (**verify**; 512,000 before 2020) | the half car is sized to 850,000 to 950,000 |
+| Fluent cells | **1,048,576 (measured 2026-11-17)**: Fluent Meshing printed "can only be used with meshes containing less than 1048576 cells or 1048576 unmeshed faces" and exited for a 1,393,684-cell mesh | the half car is meshed to about 955,000 |
 | Mechanical nodes / elements | 128,000 | not used here |
-| Parallel cores | 4 (**verify**; the solver dialog greys out more) | a 900,000-cell steady case is 1 to 2 hours |
+| Parallel cores | 4 (used by `cfd/fluent_halfcar.py`; more not tried) | see `fluent_halfcar_setup.md` for measured run times |
 | Geometry (SpaceClaim / Discovery) | no face limit for Student (**verify**) | |
 | Commercial use | not allowed | this project is personal and educational |
 
@@ -109,4 +109,4 @@ Append the result to `cfd/results/forces.csv`? No: that file is for the car vari
 
 ## 7. Then
 
-The half-car case: `fluent_halfcar_setup.md` (geometry conventions, air box, mesh sizes and the same solver table) and `halfcar_setup.jou` (the journal that applies it). Everything you clicked here is in that journal as a TUI line; the smoke test is where you learn which prompts differ in your version, so run the journal's first ten lines on this small case before trusting it on the big one.
+The half-car case is scripted: `fluent_halfcar_setup.md` and `fluent_halfcar.py` (PyFluent; meshing and solving without the GUI). The old journal `halfcar_setup.jou` is superseded. This smoke test is still the quickest way to learn what a believable result looks like in the GUI.

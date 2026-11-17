@@ -1,0 +1,22 @@
+ALL PASS   clearance check, parts from C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\step
+rules: body to frame tube >= 10 mm; anything to a tyre (static, bump +30, droop -30, front steer +-28 deg) >= 25 mm; parts must not overlap each other
+
+PASS  fw_main vs frame: no tube within 10 mm
+PASS  fw_flap1 vs frame: no tube within 10 mm
+PASS  fw_flap2 vs frame: closest FB_U-FS1_U_R 84.3 mm (rule >= 10)
+PASS  fw_endplate_R vs frame: no tube within 10 mm
+PASS  fw_endplate_L vs frame: no tube within 10 mm
+PASS  rw_main vs frame: no tube within 10 mm
+PASS  rw_flap1 vs frame: no tube within 10 mm
+PASS  rw_flap2 vs frame: no tube within 10 mm
+PASS  rw_endplate_R vs frame: no tube within 10 mm
+PASS  rw_endplate_L vs frame: no tube within 10 mm
+PASS  floor_diffuser vs frame: closest joint MH_L_R 10.7 mm (rule >= 10)
+PASS  nose vs frame: closest FB_L_cross 10.0 mm (rule >= 10)
+PASS  sidepod_R vs frame: closest MH_M-SP2_U_R 10.7 mm (rule >= 10)
+PASS  sidepod_L vs frame: closest MH_M-SP2_U_L 10.7 mm (rule >= 10)
+PASS  fw_endplate_R vs tyre_front: closest 51.9 mm at R steer -28 deg (rule >= 25)
+PASS  fw_endplate_L vs tyre_front: closest 51.9 mm at L steer +28 deg (rule >= 25)
+PASS  floor_diffuser vs tyre_rear: closest 30.0 mm at R static (rule >= 25)
+PASS  sidepod_R vs tyre_rear: closest 34.9 mm at R bump +30 (rule >= 25)
+PASS  sidepod_L vs tyre_rear: closest 34.9 mm at L bump +30 (rule >= 25)

@@ -1,106 +1,117 @@
-# Fluent half-car setup guide (Ring 5)
+# Fluent half-car setup (Ring 5), scripted
 
-**Status: untested, needs the app.** Written for Ansys Student 2025/2026 (Fluent with the Watertight Geometry meshing workflow) without the software open. Menu names may differ by a word; the TUI commands in `halfcar_setup.jou` need checking against your version's prompts (type the command path with `?` to see the options).
+Everything runs from Python (PyFluent 0.44 against Ansys Student 2026 R1); nothing is clicked. The manual journal `halfcar_setup.jou` is superseded and kept only for reference.
 
-Limits that shape everything: Ansys Student caps the model at 1,000,000 cells and 4 solver cores. The whole setup is built around that.
+```bash
+.venv/Scripts/python cad/generate/cfd_variants.py              # geometry, all variants, with checks
+.venv/Scripts/python cfd/fluent_halfcar.py mesh C              # -> cfd/cases/halfcar_C.msh.h5
+.venv/Scripts/python cfd/fluent_halfcar.py solve C --iters 1500
+.venv/Scripts/python cfd/postprocess.py --update-variants      # tables, plots, lap-sim aero table
+```
 
-## 0. Conventions used by every file in this repo
+Geometry and zones: `cfd/geometry_notes.md`. Python packages: `cfd/requirements.txt`.
 
-| Item | Convention |
-|---|---|
-| Frame | The SolidWorks master-layout frame: **x rearward** (downstream, same as the flow), **y to the right**, **z up**, origin on the ground under the front axle centre. Keep it when importing; do not let SpaceClaim or Fluent Meshing re-orient. |
-| Units | STEP from SolidWorks is in mm. Scale to metres in Fluent Meshing (Import Geometry > Units: mm) or `/mesh/scale 0.001 0.001 0.001` in the solver. Check: wheelbase must read 1.55 m. |
-| Half model | Keep the **y >= 0** half. The symmetry plane is y = 0. |
-| Speed | 20 m/s (72 km/h) for every variant, 30 m/s for the speed check. Same as `cfd_speed` in `params/car_params.txt`. |
-| Rear axle | x = 1.550 m (wheelbase). Car length L = 2.950 m (`overall_length`). |
-| Wake planes | Constant-x planes at x = 1.55 + n L for n = 0.5, 1, 2, 3: **x = 3.025, 4.500, 7.450, 10.400 m**. |
-| Window | Following-car window on each plane: 0 <= y <= 0.7 m, 0 <= z <= 1.2 m (half of 1.4 m wide, 1.2 m high). |
-| Force sign | Downforce is **negative z force** on the car surfaces; drag is positive x. Report lift with the force vector (0, 0, -1) so the number comes out positive for downforce. |
-| Half to full | Every force from the half model is **half the car**. `cfd/results/forces.csv` holds **full-car values** (multiply by 2 before you write the row). |
+## The Student limit (measured on this install)
 
-## 1. Geometry (SolidWorks side, Ring 2f)
+Fluent Meshing itself refuses a larger mesh and exits. This is the message it printed on 2026-11-17 for a 1,393,684-cell mesh of variant C:
 
-One watertight solid per variant, exported by `cad/macros/ExportConfigsSTEP.bas` to `cfd/geometry/cfd_body_<variant>.STEP`:
+> This is a student license, and can only be used with meshes containing less than 1048576 cells or 1048576 unmeshed faces.
 
-- Half car already cut at y = 0 (Cut-Extrude from the Right plane) so Fluent sees a flat symmetry face.
-- Wheels closed (no spokes), tyres as plain solids of revolution with a small flat where they touch the ground (a 10 mm contact patch avoids the tangent-point mesh failure).
-- No suspension links, no frame tubes, no gaps thinner than 5 mm. Wing elements and endplates are the real ones from the configuration.
-- Ground clearance from `ride_height_front` / `ride_height_rear`. The car sits on z = 0.
-- Run **Tools > Evaluate > Check** in SolidWorks: one closed solid, no open edges. This is the Ring 2 check.
+So the limit is **1,048,576 cells** (2^20), and the mesher will not even write the file. `fluent_halfcar.py` stops before that with its own message. Cores: 4 (Student).
 
-## 2. Air box
+## Mesh settings (same for every variant, so the ranking is fair)
 
-Draw it in SpaceClaim (Student) or as an enclosure in Fluent Meshing:
-
-| Face | Position | Boundary type and name |
+| Setting | Value | Why |
 |---|---|---|
-| Inlet | x = -3 L = -8.85 m (ahead of the nose) | velocity-inlet `inlet` |
-| Outlet | x = +5 L behind the rear axle = 16.3 m (holds the 3 L plane with margin) | pressure-outlet `outlet` |
-| Symmetry | y = 0 | symmetry `symmetry` |
-| Side | y = +4 m | symmetry `side` (slip) |
-| Ground | z = 0 | wall `ground`, moving at 20 m/s in +x |
-| Top | z = +4 m | symmetry `top` |
+| Workflow | Watertight Geometry, import of `fluid_<V>.step` (the air as one solid), one zone per CAD face, zones named by bounding-box match to `faces_<V>.csv` | the STEP reader drops names |
+| Minimum size | 2.5 mm, never scaled | at 3 mm (one cell per slot gap) the slots fail |
+| Wing faces (`car_fw`, `car_rw`) | 12 mm | at 14 to 17 mm the surface mesh fails ("breakout detected") at the rear flap on Y = 0 and the front-flap trailing edges |
+| Body, floor, wheels, ground | 48, 36, 28, 320 mm (24, 18, 14, 160 x `--scale 2`) | coarsened to get under the limit |
+| Bodies of influence | near car 80 mm, wake 140 mm (40, 70 x 2) | |
+| Curvature normal angle | 18 deg | 24 deg broke the front-flap trailing edge |
+| Surface growth | 1.2 | 1.3 broke the surface mesh at scale 1.3 |
+| Prism layers | **2**, smooth transition, rate 1.2, on car and wheels (not the moving ground) | 3 and 4 layers put C over the limit |
+| Volume | poly-hexcore, max cell 640 mm | |
 
-Blockage check: frontal area of the half car (about 0.55 m2) over the half box cross-section (4 x 4 = 16 m2) is 3.4 %, acceptable.
+Result for variant C: 955,009 cells, minimum orthogonal quality 0.10, 247k surface faces (wings 130k of them). Most cells come from the surface faces (about 4.8 cells per face), not from the refinement boxes. Volume growth rate had no effect on the count.
 
-Two refinement boxes (Bodies of Influence in the Watertight workflow):
-- **Car box**: x from -1 to 4.5 m, y 0 to 1.0 m, z 0 to 1.5 m, cell size 20 mm.
-- **Wake box**: x from 4.5 to 10.5 m, y 0 to 1.2 m, z 0 to 1.6 m, cell size 40 mm (keeps the 1 L to 3 L planes resolved).
+Search for those settings (all on C; each mesh about 3 minutes):
 
-## 3. Mesh (Fluent Meshing, Watertight Geometry workflow)
+| Try | Cells | Result |
+|---|---|---|
+| all sizes x1 (4 layers) | 1,393,684 | over the limit |
+| all sizes x1.2 | - | surface mesh failed (slots) |
+| non-wing x1.3, 4 layers | 1,321,381 | over |
+| non-wing x1.3, wings x1.4 | - | surface mesh failed (rear flap at Y = 0, front-flap TE) |
+| curvature 24 deg, 3 layers | - | surface mesh failed (front-flap TE) |
+| non-wing x1.6, 3 layers | 1,185,528 | over |
+| ... + surface growth 1.3 | 1,130,091 | over |
+| non-wing x2, 2 layers | **955,009** | **used** |
 
-Same settings for every variant; only the geometry file changes. That is what makes the comparison fair.
+Variant D then failed the surface mesh with the same settings (slot at the rear endplate, beam wing at the pylon face, front-flap ends). Eleven attempts with other settings (min 2.0 mm meshes but gives 1.09 to 1.19 M cells; coarser wing faces give self-intersections in the slots; finer wings or other curvature angles fail elsewhere; 3 mm trailing edges fail in three places) did not give a mesh under the limit. The fix was in D's own geometry (beam wing inside the pylon chord, 10 mm fins, `cfd/geometry_notes.md`); D then meshed with the common settings.
 
-1. Import Geometry: the STEP, units mm.
-2. Add Local Sizing: car surfaces (named selection `car*`) curvature 8 mm min / 40 mm max, normal angle 12 deg; wing trailing edges proximity 3 mm; the two bodies of influence above.
-3. Generate Surface Mesh: min 3 mm, max 400 mm, growth 1.2.
-4. Describe Geometry: fluid region only, no wrapping (the body is watertight).
-5. Update Boundaries: assign the six box faces as in the table; everything else wall `car`.
-6. Add Boundary Layers: 5 layers, first height 0.5 mm, growth 1.2 on `car` and `ground` (wall-function y+ of 30 to 100 at 20 m/s; a full resolution to y+ 1 would blow the cell budget).
-7. Generate Volume Mesh: **poly-hexcore**, max cell length 400 mm, peel layers 1.
-8. Check cell count. Target **850,000 to 950,000**. If above 1,000,000: raise the wake box size to 50 mm first, then the car box to 25 mm. If well below 700,000: reduce the car box to 16 mm.
-9. Check quality: orthogonal quality min > 0.1. Improve if not.
-10. Switch to Solution, save as `cfd/cases/halfcar_<variant>.cas.h5`.
+| Variant | Cells | Min orthogonal quality |
+|---|---|---|
+| A | 271,859 | 0.10 |
+| B | 900,187 | 0.10 |
+| C | 955,009 | 0.10 |
+| D | 1,042,343 (0.6 % under the limit) | 0.13 |
 
-Mesh sensitivity run (variant C): repeat with every local size times 1.26 (half the cells, since cells scale with size cubed). Record both cell counts in `forces.csv`.
+What 2 prism layers mean: wall functions (SST with Fluent's y+-insensitive treatment), first cell a few mm, y+ roughly 30 to 150 at 20 m/s. Separation on the flaps and the diffuser is predicted less well than with a resolved boundary layer. This is one of the reasons only the ranking is trusted.
 
-## 4. Solver settings (identical for every run)
+## Solver settings
 
 | Setting | Value |
 |---|---|
-| Solver | pressure-based, steady, absolute velocity |
-| Turbulence | k-omega SST, default constants, production limiter on |
-| Air | density 1.2 kg/m3, viscosity 1.8e-5 Pa s (constant, matches `air_density`) |
-| Inlet | velocity magnitude 20 m/s normal to boundary, turbulent intensity 0.5 %, viscosity ratio 10 |
-| Outlet | gauge pressure 0, backflow turbulence as the inlet |
-| Ground | moving wall, translational, (20, 0, 0) m/s, no slip |
-| Wheels | rotating wall about the wheel axle: axis direction (0, 1, 0), origin at the hub centre (front: x = 0, z = 0.2285 m; rear: x = 1.55, z = 0.2285 m), speed = 20 / 0.2285 = 87.5 rad/s. Needs the tyres as their own named selection `wheel_front`, `wheel_rear`. |
-| Car | stationary no-slip wall |
-| Scheme | coupled, pseudo-transient, second order upwind for everything, default under-relaxation |
-| Reference values | area 1.1 m2 (`frontal_area`), density 1.2, velocity 20, length 1.55 (for Fluent's own Cl and Cd; the MATLAB script uses forces, not coefficients) |
-| Monitors | lift (vector 0 0 -1) and drag (vector 1 0 0) on `car` plus the wheels, written every iteration to `forces_<variant>.out` |
-| Initialise | hybrid |
-| Iterations | 1500, or until the force monitors are flat for 300 iterations |
+| Solver | pressure-based, steady, coupled, second order (pressure, momentum, k, omega) |
+| Turbulence | k-omega SST |
+| Air | 1.2 kg/m3, 1.8e-5 Pa s |
+| Inlet | 20 m/s, turbulence intensity 0.5 %, viscosity ratio 10 |
+| Outlet | gauge 0 Pa |
+| Ground | moving wall, 20 m/s in +X |
+| Wheels | rotating wall, omega = U / R_loaded = 90.1 rad/s about (0, -1, 0) through each wheel centre |
+| Symmetry | Y = 0, side and top (slip) |
+| Reference | area 1.1 / 2 m2 (half model), length 1.55 m |
+| Reports | drag (+X) and downforce (-Z) for the total, the wheels and each car zone; pitching moment about the Y axis through the front contact point; all every iteration to `cfd/results/runs/<V><tag>/forces.out` |
+| Stop | residuals 1e-4 or force convergence (0.2 % over 100 iterations after 300) or the iteration count |
+| Exports | four wake planes (0.5, 1, 2, 3 car lengths behind the rear axle) as node CSV: u, v, w, k, total pressure |
 
-Convergence check for the ring report: residuals below 1e-4 and the lift and drag monitors flat (less than 1 % drift over the last 300 iterations). Screenshot the monitor plot.
+## What has run on this PC
 
-## 5. After the run
+| Date | Run | Result |
+|---|---|---|
+| 2026-11-17 | variant A probe, coarse (292,828 cells), 25 iterations | whole chain works: mesh, solve, reports, wake export |
+| 2026-11-17 | meshes of all four variants, common settings | table above |
+| 2026-11-17 | solves C, B, D, A, 1500 iterations each (17:09 to 21:39; C 83 min, B 82, D 82, A 23) | `media/cfd/cfd_results.md`, table below |
 
-1. Read the final lift and drag from the monitor file (average the last 200 iterations if they oscillate). Multiply by 2. Also report the force on the front wing surfaces alone (`fw*`) times 2 for `downforce_front_N`.
-2. Append one row to `cfd/results/forces.csv`:
-   `variant,speed_mps,downforce_N,drag_N,downforce_front_N,cells,note`
-3. Create the four wake planes (Surface > Create > Plane, "YZ Plane" at the x values above, or the `surface/plane-surface` commands in the journal) named `plane_0.5L`, `plane_1L`, `plane_2L`, `plane_3L`.
-4. File > Export > Solution Data: ASCII, comma delimited, **node values**, surfaces = the four planes, one file per plane, quantities x-velocity, y-velocity, z-velocity, turb-kinetic-energy. Save as `cfd/results/wake/<variant>_<n>L.csv` (for example `C_1L.csv`, `C_0.5L.csv`).
-5. Contours of velocity magnitude on each plane and a side-view streamline picture: save as PNG into `media/cfd/`.
-6. Run in MATLAB: `aero_plots` then `wake_postprocess`.
+| Variant | ClA (m2) | CdA (m2) | L/D | front axle share | forces | continuity residual drop |
+|---|---|---|---|---|---|---|
+| A | -0.03 | 0.42 | - | n/a (total near zero) | drag converged; downforce mean steady (drift 0.01 %) but swings by 1.5 N on the half car (ClA +-0.006), so the 2 % band test fails: marked NOT converged, used with `--force` | 1.2 orders |
+| B | 3.43 | 1.29 | 2.65 | 0.45 | converged | 1.7 orders |
+| C | 3.98 | 1.63 | 2.44 | 0.45 | converged | 2.2 orders |
+| D | 4.20 | 1.77 | 2.37 | 0.38 | converged | 2.1 orders |
 
-## 6. Expected run time on this PC
+Forces were flat from about iteration 200 on B, C and D, but the residuals stalled 1 to 2 orders short of the checklist's three (a common state for a steady RANS run around a bluff body with an unsteady wake). Two things did not work as planned:
+- The force-based stop (0.2 % over 100 iterations) was accepted by Fluent without error but never stopped a run, so every run used the full 1500 iterations. Cause not found. It cost time only: about 600 iterations would have been enough.
+- B and D each had one failed launch ("Connection refused" from the gRPC channel); the retry in `fluent_halfcar.py` started them on the second attempt.
 
-Ryzen 7 9800X3D, 32 GB RAM, 4 cores allowed by the Student licence: a 900,000-cell poly-hexcore case runs roughly 2 to 4 seconds per iteration with the coupled solver, so 1500 iterations is 1 to 2 hours. Memory is about 4 to 6 GB. Start a run at the end of a session and read it the next day. The GPU is not used by the CPU solver.
+## Reading the results
 
-## 7. Fallbacks
+`cfd/postprocess.py` averages the last 200 iterations, doubles to the full car, and gets the front axle load from the pitching moment (front = DF - M / wheelbase). It calls a run force-converged when the mean moves less than 1 % between the last two 200-iteration windows and the band within the last window is under 2 %. It writes `media/cfd/cfd_results.md` and the plots. With `--update-variants` it puts the converged runs into `params/aero_variants.csv` with source "CFD ...", so the lap sim uses them (`aero_estimate` never overwrites a CFD row). The pre-CFD estimate stays in `params/aero_variants_estimate.csv` for the before/after table in `media/results_table.md`.
 
-- Mesh will not generate: thicken wing trailing edges to 2 mm, add a 10 mm flat under each tyre, check for slivers between flap and endplate.
-- Count over 1,000,000: coarsen the wake box first.
-- Solution diverges: run 200 iterations first order, then switch to second order; lower the pseudo-transient time scale factor to 0.5.
-- Fluent unusable: SimScale with the same boundary table (it has a similar Watertight meshing and k-omega SST). Spend its 10 runs on A, B, C and one mesh check.
+**What the numbers mean:** one mesh per variant at the Student limit, 2 prism layers, steady RANS, no mesh-independence study, no test data. Absolute ClA, CdA and balance could be off by tens of percent. **Only the ranking of the variants is trustworthy** (same geometry rules, same mesh settings, same solver). The CFD rows in the variant table carry an assumed range of +-20 % ClA and +-15 % CdA.
+
+## Checklist for the first look at a run
+
+1. `forces.out`: downforce and drag flat over the last few hundred iterations (`media/cfd/cfd_convergence.png`); postprocess says "force-converged".
+2. Residuals in `cfd/cases/solve_<V>.log` dropped at least three orders.
+3. The downforce sign: variants B to D positive, A near zero.
+4. Wake CdA from the 0.5 L plane (momentum only, in `cfd_results.md`) of the same order as the force CdA.
+5. Open the case in the Fluent GUI (`cfd/cases/halfcar_<V>.cas.h5`): contours of y+ on the wings (expect 30 to 150), pressure on the floor, no reversed flow at the outlet.
+6. Mesh check on one variant (C): a mesh about half the size (`--scale 2.6 --tag coarse`, wings unchanged) and compare ClA and CdA; differences of more than 5 % mean the absolute numbers move with the mesh.
+
+## Fallbacks
+
+- Surface mesh fails: the message gives a coordinate; compare it with `cad/step/cfd/check_report.txt` (wing slots, flap ends, trailing edges are the usual places). Widen the gap or blunt the edge in `cad/generate/cfd_variants.py`, not the mesh sizes.
+- Over the limit: fewer prism layers or coarser non-wing faces; the wing faces cannot go above 12 mm with the current slots.
+- Diverges: start with first order for 200 iterations, or lower the Courant number of the coupled solver.

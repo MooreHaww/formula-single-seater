@@ -37,6 +37,21 @@ Attribute VB_Name = "TrimTubes"
 '   with params\car_params.txt is found. All modules can live in one project
 '   (repo_macros.swp); run TrimTubes.main.
 '
+' v4 (after the clean rebuild: 50 trims made, 114 -> 116 bodies)
+'   * Counts the bodies before and after every trim and names the trim that
+'     raised the count, with the tubes and the new bodies.
+'   * Stub cleanup: BuildTubes' simple cut lets some tubes run past their node
+'     (centroid shifts up to 42 mm along the tube). Where such an overrun goes
+'     through the boundary tube, the coped trim leaves the overrun on the far
+'     side as its own small body. After the trims, every body that is not the
+'     largest body of its nearest tube, is at most 20 cm3 and a quarter of that
+'     tube, and sits within 60 mm of one of the tube's end nodes is removed
+'     with one Delete/Keep Body feature (StubsDeleted_<n>). Anything else that
+'     is extra is listed and left alone.
+'   * A re-run on a part whose rows are all done still runs the cleanup, so the
+'     saved chassis can be repaired without a rebuild.
+'   * The body check is: bodies after = tubes in frame_tubes.csv (114).
+'
 ' Depends on run-time behaviour (not provable from the type library)
 '   * The EndCond argument: swSolidworksWeldmentEndCondOptions_e.swEndConditionTrim
 '     (4) is the weldment "end trim" value in the 2026 constants; the API
@@ -51,7 +66,11 @@ Attribute VB_Name = "TrimTubes"
 ' ============================================================================
 Option Explicit
 
+Private Const TRIM_VERSION As String = "TrimTubes v4, 2026-11-17: match = distance from body centroid to tube centreline segment, radius 12 mm, tie margin 8 mm; done rows recorded as custom properties TrimDone_<node>; body count after every trim; stub cleanup"
 Private Const MATCH_MM As Double = 12#     ' centroid to own centreline (real: 0.3 to 4.1 mm)
+Private Const STUB_MAX_MM3 As Double = 20000#   ' a stub is at most 20 cm3 (an 80 mm overrun of a 25.4x2.4 tube is 13.8 cm3)
+Private Const STUB_MAX_FRACTION As Double = 0.25 ' and at most a quarter of its tube's volume
+Private Const STUB_NODE_MM As Double = 60#     ' and its centroid within 60 mm of one end node of the tube
 Private Const TIE_MM As Double = 8#        ' next tube must be this much further (real: 54 mm or more)
 
 Sub main()
@@ -92,6 +111,8 @@ Sub main()
     Dim nodes As Object, tubes As Object
     Set nodes = CreateObject("Scripting.Dictionary")
     Set tubes = CreateObject("Scripting.Dictionary")
+    Dim tubeVol As Object
+    Set tubeVol = CreateObject("Scripting.Dictionary")
     Dim lines As Variant, k As Long, ln As String, parts() As String
     lines = ReadTextLines(nodesFile)
     For k = 1 To UBound(lines)
@@ -111,6 +132,8 @@ Sub main()
                 If nodes.Exists(Trim$(parts(1))) And nodes.Exists(Trim$(parts(2))) Then
                     a = nodes(Trim$(parts(1))): b = nodes(Trim$(parts(2)))
                     tubes(Trim$(parts(0))) = Array(a(0), a(1), a(2), b(0), b(1), b(2))
+                    If UBound(parts) >= 5 Then tubeVol(Trim$(parts(0))) = 3.14159265 / 4# * (Val(parts(4)) ^ 2 - (Val(parts(4)) - 2 * Val(parts(5))) ^ 2) * _
+                        Sqr((b(0) - a(0)) ^ 2 + (b(1) - a(1)) ^ 2 + (b(2) - a(2)) ^ 2)
                 End If
             End If
         End If
@@ -139,23 +162,46 @@ Sub main()
     End If
 
     ' --- 1. checks: bodies and matching, nothing changed --------------------------------
-    ' Re-run guard: rows are skipped by their name Trim_<node>. If the part has trim
-    ' features under any other name (SolidWorks renamed the structural members once),
-    ' the "done" rows cannot be told apart, so stop instead of trimming twice.
-    Dim ours As Long, foreign As String
-    CountTrimFeatures swModel, ours, foreign
-    If foreign <> "" Then
-        MsgBox "This part has trim features that are not named Trim_<node>: " & Left$(foreign, 400) & vbCrLf & _
-               "TrimTubes cannot tell which rows they belong to, so it stops. Nothing was changed." & vbCrLf & _
-               "Rename them Trim_<node> (the node is in cad\frame\frame_trims.csv) or delete them, then run again.", vbExclamation
+    ' Diagnostics first (nothing changed): feature tree, trim features, done records,
+    ' and the full tube <-> body distance table from the part as it is now.
+    Dim cpm As SldWorks.CustomPropertyManager
+    Set cpm = swModel.Extension.CustomPropertyManager("")
+    Dim treeTxt As String, trimList As String, nTrimAll As Long
+    treeTxt = FeatureTree(swModel, trimList, nTrimAll)
+    Dim diagTxt As String
+    diagTxt = MatchTable(swPart, tubes)
+    Dim rowDone() As String, nDoneRows As Long, r0 As Long, rec As String
+    ReDim rowDone(1 To nRows)
+    For r0 = 1 To nRows
+        rec = DoneRecord(cpm, rowNode(r0))
+        If Not FindFeatureDeep(swModel, rowName(r0)) Is Nothing Then
+            rowDone(r0) = "by name"
+        ElseIf rec <> "" Then
+            rowDone(r0) = "by record TrimDone_" & rowNode(r0) & " = " & rec
+        End If
+        If rowDone(r0) <> "" Then nDoneRows = nDoneRows + 1
+    Next r0
+    Dim header As String
+    header = TRIM_VERSION & vbCrLf & "Part: " & swModel.GetPathName & vbCrLf & _
+             "Trim features in the part before this run: " & nTrimAll & "; plan rows already done (by name or record): " & nDoneRows & vbCrLf
+    ' Re-run guard: more trim features than rows known to be done means some rows were
+    ' trimmed under a name and without a record this macro can see. Stop, do not trim twice.
+    If nTrimAll > nDoneRows Then
+        WriteReport reportFile, "STOPPED, NOTHING CHANGED   (" & Format(Now, "yyyy-mm-dd hh:nn") & ")" & vbCrLf & header & vbCrLf & _
+            "The part has " & nTrimAll & " trim features but only " & nDoneRows & " plan rows are known to be done, so " & _
+            (nTrimAll - nDoneRows) & " trim features cannot be tied to a row. Running would trim those tube ends again." & vbCrLf & vbCrLf & _
+            "Trim features:" & vbCrLf & trimList & vbCrLf & "Feature tree (top level):" & vbCrLf & treeTxt & vbCrLf & diagTxt
+        MsgBox TRIM_VERSION & vbCrLf & vbCrLf & "STOPPED: " & nTrimAll & " trim features in the part, but only " & nDoneRows & _
+               " plan rows are known to be done. Nothing was changed." & vbCrLf & vbCrLf & _
+               "Report with every trim feature and the tube/body table: " & reportFile, vbExclamation
         Exit Sub
     End If
     Dim bodyOf As Object, unmatched As String, nBodies0 As Long
     Set bodyOf = MatchBodies(swPart, tubes, unmatched, nBodies0)
     Dim r As Long, ids As Variant, j As Long, nToDo As Long, nKept As Long, why As String
     For r = 1 To nRows
-        If Not FindFeature(swModel, rowName(r)) Is Nothing Then
-            rowState(r) = "kept"
+        If rowDone(r) <> "" Then
+            rowState(r) = "kept " & rowDone(r)
             nKept = nKept + 1
             GoTo NextRowCheck
         End If
@@ -181,14 +227,24 @@ NextRowCheck:
         For r = 1 To nRows
             If Left$(rowState(r), 4) = "skip" Then pre = pre & "  " & rowName(r) & ": " & Mid$(rowState(r), 7) & vbCrLf
         Next r
-        If pre = "" Then
-            MsgBox "All " & nKept & " Trim_* features already exist. Nothing was changed.", vbInformation
+        Dim stubs0 As Collection, stubTxt0 As String
+        Set stubs0 = New Collection
+        stubTxt0 = FindStubs(swPart, tubes, tubeVol, stubs0)
+        If pre = "" And stubs0.Count > 0 Then
+            ' all rows done, but stubs to clean: carry on to the cleanup below
+        ElseIf pre = "" Then
+            WriteReport reportFile, "NOTHING CHANGED (" & Format(Now, "yyyy-mm-dd hh:nn") & "): all " & nKept & " plan rows done, no stubs" & vbCrLf & _
+                        header & vbCrLf & stubTxt0 & vbCrLf & "Trim features:" & vbCrLf & trimList & vbCrLf & diagTxt
+            MsgBox TRIM_VERSION & vbCrLf & vbCrLf & "All " & nKept & " plan rows are already done and there are no stubs. Nothing was changed." & _
+                   vbCrLf & "Report: " & reportFile, vbInformation
+            Exit Sub
         Else
             WriteReport reportFile, "NOTHING CHANGED (" & Format(Now, "yyyy-mm-dd hh:nn") & ")" & vbCrLf & vbCrLf & _
-                        "Bodies: " & nBodies0 & ", tubes in CSV: " & tubes.Count & vbCrLf & "Unmatched: " & unmatched & vbCrLf & vbCrLf & pre
-            MsgBox "No trim row can be made. Nothing was changed." & vbCrLf & "Report: " & reportFile, vbExclamation
+                        "Bodies: " & nBodies0 & ", tubes in CSV: " & tubes.Count & vbCrLf & "Unmatched: " & unmatched & vbCrLf & vbCrLf & pre & _
+                        vbCrLf & header & vbCrLf & "Trim features:" & vbCrLf & trimList & vbCrLf & diagTxt
+            MsgBox TRIM_VERSION & vbCrLf & vbCrLf & "No trim row can be made. Nothing was changed." & vbCrLf & "Report: " & reportFile, vbExclamation
+            Exit Sub
         End If
-        Exit Sub
     End If
 
     ' mass before
@@ -199,12 +255,12 @@ NextRowCheck:
     ' --- 2. trims -------------------------------------------------------------------------
     Dim report As String, failures As String, allPass As Boolean, nDone As Long
     Dim bArr() As Object, tArr() As Object, nb As Long, nt As Long, bIds As Variant, tIds As Variant
-    Dim trimType As String
+    Dim trimType As String, namesBefore As Object, nAfter As Long, splitTxt As String, newNames As String
     Dim f As SldWorks.Feature, modeTxt As String, err1 As String, dummy As String, dummyN As Long
     allPass = True
     For r = 1 To nRows
-        If rowState(r) = "kept" Then
-            report = report & "PASS  " & rowName(r) & ": existed, kept" & vbCrLf
+        If Left$(rowState(r), 4) = "kept" Then
+            report = report & "PASS  " & rowName(r) & ": already done (" & Mid$(rowState(r), 6) & "), kept" & vbCrLf
             GoTo NextRow
         End If
         If Left$(rowState(r), 4) = "skip" Then
@@ -215,6 +271,7 @@ NextRowCheck:
         End If
         ' bodies change with every trim: match again
         Set bodyOf = MatchBodies(swPart, tubes, dummy, dummyN)
+        Set namesBefore = BodyNames(swPart)
         bIds = Split(rowB(r), ";"): tIds = Split(rowT(r), ";")
         ReDim bArr(0 To UBound(bIds)): ReDim tArr(0 To UBound(tIds))
         nb = 0: nt = 0: why = ""
@@ -252,11 +309,40 @@ NextRowCheck:
         If f.Name <> rowName(r) Then modeTxt = modeTxt & ", NOT renamed (is " & f.Name & ")"
         nDone = nDone + 1
         If trimType = "" Then trimType = f.GetTypeName2
+        ' record the row as done, independent of the feature name
+        If Not cpm Is Nothing Then
+            cpm.Add3 "TrimDone_" & rowNode(r), swCustomInfoType_e.swCustomInfoText, f.Name, _
+                     swCustomPropertyAddOption_e.swCustomPropertyReplaceValue
+        End If
         report = report & "PASS  " & rowName(r) & ": " & nt & " ends against " & nb & " boundary tube(s), " & modeTxt & vbCrLf
+        nAfter = BodyCount(swPart)
+        If nAfter <> namesBefore.Count Then
+            newNames = NewBodyNames(swPart, namesBefore)
+            splitTxt = splitTxt & "- " & rowName(r) & ": bodies " & namesBefore.Count & " -> " & nAfter & "; trimmed " & rowT(r) & _
+                       " against " & rowB(r) & "; bodies with a new name after it: " & newNames & vbCrLf
+            report = report & "SPLIT " & rowName(r) & ": bodies " & namesBefore.Count & " -> " & nAfter & " (new body names: " & newNames & ")" & vbCrLf
+        End If
 NextRow:
     Next r
     swModel.ClearSelection2 True
     swModel.ForceRebuild3 False
+
+    ' --- 2b. stub cleanup -------------------------------------------------------------------
+    Dim stubs As Collection, stubTxt As String, nDel As Long, delName As String
+    Set stubs = New Collection
+    stubTxt = FindStubs(swPart, tubes, tubeVol, stubs)
+    If stubs.Count > 0 Then
+        delName = DeleteStubs(swModel, swFeatMgr, stubs, cpm)
+        If delName = "" Then
+            report = report & "FAIL  stub cleanup: Delete/Keep Body refused (" & CreateErrors(swFeatMgr) & ")" & vbCrLf
+            failures = failures & "- stub cleanup refused: " & stubs.Count & " stubs stay" & vbCrLf
+            allPass = False
+        Else
+            nDel = stubs.Count
+            report = report & "PASS  " & delName & ": " & nDel & " stub bodies deleted" & vbCrLf
+        End If
+        swModel.ForceRebuild3 False
+    End If
 
     ' --- 3. totals -------------------------------------------------------------------------
     Dim nBodies1 As Long, cutLen_m As Double, lenMissing As Long, nFolders As Long, nCut As Long
@@ -269,7 +355,8 @@ NextRow:
 
     Dim summary As String
     summary = report & vbCrLf
-    summary = summary & PassFail(nBodies1 = nBodies0, allPass) & "  bodies: " & nBodies0 & " before, " & nBodies1 & " after (a trim must not split tubes)" & vbCrLf
+    summary = summary & PassFail(nBodies1 = tubes.Count, allPass) & "  bodies: " & nBodies0 & " before, " & nBodies1 & " after, " & tubes.Count & _
+              " tubes in frame_tubes.csv (must be equal after the run)" & vbCrLf
     summary = summary & PassFail(mass1 <= mass0 And mass1 >= 38 And mass1 <= 46, allPass) & "  mass: " & Format(mass0, "0.00") & " kg before, " & _
               Format(mass1, "0.00") & " kg after (" & Format(mass1 - mass0, "+0.00;-0.00") & " kg; must not rise, 38 to 46)" & vbCrLf
     If lenMissing > 0 Or nFolders = 0 Then
@@ -280,20 +367,31 @@ NextRow:
 
     ' --- 4. save ---------------------------------------------------------------------------
     Dim saved As Boolean, errs As Long, warns As Long
-    saved = swModel.Save3(swSaveAsOptions_e.swSaveAsOptions_Silent, errs, warns)
-    summary = summary & PassFail(saved, allPass) & "  saved: " & IIf(saved, swModel.GetPathName, "NOT saved (error " & errs & ")") & vbCrLf
+    If nDone > 0 Or nDel > 0 Then
+        saved = swModel.Save3(swSaveAsOptions_e.swSaveAsOptions_Silent, errs, warns)
+        summary = summary & PassFail(saved, allPass) & "  saved: " & IIf(saved, swModel.GetPathName, "NOT saved (error " & errs & ")") & vbCrLf
+    Else
+        summary = summary & "INFO  nothing changed, not saved" & vbCrLf
+    End If
 
     Dim full As String
     full = IIf(allPass, "ALL PASS", "SOME CHECKS FAILED") & "   (" & Format(Now, "yyyy-mm-dd hh:nn") & ", " & nDone & " trims made, " & _
-           nKept & " kept, " & nRows & " in plan)" & vbCrLf & vbCrLf & summary & vbCrLf & _
+           nKept & " kept, " & nDel & " stubs deleted, " & nRows & " in plan)" & vbCrLf & header & _
+           "made = new trim features inserted in this run; kept = rows already done before it (by name Trim_<node> or record TrimDone_<node>)" & _
+           vbCrLf & vbCrLf & summary & vbCrLf & _
            IIf(failures = "", "No failures.", "Failures:" & vbCrLf & failures) & _
+           vbCrLf & vbCrLf & "Trims that changed the body count:" & vbCrLf & IIf(splitTxt = "", "  (none in this run)" & vbCrLf, splitTxt) & _
+           vbCrLf & "Stubs found after the trims:" & vbCrLf & stubTxt & _
            IIf(unmatched = "", "", vbCrLf & "Bodies or tubes without a match before trimming: " & unmatched) & _
-           vbCrLf & "Trim features found by name before this run: " & ours & IIf(trimType = "", "", "; type name of the new ones: " & trimType)
+           IIf(trimType = "", "", vbCrLf & "Type name of the trim features made in this run: " & trimType) & vbCrLf & vbCrLf & _
+           "Trim features before this run:" & vbCrLf & trimList & vbCrLf & "BEFORE this run:" & vbCrLf & diagTxt & vbCrLf & _
+           "AFTER this run:" & vbCrLf & MatchTable(swPart, tubes)
     WriteReport reportFile, full
     Debug.Print full
     Dim shortTxt As String
-    shortTxt = IIf(allPass, "ALL PASS", "SOME CHECKS FAILED") & ": " & nDone & " trims made, " & nKept & " kept, " & nRows & " in plan." & vbCrLf & vbCrLf & _
+    shortTxt = TRIM_VERSION & vbCrLf & vbCrLf & IIf(allPass, "ALL PASS", "SOME CHECKS FAILED") & ": " & nDone & " trims made, " & nKept & " kept, " & nDel & " stubs deleted, " & nRows & " in plan." & vbCrLf & vbCrLf & _
                Mid$(summary, Len(report) + 3)
+    If splitTxt <> "" Then shortTxt = shortTxt & vbCrLf & "Trims that changed the body count:" & vbCrLf & Left$(splitTxt, 400)
     If failures <> "" Then shortTxt = shortTxt & vbCrLf & "Failures:" & vbCrLf & Left$(failures, 500)
     MsgBox shortTxt & vbCrLf & vbCrLf & "Full report: " & reportFile, IIf(allPass, vbInformation, vbExclamation)
 End Sub
@@ -449,21 +547,291 @@ Private Function CreateErrors(ByVal swFeatMgr As SldWorks.FeatureManager) As Str
     CreateErrors = s
 End Function
 
-' Trim features: ours (named Trim_*) and others (default name Trim/Extend<n>,
-' or a weldment trim type name), listed by name.
-Private Sub CountTrimFeatures(ByVal swModel As SldWorks.ModelDoc2, ByRef ours As Long, ByRef foreign As String)
-    Dim f As SldWorks.Feature, tn As String
+' Top-level feature tree as text; collects every trim feature (name Trim_*,
+' default name Trim/Extend<n>, or a type name containing "Trim"), sub-features too.
+Private Function FeatureTree(ByVal swModel As SldWorks.ModelDoc2, ByRef trimList As String, ByRef nTrim As Long) As String
+    Dim f As SldWorks.Feature, sf As SldWorks.Feature, k As Long, txt As String
     Set f = swModel.FirstFeature
     Do While Not f Is Nothing
-        tn = f.GetTypeName2
-        If LCase$(Left$(f.Name, 5)) = "trim_" Then
-            ours = ours + 1
-        ElseIf LCase$(Left$(f.Name, 11)) = "trim/extend" Or InStr(1, tn, "Trim", vbTextCompare) > 0 Then
-            foreign = foreign & f.Name & " (" & tn & "), "
+        k = k + 1
+        txt = txt & "  " & Format(k, "000") & "  " & f.Name & "  [" & f.GetTypeName2 & "]" & vbCrLf
+        If IsTrimFeature(f) Then
+            nTrim = nTrim + 1
+            trimList = trimList & "  " & f.Name & "  [" & f.GetTypeName2 & "]" & vbCrLf
         End If
+        Set sf = f.GetFirstSubFeature
+        Do While Not sf Is Nothing
+            If IsTrimFeature(sf) Then
+                nTrim = nTrim + 1
+                trimList = trimList & "  " & sf.Name & "  [" & sf.GetTypeName2 & "]  (sub-feature of " & f.Name & ")" & vbCrLf
+            End If
+            Set sf = sf.GetNextSubFeature
+        Loop
         Set f = f.GetNextFeature
     Loop
-End Sub
+    If trimList = "" Then trimList = "  (none)" & vbCrLf
+    FeatureTree = txt
+End Function
+
+Private Function IsTrimFeature(ByVal f As SldWorks.Feature) As Boolean
+    Dim nm As String
+    nm = LCase$(f.Name)
+    IsTrimFeature = (Left$(nm, 5) = "trim_") Or (Left$(nm, 11) = "trim/extend") Or _
+                    (InStr(1, f.GetTypeName2, "Trim", vbTextCompare) > 0)
+End Function
+
+' Value of the custom property TrimDone_<node> (the trim feature's name when it was made), or "".
+Private Function DoneRecord(ByVal cpm As SldWorks.CustomPropertyManager, ByVal node As String) As String
+    Dim v As String, res As String, wasRes As Boolean, linked As Boolean
+    If cpm Is Nothing Then Exit Function
+    cpm.Get6 "TrimDone_" & node, False, v, res, wasRes, linked
+    DoneRecord = res
+End Function
+
+' Tube <-> body distance table from the part as it is (nothing changed). Distances in mm
+' from each body's centroid to each tube's centreline segment.
+Private Function MatchTable(ByVal swPart As SldWorks.PartDoc, ByVal tubes As Object) As String
+    Dim bodies As Variant, nB As Long, k As Long, i As Long, mpv As Variant, swBody As SldWorks.Body2
+    bodies = swPart.GetBodies2(swBodyType_e.swSolidBody, False)
+    If IsEmpty(bodies) Then
+        MatchTable = "No solid bodies." & vbCrLf
+        Exit Function
+    End If
+    nB = UBound(bodies) + 1
+    Dim cx() As Double, cy() As Double, cz() As Double, bn() As String
+    ReDim cx(nB - 1): ReDim cy(nB - 1): ReDim cz(nB - 1): ReDim bn(nB - 1)
+    For k = 0 To nB - 1
+        Set swBody = bodies(k)
+        mpv = swBody.GetMassProperties(7900#)
+        cx(k) = mpv(0) * 1000: cy(k) = mpv(1) * 1000: cz(k) = mpv(2) * 1000
+        bn(k) = swBody.Name
+    Next k
+    Dim keys As Variant, nT As Long, d() As Double
+    keys = tubes.keys
+    nT = tubes.Count
+    ReDim d(nT - 1, nB - 1)
+    For i = 0 To nT - 1
+        For k = 0 To nB - 1
+            d(i, k) = DistToSegment(cx(k), cy(k), cz(k), tubes(keys(i)))
+        Next k
+    Next i
+    Dim txt As String, t As Variant, b1 As Long, b2 As Long, t1 As Long, t2 As Long, ok As Boolean, nBad As Long, nextTxt As String
+    txt = "Tube table (mm). tube | centreline A -> B | nearest body: index, name, centroid, distance to segment | next body: index, distance | " & _
+          "OK if nearest <= " & Format(MATCH_MM, "0") & " and next >= nearest + " & Format(TIE_MM, "0") & vbCrLf
+    For i = 0 To nT - 1
+        t = tubes(keys(i))
+        b1 = -1: b2 = -1
+        For k = 0 To nB - 1
+            If b1 < 0 Then
+                b1 = k
+            ElseIf d(i, k) < d(i, b1) Then
+                b2 = b1: b1 = k
+            ElseIf b2 < 0 Then
+                b2 = k
+            ElseIf d(i, k) < d(i, b2) Then
+                b2 = k
+            End If
+        Next k
+        ok = d(i, b1) <= MATCH_MM
+        nextTxt = ""
+        If b2 >= 0 Then
+            ok = ok And (d(i, b2) - d(i, b1) >= TIE_MM)
+            nextTxt = " | body " & b2 & " " & Format(d(i, b2), "0.0")
+        End If
+        txt = txt & "  " & keys(i) & " | (" & Format(t(0), "0") & "," & Format(t(1), "0") & "," & Format(t(2), "0") & ") -> (" & _
+              Format(t(3), "0") & "," & Format(t(4), "0") & "," & Format(t(5), "0") & ") | body " & b1 & " " & bn(b1) & " (" & _
+              Format(cx(b1), "0.0") & "," & Format(cy(b1), "0.0") & "," & Format(cz(b1), "0.0") & ") " & Format(d(i, b1), "0.0") & _
+              nextTxt & " | " & IIf(ok, "OK", "NO MATCH") & vbCrLf
+    Next i
+    txt = txt & vbCrLf & "Bodies matched to no tube (mm): index, name, centroid | nearest tube, distance | next tube, distance" & vbCrLf
+    For k = 0 To nB - 1
+        t1 = -1: t2 = -1
+        For i = 0 To nT - 1
+            If t1 < 0 Then
+                t1 = i
+            ElseIf d(i, k) < d(t1, k) Then
+                t2 = t1: t1 = i
+            ElseIf t2 < 0 Then
+                t2 = i
+            ElseIf d(i, k) < d(t2, k) Then
+                t2 = i
+            End If
+        Next i
+        ok = d(t1, k) <= MATCH_MM
+        nextTxt = ""
+        If t2 >= 0 Then
+            ok = ok And (d(t2, k) - d(t1, k) >= TIE_MM)
+            nextTxt = " | " & keys(t2) & " " & Format(d(t2, k), "0.0")
+        End If
+        If Not ok Then
+            nBad = nBad + 1
+            txt = txt & "  body " & k & " " & bn(k) & " (" & Format(cx(k), "0.0") & "," & Format(cy(k), "0.0") & "," & _
+                  Format(cz(k), "0.0") & ") | " & keys(t1) & " " & Format(d(t1, k), "0.0") & nextTxt & vbCrLf
+        End If
+    Next k
+    If nBad = 0 Then txt = txt & "  (none: every body matches one tube)" & vbCrLf
+    MatchTable = txt
+End Function
+
+Private Function BodyCount(ByVal swPart As SldWorks.PartDoc) As Long
+    Dim bodies As Variant
+    bodies = swPart.GetBodies2(swBodyType_e.swSolidBody, False)
+    If Not IsEmpty(bodies) Then BodyCount = UBound(bodies) + 1
+End Function
+
+' Body name -> True for every solid body.
+Private Function BodyNames(ByVal swPart As SldWorks.PartDoc) As Object
+    Dim d As Object, bodies As Variant, k As Long, swBody As SldWorks.Body2
+    Set d = CreateObject("Scripting.Dictionary")
+    bodies = swPart.GetBodies2(swBodyType_e.swSolidBody, False)
+    If Not IsEmpty(bodies) Then
+        For k = 0 To UBound(bodies)
+            Set swBody = bodies(k)
+            d(swBody.Name & "#" & k) = True
+        Next k
+    End If
+    Set BodyNames = d
+End Function
+
+' Names (with centroid) of bodies whose name was not there before.
+Private Function NewBodyNames(ByVal swPart As SldWorks.PartDoc, ByVal before As Object) As String
+    Dim old As Object, key As Variant, bodies As Variant, k As Long, swBody As SldWorks.Body2, mpv As Variant, s As String
+    Set old = CreateObject("Scripting.Dictionary")
+    For Each key In before.Keys
+        old(Left$(key, InStrRev(key, "#") - 1)) = True
+    Next key
+    bodies = swPart.GetBodies2(swBodyType_e.swSolidBody, False)
+    If IsEmpty(bodies) Then Exit Function
+    For k = 0 To UBound(bodies)
+        Set swBody = bodies(k)
+        If Not old.Exists(swBody.Name) Then
+            mpv = swBody.GetMassProperties(7900#)
+            s = s & swBody.Name & " at (" & Format(mpv(0) * 1000, "0") & "," & Format(mpv(1) * 1000, "0") & "," & _
+                Format(mpv(2) * 1000, "0") & ") mm, " & Format(mpv(3) * 1000000000#, "0") & " mm3; "
+        End If
+    Next k
+    If s = "" Then s = "(no new names; compare the AFTER table)"
+    NewBodyNames = s
+End Function
+
+' Stubs: bodies that are not the largest body of their nearest tube, are small
+' (<= STUB_MAX_MM3 and <= STUB_MAX_FRACTION of the tube) and sit within
+' STUB_NODE_MM of one end node of that tube. Fills stubs; returns a text list
+' that also names every other extra body (left alone).
+Private Function FindStubs(ByVal swPart As SldWorks.PartDoc, ByVal tubes As Object, ByVal tubeVol As Object, _
+                           ByRef stubs As Collection) As String
+    Dim bodies As Variant, nB As Long, k As Long, i As Long, swBody As SldWorks.Body2, mpv As Variant
+    bodies = swPart.GetBodies2(swBodyType_e.swSolidBody, False)
+    If IsEmpty(bodies) Then
+        FindStubs = "  (no bodies)" & vbCrLf
+        Exit Function
+    End If
+    nB = UBound(bodies) + 1
+    Dim keys As Variant, nearest() As String, vol() As Double, cx() As Double, cy() As Double, cz() As Double, dist() As Double
+    ReDim nearest(nB - 1): ReDim vol(nB - 1): ReDim cx(nB - 1): ReDim cy(nB - 1): ReDim cz(nB - 1): ReDim dist(nB - 1)
+    keys = tubes.Keys
+    Dim d As Double, best As Double
+    For k = 0 To nB - 1
+        Set swBody = bodies(k)
+        mpv = swBody.GetMassProperties(7900#)
+        cx(k) = mpv(0) * 1000: cy(k) = mpv(1) * 1000: cz(k) = mpv(2) * 1000
+        vol(k) = mpv(3) * 1000000000#
+        best = 1E+30
+        For i = 0 To UBound(keys)
+            d = DistToSegment(cx(k), cy(k), cz(k), tubes(keys(i)))
+            If d < best Then best = d: nearest(k) = keys(i)
+        Next i
+        dist(k) = best
+    Next k
+    ' largest body per tube
+    Dim largest As Object
+    Set largest = CreateObject("Scripting.Dictionary")
+    For k = 0 To nB - 1
+        If Not largest.Exists(nearest(k)) Then
+            largest(nearest(k)) = k
+        ElseIf vol(k) > vol(largest(nearest(k))) Then
+            largest(nearest(k)) = k
+        End If
+    Next k
+    Dim txt As String, t As Variant, dEnd As Double, tv As Double, isStub As Boolean
+    For k = 0 To nB - 1
+        If largest(nearest(k)) <> k Then
+            t = tubes(nearest(k))
+            dEnd = Dist3(cx(k), cy(k), cz(k), t(0), t(1), t(2))
+            d = Dist3(cx(k), cy(k), cz(k), t(3), t(4), t(5))
+            If d < dEnd Then dEnd = d
+            tv = 0
+            If tubeVol.Exists(nearest(k)) Then tv = tubeVol(nearest(k))
+            isStub = (vol(k) <= STUB_MAX_MM3) And (tv > 0 And vol(k) <= STUB_MAX_FRACTION * tv) And (dEnd <= STUB_NODE_MM)
+            Set swBody = bodies(k)
+            txt = txt & "  " & IIf(isStub, "STUB  ", "EXTRA ") & swBody.Name & " at (" & Format(cx(k), "0.0") & "," & Format(cy(k), "0.0") & "," & _
+                  Format(cz(k), "0.0") & ") mm, " & Format(vol(k), "0") & " mm3 (" & Format(IIf(tv > 0, vol(k) / tv * 100, 0), "0.0") & _
+                  " % of tube " & nearest(k) & "), " & Format(dEnd, "0.0") & " mm from its nearest end node" & _
+                  IIf(isStub, " -> delete", " -> NOT a stub, left alone") & vbCrLf
+            If isStub Then stubs.Add swBody
+        End If
+    Next k
+    Dim nNo As Long
+    For i = 0 To UBound(keys)
+        If Not largest.Exists(keys(i)) Then
+            txt = txt & "  tube " & keys(i) & " has no body" & vbCrLf
+            nNo = nNo + 1
+        End If
+    Next i
+    If txt = "" Then txt = "  (none: one body per tube)" & vbCrLf
+    FindStubs = txt
+End Function
+
+' One Delete/Keep Body feature removing the stubs; returns its name or "".
+Private Function DeleteStubs(ByVal swModel As SldWorks.ModelDoc2, ByVal swFeatMgr As SldWorks.FeatureManager, _
+                             ByVal stubs As Collection, ByVal cpm As SldWorks.CustomPropertyManager) As String
+    Dim b As Variant, swBody As SldWorks.Body2, f As SldWorks.Feature, n As Long, nm As String, names As String
+    swModel.ClearSelection2 True
+    For Each b In stubs
+        Set swBody = b
+        names = names & swBody.Name & " "
+        swBody.Select2 True, Nothing
+    Next b
+    Set f = swFeatMgr.InsertDeleteBody2(False)
+    swModel.ClearSelection2 True
+    If f Is Nothing Then Exit Function
+    n = 1
+    Do While Not FindFeatureDeep(swModel, "StubsDeleted_" & n) Is Nothing
+        n = n + 1
+    Loop
+    nm = "StubsDeleted_" & n
+    On Error Resume Next
+    f.Name = nm
+    On Error GoTo 0
+    If Not cpm Is Nothing Then
+        cpm.Add3 "TrimStubs_" & n, swCustomInfoType_e.swCustomInfoText, Left$(names, 250), _
+                 swCustomPropertyAddOption_e.swCustomPropertyReplaceValue
+    End If
+    DeleteStubs = f.Name
+End Function
+
+
+' FindFeature that also looks at sub-features.
+Private Function FindFeatureDeep(ByVal swModel As SldWorks.ModelDoc2, ByVal nm As String) As SldWorks.Feature
+    Dim f As SldWorks.Feature, sf As SldWorks.Feature
+    Set f = swModel.FirstFeature
+    Do While Not f Is Nothing
+        If StrComp(f.Name, nm, vbTextCompare) = 0 Then
+            Set FindFeatureDeep = f
+            Exit Function
+        End If
+        Set sf = f.GetFirstSubFeature
+        Do While Not sf Is Nothing
+            If StrComp(sf.Name, nm, vbTextCompare) = 0 Then
+                Set FindFeatureDeep = sf
+                Exit Function
+            End If
+            Set sf = sf.GetNextSubFeature
+        Loop
+        Set f = f.GetNextFeature
+    Loop
+End Function
+
 
 Private Function FindFeature(ByVal swModel As SldWorks.ModelDoc2, ByVal nm As String) As SldWorks.Feature
     Dim f As SldWorks.Feature

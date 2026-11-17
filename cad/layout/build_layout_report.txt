@@ -1,0 +1,35 @@
+ALL PASS   (2026-11-17 21:33, harness swh.exe)  BuildLayout, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\layout\master_layout.SLDPRT
+
+PASS  equation file linked: 266 equations / global variables loaded, update from file ok, automatic solve order True
+PASS  equations: 266 of 266 lines of car_params.txt loaded
+PASS  equations: numeric values equal to the file (251 numeric names)
+PASS  REAR_AXLE at 1550.0 mm, distance driven by "D1@REAR_AXLE" = "wheelbase"
+PASS  MAIN_HOOP at 1250.0 mm, distance driven by "D1@MAIN_HOOP" = "main_hoop_x"
+PASS  FRONT_HOOP at 650.0 mm, distance driven by "D1@FRONT_HOOP" = "front_hoop_x"
+PASS  WHEEL_CENTRE_HEIGHT at 222.0 mm, distance driven by "D1@WHEEL_CENTRE_HEIGHT" = "tyre_rolling_radius"
+PASS  FRONT_AXLE_AXIS (FRONT_AXLE x WHEEL_CENTRE_HEIGHT), InsertAxis2 returned True
+PASS  REAR_AXLE_AXIS (REAR_AXLE x WHEEL_CENTRE_HEIGHT), InsertAxis2 returned True
+PASS  HP_front_right: 10 points, 10 named reference points HP_*
+PASS  HP_rear_right: 10 points, 10 named reference points HP_*
+PASS  HP_front_left: 10 points, 10 named reference points HPL_*
+PASS  HP_rear_left: 10 points, 10 named reference points HPL_*
+PASS  features with rebuild errors: 0
+PASS  saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\layout\master_layout.SLDPRT
+PASS  car_params.txt unchanged by SolidWorks (byte compare before/after)
+PASS  after reopening: equation file linked, 270 equations
+PASS  after reopening: REAR_AXLE at 1550.0 mm (wheelbase = 1550.0), driven by equation "D1@REAR_AXLE" = "wheelbase"
+PASS  after reopening: MAIN_HOOP at 1250.0 mm (main_hoop_x = 1250.0), driven by equation "D1@MAIN_HOOP" = "main_hoop_x"
+PASS  after reopening: FRONT_HOOP at 650.0 mm (front_hoop_x = 650.0), driven by equation "D1@FRONT_HOOP" = "front_hoop_x"
+PASS  after reopening: WHEEL_CENTRE_HEIGHT at 222.0 mm (tyre_rolling_radius = 222.0), driven by equation "D1@WHEEL_CENTRE_HEIGHT" = "tyre_rolling_radius"
+PASS  after reopening: FRONT_AXLE_AXIS [RefAxis]
+PASS  after reopening: REAR_AXLE_AXIS [RefAxis]
+PASS  after reopening: 20 reference points HP_* (20 hardpoints)
+PASS  after reopening: 20 reference points HPL_* (left side, mirrored)
+
+No failures.
+
+Equation check: 266 quoted lines in car_params.txt, 266 equations loaded by SolidWorks, 0 disabled, EvaluateAll returned -1, Status -1
+Duplicate names in the file: none
+Lines SolidWorks did not load (0):
+Numeric values that differ from the file (0): none
+

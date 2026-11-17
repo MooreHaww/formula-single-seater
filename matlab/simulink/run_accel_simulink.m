@@ -40,7 +40,7 @@ function ok = selftest()
 % Same hand-checkable car as accel_test's self-test (constant 7.279 m/s^2,
 % t_75 = 4.540 s) must come out of Simulink within 0.5 %, and the real
 % variant C must agree with accel_test within 1 %.
-car = car_from_params('A');
+car = car_from_params('A', [], 'params');   % hand car: start from the parameter-file guesses, not the variant table
 car.ClA = 0; car.CdA = 0; car.crr = 0; car.lsens = 0; car.mu0 = 1.4; car.wd_front = 0.47;
 car.P_max = 1e9; car.T_max = 1e9; car.F_torque_max = 1e9; car.v_rpm_max = 1e9; car.m = 300; car.g = 9.81;
 r1 = run_accel_simulink(car);

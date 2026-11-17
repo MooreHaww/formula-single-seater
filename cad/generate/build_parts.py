@@ -38,7 +38,7 @@ from pathlib import Path
 try:
     from build123d import (
         Axis, Box, Compound, Cylinder, Ellipse, Face, Line, Plane, Polygon, Pos, RectangleRounded,
-        Rot, Spline, Vector, Wire, export_step, extrude, loft, make_face, offset, revolve, mirror,
+        Rot, Shell, Solid, Spline, Vector, Wire, export_step, extrude, loft, make_face, offset, revolve, mirror,
     )
 except ImportError:  # pragma: no cover
     print("build123d is not installed. Run:  uvx --from build123d python cad/generate/build_parts.py")
@@ -159,6 +159,70 @@ def airfoil_face(name: str, chord: float, aoa_deg: float, le_x: float, le_z: flo
     return face, info
 
 
+# ---------------------------------------------------------------------------
+# frame envelope: the body panels are sized from the real tube positions
+# ---------------------------------------------------------------------------
+TUBE_CLEAR = 10.0    # panel inner face to tube outer surface (room for brackets, frame tolerance)
+SKIN = 2.0           # panel thickness
+LINK_OD = 15.9       # suspension links (wishbones, tie rods, pushrods), tools/sw_harness/BuildSuspension.cs
+LINK_CLEAR = 5.0     # slot edge to a moving link, all round
+
+
+def frame_samples(step: float = 5.0) -> list[tuple[float, float, float, float]]:
+    """Points along every tube axis of cad/frame/*.csv: (x, |y|, z, outer radius)."""
+    import csv
+    nodes = {}
+    with open(ROOT / "cad" / "frame" / "frame_nodes.csv", newline="") as f:
+        for r in csv.DictReader(f):
+            if r["node"].startswith("#"):
+                continue
+            nodes[r["node"]] = (float(r["x_mm"]), float(r["y_mm"]), float(r["z_mm"]))
+    pts = []
+    with open(ROOT / "cad" / "frame" / "frame_tubes.csv", newline="") as f:
+        for r in csv.DictReader(f):
+            if r["tube"].startswith("#") or not r.get("node_b"):
+                continue
+            a, b = nodes[r["node_a"]], nodes[r["node_b"]]
+            rad = float(r["od_mm"]) / 2
+            L = math.dist(a, b); n = max(2, int(L / step) + 1)
+            for k in range(n):
+                t = k / (n - 1)
+                x, y, z = (a[i] + t * (b[i] - a[i]) for i in range(3))
+                pts.append((x, abs(y), z, rad))
+    return pts
+
+
+def section_from_frame(pts, x_lo: float, x_hi: float, r_max: float, y_max: float | None = None):
+    """Rounded-rectangle section (width, height, corner R, bottom z) whose inner
+    face keeps TUBE_CLEAR from every tube sample with x in [x_lo, x_hi] (and |y| <= y_max
+    if given), the tube radius counted also along x (a tube end reaches r past its node).
+    A ruled loft between two stations is linear, so each station is sized for
+    the whole interval on both sides of it (see build_nose)."""
+    sel = [(y, z, r) for (x, y, z, r) in pts if x_lo - r <= x <= x_hi + r and (y_max is None or y <= y_max)]
+    if not sel:
+        return None
+    m = TUBE_CLEAR + SKIN
+    hw = max(y + r for y, z, r in sel) + m
+    zb = min(z - r for y, z, r in sel) - m
+    zt = max(z + r for y, z, r in sel) + m
+    R = r_max
+    while R > 10:
+        # the square corner of a joint (y + r, z +- r) must lie inside the section's inner
+        # face shrunk by TUBE_CLEAR: in a corner zone, within R - m of the arc centre
+        # (SolidWorks found the bulkhead corners 0.1 cm3 into a nose sized for round tubes)
+        ok = True
+        for y, z, r in sel:
+            qy = y + r
+            for qz, zc, upper in ((z + r, zt - R, True), (z - r, zb + R, False)):
+                if qy > hw - R and (qz > zc if upper else qz < zc):
+                    if math.hypot(qy - (hw - R), qz - zc) > R - m:
+                        ok = False
+        if ok:
+            break
+        R -= 5
+    return 2 * hw, zt - zb, R, zb
+
+
 def bbox_str(part) -> str:
     bb = part.bounding_box()
     return f"X {bb.min.X:7.1f}..{bb.max.X:7.1f}  Y {bb.min.Y:7.1f}..{bb.max.Y:7.1f}  Z {bb.min.Z:7.1f}..{bb.max.Z:7.1f}"
@@ -225,7 +289,9 @@ def build_wing(p, prefix: str, variant: str = "C"):
         faces.append(f); infos.append(info)
         le = (info["te"][0] - overlap, info["te"][1] + gap)
     if prefix == "fw":
-        dx = -600.0 - 0.0
+        # main LE at fw_le_x, the value the CFD session (cfd_variants.py) and the aero estimate use;
+        # at the playbook's -600 the flap stack runs through the front tyres
+        dx = p.get("fw_le_x", -600.0)
         dz = p["fw_ground_clearance"] - infos[0]["z_min"]
     else:
         dx = p["wheelbase"] + p["rear_overhang"] - infos[-1]["x_max"]
@@ -233,9 +299,16 @@ def build_wing(p, prefix: str, variant: str = "C"):
     solids = {}
     le = (dx, dz)
     geo = {}
+    y_in = p.get("fw_flap_inner_y", 0.0) if prefix == "fw" else 0.0
     for name, c, a in zip(names, chords, aoas):
         f, info = airfoil_face(name, c, a, *le)
-        solids[name] = extrude(f, amount=span / 2, both=True)
+        if prefix == "fw" and name != "fw_main" and y_in > 0:
+            # front flaps only outboard of fw_flap_inner_y (as in the CFD geometry): under the
+            # nose only the main element runs through. One part, two bodies (right and left).
+            solids[name] = Compound([Pos(0, y_in, 0) * extrude(f, amount=span / 2 - y_in, dir=(0, 1, 0)),
+                                     Pos(0, -y_in, 0) * extrude(f, amount=span / 2 - y_in, dir=(0, -1, 0))])
+        else:
+            solids[name] = extrude(f, amount=span / 2, both=True)
         geo[name] = info
         le = (info["te"][0] - overlap, info["te"][1] + gap)
     return solids, geo
@@ -270,26 +343,32 @@ def build_floor(p):
     """Flat floor (10 mm at ride_height_front) from floor_start to the rear
     axle, stepped in beside the rear tyres, plus the variant C diffuser plate
     and four strakes with their top at diffuser_exit_height at the exit."""
-    z0 = p["ride_height_front"]; t = 10.0
+    # 2026-11-17 clearance rules (docs/log.md): raked from ride_height_front at the leading
+    # edge to ride_height_rear at the rear axle; steps in to |y| 455 from X 1290 so the
+    # rear tyre keeps 25 mm at full droop (the 470 / 1400 step touched it); strakes and
+    # side fences hang UNDER the diffuser roof (above it they ran into the rear lower
+    # cross tube RS2_L_cross). Same plan, rake and strake positions as cfd_variants.py.
+    t = 10.0
     x_le, x_axle = p["floor_start_from_front_axle"], p["wheelbase"]
-    hw = p["floor_width"] / 2; hw_step = 470.0; x_step = 1400.0
-    plan = [(x_le, -hw), (x_step, -hw), (x_step, -hw_step), (x_axle, -hw_step), (x_axle, hw_step), (x_step, hw_step), (x_step, hw), (x_le, hw)]
-    plan_face = (Plane(origin=(0, 0, z0)) * Polygon(*plan, align=None)).faces()[0]
-    floor = extrude(plan_face, amount=t)
-    # diffuser plate: inclined 10 mm plate from the rear axle, 940 wide
-    ang = math.radians(p[f"diffuser_angle_C"]); Ld = p["diffuser_length"]
-    rise = Ld * math.tan(ang)
-    prof = [(x_axle, 0, z0), (x_axle + Ld, 0, z0 + rise), (x_axle + Ld, 0, z0 + rise + t), (x_axle, 0, z0 + t)]
-    pf = make_face(Wire([Line(Vector(*prof[i]), Vector(*prof[(i + 1) % 4])) for i in range(4)]))
-    plate = extrude(pf, amount=hw_step, both=True)
-    # strakes: between the plate top and a line from z0 + t + 120 at the axle to diffuser_exit_height at the exit
-    z_exit = p["diffuser_exit_height"]
-    sp = [(x_axle, 0, z0 + t - 1), (x_axle + Ld, 0, z0 + rise + t - 1), (x_axle + Ld, 0, z_exit), (x_axle, 0, z0 + t + 120)]
-    sf = make_face(Wire([Line(Vector(*sp[i]), Vector(*sp[(i + 1) % 4])) for i in range(4)]))
-    strake = extrude(sf, amount=5, both=True)
-    part = floor + plate
-    for y in (-350, -150, 150, 350):
-        part = part + Pos(0, y, 0) * strake
+    z0, z1 = p["ride_height_front"], p.get("ride_height_rear", p["ride_height_front"])
+    hw = p["floor_width"] / 2; hw_step = 455.0; x_step = 1290.0
+
+    def xz_prism(pts, y0, y1):
+        v = [Vector(x, 0.0, z) for (x, z) in pts]
+        face = make_face(Wire([Line(v[i], v[(i + 1) % len(v)]) for i in range(len(v))]))
+        return Pos(0, y0, 0) * extrude(face, amount=y1 - y0, dir=(0, 1, 0))
+    raked = [(x_le, z0), (x_axle, z1), (x_axle, z1 + t), (x_le, z0 + t)]
+    z_at = lambda x: z0 + (z1 - z0) * (x - x_le) / (x_axle - x_le)      # noqa: E731
+    wide = [(x_le, z0), (x_step, z_at(x_step)), (x_step, z_at(x_step) + t), (x_le, z0 + t)]
+    floor = xz_prism(wide, -hw, hw) + xz_prism(raked, -hw_step, hw_step)
+    ang = math.radians(p["diffuser_angle_C"]); Ld = p["diffuser_length"]
+    xe, ze = x_axle + Ld, z1 + Ld * math.tan(ang)
+    roof = xz_prism([(x_axle, z1), (xe, ze), (xe, ze + t), (x_axle, z1 + t)], -hw_step, hw_step)
+    fin = [(x_axle, z1), (xe, z1), (xe, ze + 1.0), (x_axle, z1 + 1.0)]      # 1 mm into the roof
+    part = floor + roof
+    for y in (150.0, 350.0):
+        part = part + xz_prism(fin, y - 4, y + 4) + xz_prism(fin, -y - 4, -y + 4)
+    part = part + xz_prism(fin, hw_step - 8, hw_step) + xz_prism(fin, -hw_step, -hw_step + 8)
     return part
 
 
@@ -298,20 +377,99 @@ def build_nose(p):
     by subtracting an inner loft that pokes through the front-hoop face
     (open at the back). A smooth loft sagged to Z 41 behind the bulkhead
     and offset() with an opening failed on the creased solid."""
-    t = 2.0
+    t = SKIN
+    # 2026-11-17 clearance rules (docs/log.md): ahead of the bulkhead the two tip sections
+    # of cfd_variants.py (underside raised to clear the front wing's main element);
+    # from the bulkhead back, every section is sized from the real tube positions so the
+    # inner face keeps TUBE_CLEAR (10 mm) from every tube (the playbook sections cut through
+    # the front suspension pickups, FBT and the upper frame line). The nose ends
+    # TUBE_CLEAR + tube radius ahead of the front hoop plane, where the hoop's sideways
+    # tubes leave the frame.
+    x_end = p["front_hoop_x"] - 12.7 - TUBE_CLEAR
     secs = [  # x, width, height, corner R, bottom z
-        (-p["nose_overhang"], 160, 120, 40, 160),
-        (-450, 320, 240, 60, 100),
-        (-300, 460, 360, 60, 60),
-        (150, 560, 470, 80, 60),
-        (p["front_hoop_x"], 640, 540, 90, 60),
+        (-p["nose_overhang"], 160, 80, 30, 200),
+        (-450, 320, 180, 60, 160),
     ]
+    pts = frame_samples()
+    st = [-325.0, -230.0, -160.0, -80.0, 0.0, 80.0, 160.0, 280.0, 400.0, 520.0, x_end]
+    for i, x in enumerate(st):
+        lo = st[max(i - 1, 0)] if i > 0 else -340.0
+        hi = st[min(i + 1, len(st) - 1)]
+        w, h, R, zb = section_from_frame(pts, lo, hi, 90.0)
+        secs.append((x, w, h, R, zb))
     outer = loft([section_rounded(*s) for s in secs], ruled=True)
-    inner_secs = [(x, w - 2 * t, h - 2 * t, r - t, zb + t) for (x, w, h, r, zb) in secs]
-    inner_secs[-1] = (inner_secs[-1][0] + 5.0,) + inner_secs[-1][1:]     # 5 mm past the hoop plane: open there
+    inner_secs = [(x, w - 2 * t, h - 2 * t, max(r - t, 2.0), zb + t) for (x, w, h, r, zb) in secs]
+    inner_secs[-1] = (inner_secs[-1][0] + 5.0,) + inner_secs[-1][1:]     # 5 mm past the last section: open there
     inner_secs[0] = (inner_secs[0][0] + t,) + inner_secs[0][1:]           # keep a 2 mm wall at the tip
     inner = loft([section_rounded(*s) for s in inner_secs], ruled=True)
-    return outer - inner, "2 mm skin (outer loft minus inner loft), open at X 650"
+    nose = outer - inner
+    # slots where the front suspension links pass through the skin (their pivots are on frame
+    # brackets inside the nose): every link swept over the wheel travel, the tie rod also over
+    # the rack travel, LINK_CLEAR all round
+    cut = suspension_sweep(p, "f")
+    nose = nose.cut(*cut)
+    return nose, (f"2 mm skin, sections from the frame (+{TUBE_CLEAR:.0f} mm), open at X {x_end:.0f}, "
+                  f"{len(cut)} link slots cut (+{LINK_CLEAR:.0f} mm)")
+
+
+def circle_points(a, b, r: float, n: int = 16):
+    """n points on the circle of radius r around the line a-b, at a and at b (mm)."""
+    import numpy as np
+    a, b = np.array(a, float), np.array(b, float)
+    d = (b - a) / np.linalg.norm(b - a)
+    u = np.cross(d, [0.0, 0.0, 1.0])
+    if np.linalg.norm(u) < 1e-6:
+        u = np.cross(d, [0.0, 1.0, 0.0])
+    u /= np.linalg.norm(u)
+    v = np.cross(d, u)
+    r = r / math.cos(math.pi / n)            # polygon circumscribes the circle
+    ang = np.linspace(0, 2 * math.pi, n, endpoint=False)
+    ring = np.outer(np.cos(ang), u) + np.outer(np.sin(ang), v)
+    return np.vstack([a + r * ring, b + r * ring])
+
+
+def hull_solid(points):
+    """Convex hull of a point cloud as a polyhedral solid (scipy Qhull, triangles)."""
+    from scipy.spatial import ConvexHull
+    h = ConvexHull(points)
+    faces = []
+    for simplex, eq in zip(h.simplices, h.equations):
+        tri = [h.points[i] for i in simplex]
+        n = Vector(*(tri[1] - tri[0])).cross(Vector(*(tri[2] - tri[0])))
+        if n.dot(Vector(*eq[:3])) < 0:          # outward normals
+            tri = [tri[0], tri[2], tri[1]]
+        faces.append(Face(Wire.make_polygon([Vector(*q) for q in tri], close=True)))
+    return Solid(Shell(faces))
+
+
+def suspension_sweep(p, axle: str) -> list:
+    """Cylinders covering every position of the axle's links (both sides) over the wheel
+    travel: each link from its fixed inboard point to its outboard joint moved up and down
+    by the travel + 5 mm (the outer joints move with the wheel to within a few mm, which
+    the clearance covers); the tie rod's inboard end also over +/- steer_rack_travel."""
+    r = LINK_OD / 2 + LINK_CLEAR
+    bump, droop = p.get("wheel_travel_bump", 30) + 5, p.get("wheel_travel_droop", 30) + 5
+    tie = "tierod" if axle == "f" else "toelink"
+    pt = lambda n: (p[f"{axle}_{n}_x"], p[f"{axle}_{n}_y"], p[f"{axle}_{n}_z"])
+    links = [("lwb_in_fwd", "lwb_out"), ("lwb_in_aft", "lwb_out"), ("uwb_in_fwd", "uwb_out"), ("uwb_in_aft", "uwb_out"),
+             (f"{tie}_in", f"{tie}_out"), ("pushrod_in", "pushrod_out")]
+    rack = p.get("steer_rack_travel", 40) if axle == "f" else 0.0
+    import numpy as np
+    out = []
+    for side in (1, -1):
+        for a, b in links:
+            ia, ob = pt(a), pt(b)
+            shifts = [-rack, rack] if a.startswith(tie) and rack else [0.0]
+            cloud = []
+            for dy in shifts:
+                for t in (-droop, bump):
+                    i2 = (ia[0], side * ia[1] + dy, ia[2])
+                    o2 = (ob[0], side * ob[1], ob[2] + t)
+                    cloud.append(circle_points(i2, o2, r))
+            # one convex solid per link: the hull of its extreme positions (the joint path between
+            # the extremes is within a few mm of a straight line; LINK_CLEAR covers it)
+            out.append(hull_solid(np.vstack(cloud)))
+    return out
 
 
 def build_sidepod(p, side: int):
@@ -320,24 +478,43 @@ def build_sidepod(p, side: int):
     tapered leading cap ahead of it and a taper to the rear-tyre inner face.
     The 2 mm skin is made by subtracting an inner loft (offset() with an
     opening gave an invalid solid on this shape)."""
-    t = 2.0
-    y_in, y_out = 320.0, 562.0           # skin inner face at 560: 20 mm outside the structure rails
-    z_bot, z_top = 50.0, 342.0           # skin inner faces at 52 and 340
+    t = SKIN
+    # 2026-11-17 clearance rules (docs/log.md): the full section runs from TUBE_CLEAR + tube
+    # radius ahead of the front hoop plane to the same behind the main hoop plane, and its
+    # skin keeps TUBE_CLEAR from every tube outboard of |y| 300 (the hoop-to-sidepod tubes
+    # FH_M-SP1_U and MH_M-SP2_U rise to Z 350 at their inboard end and went through the old
+    # top at 342). The tail ends 25 mm or more ahead of the rear tyre at full bump.
+    # The pod is bonded onto the floor: the floor is its bottom (open there), its lower
+    # edge 1 mm above the floor top. Its open inboard face is TUBE_CLEAR outboard of the
+    # hoop tubes (|y| 310), so only tubes outboard of that size the pod.
+    m = TUBE_CLEAR + t
+    y_in = 310.0 + 12.7 + TUBE_CLEAR
+    pts = [q for q in frame_samples() if q[1] >= y_in and 600.0 <= q[0] <= 1300.0]
+    y_out = max(562.0, max(y + r for (x, y, z, r) in pts) + m)
+    z0, z1 = p["ride_height_front"], p.get("ride_height_rear", p["ride_height_front"])
+    x_le = p["floor_start_from_front_axle"]
+    floor_top = max(z0 + (z1 - z0) * (x - x_le) / (p["wheelbase"] - x_le) for x in (600.0, 1300.0)) + 10.0
+    z_bot = floor_top + 1.0
+    z_top = max(342.0, max(z + r for (x, y, z, r) in pts) + m + 1.0)   # +1: the inboard top corner is the closest point
+    x_full0 = p["front_hoop_x"] - 12.7 - TUBE_CLEAR - 3.0
+    x_full1 = p["main_hoop_x"] + 12.7 + TUBE_CLEAR + 3.0
 
     def sections(dy_in, dy_out, dz_bot, dz_top):
         yi, yo = y_in + dy_in, y_out - dy_out
         zb, zt = z_bot + dz_bot, z_top - dz_top
         yc = side * (yi + yo) / 2; w = yo - yi; h = zt - zb
         return [
-            section_ellipse(560, 60 - 2 * dy_out, 180 - 2 * dz_top, side * 440, 200),
-            section_rounded(660, w, h, 25 - dy_out, zb, yc),
-            section_rounded(1240, w, h, 25 - dy_out, zb, yc),
-            section_rounded(1400, 150 - dy_in - dy_out, 180 - dz_bot - dz_top, 30 - dy_out, 70 + dz_bot, side * ((330 + dy_in) + (150 - dy_in - dy_out) / 2)),
+            section_ellipse(x_full0 - 100, 60 - 2 * dy_out, 180 - 2 * dz_top, side * 440, 200),
+            section_rounded(x_full0, w, h, 6 - dy_out / 2, zb, yc),      # R 6: with the bottom open, a larger
+            section_rounded(x_full1, w, h, 6 - dy_out / 2, zb, yc),      # corner lifts the wall's edge off the floor
+            # tail: inboard edge stays at y_in (stepping in to |y| 310 brought the taper within
+            # 6.5 mm of MH_M-RS1_U once RS1_U moved out to |y| 320, 2026-11-17), outboard at 430
+            section_rounded(x_full1 + 25, 430 - y_in - dy_in - dy_out, 180 - dz_bot - dz_top, 30 - dy_out, 70 + dz_bot, side * ((y_in + dy_in) + (430 - y_in - dy_in - dy_out) / 2)),
         ]
     outer = loft(sections(0, 0, 0, 0), ruled=True)
-    inner = loft(sections(-5.0, t, t, t), ruled=True)     # pokes 5 mm through the inboard face: open there
+    inner = loft(sections(-5.0, t, -5.0, t), ruled=True)  # pokes 5 mm through the inboard face and the bottom: open there
     shell = outer - inner
-    note = "2 mm skin (outer loft minus inner loft), open inboard"
+    note = f"2 mm skin, open inboard (y {y_in:.0f}) and at the bottom (sits on the floor at Z {z_bot:.0f}), top Z {z_top:.0f}"
     # clearance check: the structure box must lie entirely in the cavity
     box = Pos(960, side * 430, 190) * Box(520, 220, 260)   # X 700..1220, |Y| 320..540, Z 60..320
     clash = (shell & box).volume

@@ -113,7 +113,7 @@ function ok = selftest()
 %   m v^2 / R = mu (m g + 0.5 rho ClA v^2)
 %   v^2 (m/R - 0.5 mu rho ClA) = mu m g
 %   v^2 (6 - 3.36) = 4120.2  ->  v = sqrt(1560.7) = 39.51 m/s = 142.2 km/h
-car = car_from_params('A');
+car = car_from_params('A', [], 'params');   % hand car: start from the parameter-file guesses, not the variant table
 car.ClA = 0; car.CdA = 0; car.lsens = 0; car.mu0 = 1.4; car.m = 300; car.g = 9.81; car.rho = 1.2;
 car.P_max = 1e9; car.F_torque_max = 1e9; car.v_rpm_max = 1e9; car.crr = 0;
 v1 = corner_vmax(car, 50);

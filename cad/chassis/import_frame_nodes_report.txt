@@ -1,0 +1,13 @@
+ALL PASS   (2026-11-17 23:11, harness swh.exe)  ImportFrameNodes, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+
+PASS  FRAME_hoop: 12 lines in the sketch, 12 tubes in the CSV
+PASS  FRAME_hoop_brace: 10 lines in the sketch, 10 tubes in the CSV
+PASS  FRAME_sis: 7 lines in the sketch, 7 tubes in the CSV
+PASS  FRAME_bulkhead: 4 lines in the sketch, 4 tubes in the CSV
+PASS  FRAME_sidepod: 18 lines in the sketch, 18 tubes in the CSV
+PASS  FRAME_front: 32 lines in the sketch, 32 tubes in the CSV
+PASS  FRAME_rear: 31 lines in the sketch, 31 tubes in the CSV
+PASS  total: 114 lines in 7 sketches, 114 tubes in frame_tubes.csv (0 skipped for missing nodes)
+PASS  saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+
+No failures.

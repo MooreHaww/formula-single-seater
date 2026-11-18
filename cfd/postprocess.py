@@ -92,6 +92,18 @@ def read_forces(path: Path):
     return {n: a[:, k] for k, n in enumerate(names)}
 
 
+def read_forces_all(run_dir: Path):
+    """forces.out plus any forces_cont<k>.out of continued runs (iteration numbers
+    carry on; a repeated iteration keeps its last value)."""
+    files = [run_dir / "forces.out"] + sorted(run_dir.glob("forces_cont*.out"), key=lambda f: int(re.sub(r"\D", "", f.stem) or 0))
+    parts = [read_forces(f) for f in files if f.exists()]
+    names = list(parts[0])
+    a = np.concatenate([np.column_stack([q[n] for n in names]) for q in parts if list(q) == names])
+    _, idx = np.unique(a[::-1, 0], return_index=True)
+    a = a[::-1][idx]
+    return {n: a[:, k] for k, n in enumerate(names)}
+
+
 def window_stats(h: np.ndarray, n_avg: int = N_AVG, floor: float = 1e-9):
     n = len(h)
     N = max(5, min(n_avg, n // 5)) if n >= 10 else n
@@ -106,7 +118,7 @@ def window_stats(h: np.ndarray, n_avg: int = N_AVG, floor: float = 1e-9):
 
 def analyse_run(run_dir: Path, wheelbase: float):
     info = json.loads((run_dir / "run_info.json").read_text())
-    F = read_forces(run_dir / "forces.out")
+    F = read_forces_all(run_dir)
     U, rho = info["speed_mps"], info["density"]
     q = 0.5 * rho * U * U
     n_it = int(F["Iteration"][-1])
@@ -118,13 +130,19 @@ def analyse_run(run_dir: Path, wheelbase: float):
     front = DF - rear
     conv = (n_it >= MIN_ITERS and sd["drift"] < DRIFT_MAX and sD["drift"] < DRIFT_MAX
             and sd["band"] < BAND_MAX and sD["band"] < BAND_MAX)
-    r = {"run": run_dir.name, "variant": info["variant"], "tag": info.get("tag", ""), "speed_mps": U, "density": rho,
+    r = {"run": run_dir.name, "variant": info["variant"], "tag": info.get("tag") or run_dir.name[len(info["variant"]):], "speed_mps": U, "density": rho,
          "cells": info.get("cells", 0), "iterations": n_it, "downforce_N": DF, "drag_N": D, "front_axle_N": front,
          "rear_axle_N": rear, "ClA": DF / q, "CdA": D / q, "L_over_D": DF / D if D else float("nan"),
          "aero_front": front / DF if abs(DF / q) > 0.5 else float("nan"),
          "df_drift_pct": 100 * sd["drift"], "df_band_pct": 100 * sd["band"],
          "drag_drift_pct": 100 * sD["drift"], "drag_band_pct": 100 * sD["band"], "avg_iters": sd["N"],
          "force_converged": conv}
+    pi = run_dir / "post_info.json"
+    if pi.exists():
+        post = json.loads(pi.read_text())
+        r["mass_imbalance_rel"] = post.get("mass_imbalance_rel", float("nan"))
+        r["_yplus"] = post.get("yplus", {})
+        r["_boxes"] = post.get("wake_boxes", [])
     for k in F:                                                     # components, full car, as ClA_x / CdA_x
         m = re.match(r"(downforce|drag)_(.+)", k)
         if m and m.group(2) != "total":
@@ -195,15 +213,75 @@ def read_estimates():
 
 
 def pick_final(runs: list[dict]):
-    """Per variant: the non-probe run with the most cells (ties: most iterations)."""
-    best = {}
-    for r in runs:
-        if "probe" in r["tag"] or "coarse" in r["tag"]:
-            continue
-        b = best.get(r["variant"])
-        if b is None or (r["cells"], r["iterations"]) > (b["cells"], b["iterations"]):
-            best[r["variant"]] = r
-    return best
+    """Per variant: the run without a tag (run name = variant name), solved with the
+    common mesh settings. Tagged runs (coarse, w = wake-window mesh, num = numerics
+    test, probe) are checks and never go into the variant table."""
+    return {r["variant"]: r for r in runs if r["tag"] == "" and r["run"] == r["variant"]}
+
+
+def yplus_stats(yp: dict) -> list[dict]:
+    """Per wall zone: area-average, max (Fluent reports) and the share of faces in
+    the y+ bands, from the per-face export (cfd/cases/yplus, if it is there)."""
+    rows = []
+    for zone, v in sorted(yp.items()):
+        r = {"zone": zone, "area_avg": v.get("area_avg"), "max": v.get("max"), "min": v.get("min")}
+        f = Path(v.get("face_file", ""))
+        if f.is_file():
+            y = read_plane_cols(f, ["y-plus"])["y-plus"]
+            r.update({"n_faces": int(y.size), "p05": float(np.percentile(y, 5)), "p50": float(np.percentile(y, 50)), "p95": float(np.percentile(y, 95)),
+                      "lt5": float((y < 5).mean()), "5to30": float(((y >= 5) & (y < 30)).mean()),
+                      "30to300": float(((y >= 30) & (y <= 300)).mean()), "gt300": float((y > 300).mean())})
+        rows.append(r)
+    return rows
+
+
+# boxes: the following car's front wing and wheels (low) and its rear wing (high), half width
+BOX_REGIONS = {"low": (0.8, 0.0, 0.5), "high": (0.65, 1.0, 1.5)}      # (y max, z min, z max) in m
+
+
+def read_plane_cols(path: Path, cols: list[str]):
+    with path.open() as f:
+        rd = csv.reader(f)
+        head = [h.strip() for h in next(rd)]
+        data = np.array([[float(v) for v in row] for row in rd if row])
+    return {h: data[:, k] for k, h in enumerate(head) if h in cols or h.endswith("coordinate")}
+
+
+def box_metrics(path: Path, U: float, x_centre: float, offsets) -> dict:
+    """Average over the five planes of a wake box, each interpolated linearly onto a
+    10 mm grid in its region: deficit 1 - mean(u)/U, q-ratio mean((u/U)^2),
+    TKE mean k (m2/s2) and TI = sqrt(2 k_mean / 3) / U, mean |x-vorticity| and
+    mean vorticity magnitude (1/s), mean upwash angle."""
+    from scipy.interpolate import griddata
+    c = read_plane_cols(path, ["x-velocity", "z-velocity", "turb-kinetic-energy", "x-vorticity", "vorticity-mag"])
+    out = {}
+    for reg, (ym, z0, z1) in BOX_REGIONS.items():
+        yg = np.arange(0.005, ym, GRID); zg = np.arange(z0 + 0.005, z1, GRID)
+        Y, Z = np.meshgrid(yg, zg)
+        acc = {k: [] for k in ("u", "w", "k", "wx", "wm")}
+        nodes = 0
+        for d in offsets:
+            sel = np.abs(c["x-coordinate"] - (x_centre + d)) < 1e-3
+            pts = np.column_stack([c["y-coordinate"][sel], c["z-coordinate"][sel]])
+            inreg = (pts[:, 0] <= ym + 0.05) & (pts[:, 1] >= z0 - 0.05) & (pts[:, 1] <= z1 + 0.05)
+            nodes += int(inreg.sum())
+            for key, col in (("u", "x-velocity"), ("w", "z-velocity"), ("k", "turb-kinetic-energy"), ("wx", "x-vorticity"), ("wm", "vorticity-mag")):
+                vals = c[col][sel]
+                g = griddata(pts, vals, (Y, Z), method="linear")
+                g = np.where(np.isnan(g), griddata(pts, vals, (Y, Z), method="nearest"), g)
+                acc[key].append(np.abs(g) if key == "wx" else g)
+        u = np.mean(acc["u"], axis=0) / U
+        kk = float(np.mean(acc["k"]))
+        out[reg] = {"deficit": float(1 - u.mean()), "q_ratio": float((u ** 2).mean()), "tke": kk, "TI": math.sqrt(2 * kk / 3) / U,
+                    "abs_x_vorticity": float(np.mean(acc["wx"])), "vorticity_mag": float(np.mean(acc["wm"])),
+                    "upwash_deg": math.degrees(math.atan2(float(np.mean(acc["w"])), float(np.mean(acc["u"])))), "nodes": nodes}
+    return out
+
+
+# which CFD run feeds each row of params/aero_variants.csv (default: the run named like the variant).
+# 2026-11-18: C uses CP, i.e. C's wings and floor plan with the SolidWorks nose, sidepods and floor
+# plate (user's choice). A, B and D are still on the older CFD bodywork.
+TABLE_RUN = {"C": "CP"}
 
 
 def update_variants(final: dict, force: bool):
@@ -212,7 +290,7 @@ def update_variants(final: dict, force: bool):
         rd = csv.DictReader(f); keys = rd.fieldnames; rows = list(rd)
     changed = []
     for row in rows:
-        r = final.get(row["variant"])
+        r = final.get(TABLE_RUN.get(row["variant"], row["variant"]))
         if r is None or (not r["force_converged"] and not force) or math.isnan(r["aero_front"]) and abs(r["ClA"]) > 0.5:
             continue
         af = r["aero_front"] if not math.isnan(r["aero_front"]) else float(row["aero_front"])
@@ -220,8 +298,10 @@ def update_variants(final: dict, force: bool):
                     "ClA_lo": f"{r['ClA'] - abs(r['ClA']) * CFD_RANGE['ClA']:.2f}", "ClA_hi": f"{r['ClA'] + abs(r['ClA']) * CFD_RANGE['ClA']:.2f}",
                     "CdA_lo": f"{r['CdA'] * (1 - CFD_RANGE['CdA']):.2f}", "CdA_hi": f"{r['CdA'] * (1 + CFD_RANGE['CdA']):.2f}",
                     "source": f"CFD {r['run']} (Fluent half car, {r['cells']} cells, {'force-converged' if r['force_converged'] else 'NOT converged'})",
-                    "note": "range is an ASSUMPTION (+-20 % ClA, +-15 % CdA): no mesh study; only the ranking of variants is trustworthy"
-                            + ("" if not math.isnan(r["aero_front"]) else "; total near zero so aero_front kept from the estimate")})
+                    "note": "range is an ASSUMPTION (+-20 % ClA, +-15 % CdA): mesh checks move ClA < 0.3 % and CdA < 2.4 % but model error is unmeasured; only the ranking of variants is trustworthy"
+                            + ("" if not math.isnan(r["aero_front"]) else "; total near zero so aero_front kept from the estimate")
+                            + ("; SolidWorks bodywork (nose, sidepods, 10 mm floor plate); unsteady, mean good to about 1 %" if r["run"] == "CP"
+                               else "; older CFD bodywork (not the SolidWorks nose and sidepods)")})
         changed.append(row["variant"])
     with VARIANTS.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
@@ -233,7 +313,7 @@ def plots(runs, hist, wakes, est, final):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     MEDIA.mkdir(parents=True, exist_ok=True)
-    col = {"A": "#7f7f7f", "B": "#1f77b4", "C": "#d62728", "D": "#2ca02c"}
+    col = {"A": "#7f7f7f", "B": "#1f77b4", "C": "#d62728", "D": "#2ca02c", "E": "#9467bd", "CP": "#ff7f0e"}
     # ClA vs CdA: CFD (final runs) and the estimates with their ranges
     fig, ax = plt.subplots(figsize=(7, 5.5))
     for v, e in sorted(est.items()):
@@ -270,7 +350,7 @@ def plots(runs, hist, wakes, est, final):
         for run in sorted({w["run"] for w in wakes}):
             ws = sorted([w for w in wakes if w["run"] == run], key=lambda w: w["plane_L"])
             c = col.get(ws[0]["variant"], "k"); L = [w["plane_L"] for w in ws]
-            ls = "--" if ("probe" in run or "coarse" in run) else "-"
+            ls = "-" if run == ws[0]["variant"] else "--"
             axs[0].plot(L, [w["centre_deficit"] for w in ws], ls, marker="o", color=c, label=run)
             axs[1].plot(L, [w["width_m"] for w in ws], ls, marker="o", color=c, label=run)
             axs[2].plot(L, [w["q_ratio"] for w in ws], ls, marker="o", color=c, label=run)
@@ -296,7 +376,7 @@ def fmt_share(x: float) -> str:
     return "n/a" if math.isnan(x) else f"{x:.2f}"
 
 
-def write_md(runs, final, wakes, est, changed):
+def write_md(runs, final, wakes, est, changed, boxes=(), yrows=(), comp=()):
     MEDIA.mkdir(parents=True, exist_ok=True)
     L = ["# CFD results (Ansys Fluent, half car)", "",
          "Written by `cfd/postprocess.py`. **What these numbers mean:** one mesh per variant, sized to stay under the "
@@ -341,6 +421,35 @@ def write_md(runs, final, wakes, est, changed):
         for w in sorted(wakes, key=lambda w: (w["run"], w["plane_L"])):
             L.append(f"| {w['run']} | {w['plane_L']:g} | {w['centre_deficit']:.2f} | {w['centre_y_m']:.2f}, {w['centre_z_m']:.2f} | {w['width_m']:.2f} | "
                      f"{w['height_m']:.2f} | {w['window_deficit']:.2f} | {w['q_ratio']:.2f} | {w['TI']:.3f} | {w['upwash_deg']:.1f} | {w['wake_CdA_momentum']:.2f} | {w['nodes']} |")
+    if comp:
+        L += ["", "## Checks: tagged runs against the standard run of the same variant", "",
+              "`coarse` = coarser non-wing surface sizes (mesh check), `w` = wake-window refinement boxes, `num` = numerics test.", "",
+              "| run | cells | base run | base cells | ClA change % | CdA change % | front share change |", "|---|---|---|---|---|---|---|"]
+        for c in comp:
+            L.append(f"| {c['run']} | {c['cells']:,} | {c['base']} | {c['base_cells']:,} | {c['dClA_pct']:+.1f} | {c['dCdA_pct']:+.1f} | {c['d_front']:+.3f} |")
+    if boxes:
+        L += ["", "## Wake boxes (following car at 1, 2, 3 car lengths)", "",
+              "Five planes 0.15 m apart (a 0.6 m deep box) around each station, half model. `low` = Y 0 to 0.8, Z 0 to 0.5 m (the "
+              "following car's front wing and wheels); `high` = Y 0 to 0.65, Z 1.0 to 1.5 m (its rear wing). TKE in m2/s2, "
+              "TI = sqrt(2 TKE / 3) / U, vorticity in 1/s. Inlet turbulence: TI 0.005.", "",
+              "| run | L | region | deficit | q-ratio | TKE | TI | mean abs x-vorticity | mean vorticity magnitude | upwash (deg) | nodes |",
+              "|---|---|---|---|---|---|---|---|---|---|---|"]
+        for b in sorted(boxes, key=lambda b: (b["run"], b["L"], b["region"] != "low")):
+            L.append(f"| {b['run']} | {b['L']:g} | {b['region']} | {b['deficit']:.3f} | {b['q_ratio']:.3f} | {b['tke']:.3f} | {b['TI']:.3f} | "
+                     f"{b['abs_x_vorticity']:.2f} | {b['vorticity_mag']:.2f} | {b['upwash_deg']:.1f} | {b['nodes']} |")
+    if yrows:
+        L += ["", "## y+ on the walls", "",
+              "From Fluent's area-weighted average and face maximum, and the share of faces per y+ band (per-face export). "
+              "The wall treatment of k-omega SST in Fluent is y+-insensitive: a resolved sublayer below about 1 to 5, wall functions "
+              "above about 30, a blend in between (the buffer layer 5 to 30 is where both are weakest).", "",
+              "| run | zone | area-avg | max | 5 % | median | 95 % | < 5 | 5 to 30 | 30 to 300 | > 300 |", "|---|---|---|---|---|---|---|---|---|---|---|"]
+        for y in yrows:
+            pc = lambda k: f"{100 * y[k]:.0f} %" if k in y else "-"  # noqa: E731
+            L.append(f"| {y['run']} | {y['zone']} | {y['area_avg']:.0f} | {y['max']:.0f} | {y.get('p05', float('nan')):.0f} | {y.get('p50', float('nan')):.0f} | "
+                     f"{y.get('p95', float('nan')):.0f} | {pc('lt5')} | {pc('5to30')} | {pc('30to300')} | {pc('gt300')} |")
+    mi = [r for r in runs if not math.isnan(r.get("mass_imbalance_rel", float("nan")))]
+    if mi:
+        L += ["", "Mass imbalance (net mass flow / inlet mass flow): " + ", ".join(f"{r['run']} {r['mass_imbalance_rel']:.1e}" for r in sorted(mi, key=lambda r: r["run"])) + "."]
     L += ["", f"params/aero_variants.csv updated from CFD for: {', '.join(changed) if changed else 'none'}.", "",
           "Plots: `media/cfd/cfd_forces.png`, `media/cfd/cfd_convergence.png`, `media/cfd/cfd_wake.png`, `media/cfd/wake_<run>.png`.", ""]
     (MEDIA / "cfd_results.md").write_text("\n".join(L), encoding="utf-8")
@@ -384,11 +493,40 @@ def run(args) -> int:
     if wakes:
         write_csv(out / "wake_cfd.csv", wakes, ["run", "variant", "plane_L", "centre_deficit", "centre_y_m", "centre_z_m", "width_m", "height_m",
                                                "window_deficit", "q_ratio", "TI", "upwash_deg", "wake_CdA_momentum", "nodes"])
+    # wake boxes (files in cfd/cases/wake_boxes, listed in post_info.json)
+    boxes = []
+    for r in runs:
+        for b in r.get("_boxes", []):
+            f = Path(b["file"])
+            if f.is_file():
+                m = box_metrics(f, r["speed_mps"], b["x_centre_m"], b["offsets_m"])
+                for reg, v in m.items():
+                    boxes.append({"run": r["run"], "variant": r["variant"], "L": b["L"], "region": reg, **v})
+    if boxes:
+        write_csv(out / "wake_boxes.csv", boxes, ["run", "variant", "L", "region", "deficit", "q_ratio", "tke", "TI", "abs_x_vorticity",
+                                                  "vorticity_mag", "upwash_deg", "nodes"])
+    yrows = []
+    for r in runs:
+        for y in yplus_stats(r.get("_yplus", {})):
+            yrows.append({"run": r["run"], **y})
+    if yrows:
+        write_csv(out / "yplus.csv", yrows, ["run", "zone", "area_avg", "min", "max", "p05", "p50", "p95", "lt5", "5to30", "30to300", "gt300", "n_faces"])
+    # tagged runs against the untagged run of the same variant (mesh and numerics checks)
+    comp = []
+    for r in runs:
+        b = final.get(r["variant"])
+        if r["tag"] and b is not None and "probe" not in r["tag"]:
+            comp.append({"run": r["run"], "base": b["run"], "cells": r["cells"], "base_cells": b["cells"],
+                         "dClA_pct": 100 * (r["ClA"] / b["ClA"] - 1) if abs(b["ClA"]) > 0.5 else float("nan"),
+                         "dCdA_pct": 100 * (r["CdA"] / b["CdA"] - 1),
+                         "d_front": (r["aero_front"] - b["aero_front"]) if not (math.isnan(r["aero_front"]) or math.isnan(b["aero_front"])) else float("nan")})
+    if comp:
+        write_csv(out / "cfd_checks.csv", comp)
     est = read_estimates()
     changed = update_variants(final, args.force) if args.update_variants else []
     if not args.no_plots:
         plots(runs, hist, wakes, est, final)
-    write_md(runs, final, wakes, est, changed)
+    write_md(runs, final, wakes, est, changed, boxes=boxes, yrows=yrows, comp=comp)
     for r in sorted(runs, key=lambda r: r["run"]):
         print(f"{r['run']:>14}: {r['cells']:>9,} cells {r['iterations']:>5} it  ClA {r['ClA']:6.2f}  CdA {r['CdA']:5.2f}  "
               f"front {r['aero_front']:.2f}  drift {r['df_drift_pct']:.2f}/{r['drag_drift_pct']:.2f} %  "

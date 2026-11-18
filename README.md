@@ -44,7 +44,7 @@ All numbers come from the scripts named in the table, as of 2026-11-18. None of 
 |---|---|---|
 | Mass, car without / with driver | 235.6 / 305.6 kg, 41.8 % front, CG height 312 mm | `matlab/mass_budget.m`, `media/mass_table.md` |
 | Frame | 124 tubes of 25.4 mm 4130, 49.3 kg (centre-line lengths, no welds) | `matlab/cad/frame_layout.m` |
-| Frame torsional stiffness | 1503 Nm/deg (834 before the 10 torsion diagonals added on 2026-11-18) | `matlab/stress/frame_fe.m`, beam model |
+| Frame torsional stiffness | 1503 Nm/deg (834 before the 10 torsion diagonals added on 2026-11-18); a fused solid model in SOLIDWORKS Simulation gives 1504 (same load case, 2.9 M-node mesh) | `matlab/stress/frame_fe.m` (beam model), `tools/sw_harness/FrameAnalysis.cs` (solid cross-check) |
 | Frame, lowest factor of safety on yield | 2.67, bump case (3 g total wheel load), nominal beam stress | `matlab/stress/frame_fe.m`, `docs/stress_frame.md` |
 | Camber gain, front / rear | −0.039 / −0.043 deg/mm | `matlab/suspension_geometry.m` |
 | Bump steer over ±30 mm, front / rear | 0.010 / 0.021 deg | same |
@@ -88,7 +88,7 @@ The diagonals were chosen by `matlab/stress/frame_diagonal_search.m`: the lighte
 
 | File | What |
 |---|---|
-| `media/views/*_iso.png` and the other five views | SolidWorks standard views of the chassis, the assembly, the master layout and the suspension (corners and frame only) |
+| `media/views/*_iso.png` and the other five views | SolidWorks standard views of the chassis, the assembly, the master layout, the suspension (corners and frame only) and the fused analysis frame |
 | `media/suspension_bump_steer.gif` | front and rear corner through ±30 mm of travel, then the front corner lock to lock (MATLAB kinematics) |
 | `media/frame_stress_cases.png`, `frame_stress_bump.png`, `frame_torsion_diagonals.png`, `frame_fe.png` | frame stress per load case, the bump case on the frame, stiffness by diagonal family, deformed shapes |
 | `media/mass_table.md`, `media/lap_time_table.md`, `media/results_table.md` | mass budget, lap times, aero before/after CFD |
@@ -113,8 +113,10 @@ These are the things the numbers above depend on that were not measured, or were
 - **Frame stiffness and stress** come from a MATLAB beam model:
   - rigid joints at the node centres;
   - no weld detail, no stress concentration, no fatigue.
-  - It is self-tested against hand calculations for single tubes, but **no solid model has confirmed it on the full frame**. The SOLIDWORKS solid cross-check runs on the Student licence, but its result is not valid: the trimmed weldment tubes touch only along edges, so bonded contact leaves some tubes unjoined (see `docs/stress_frame.md`).
-  - The real joints will be somewhat softer than the model.
+  - It is self-tested against hand calculations for single tubes.
+  - **Torsional stiffness is confirmed by a solid model.** A separate analysis-only solid frame (`cad/analysis/frame_analysis.SLDPRT`, built from the same tube data, tube ends overlapping their neighbours by 1 mm and fused into one body) gives 1504 Nm/deg against the beam model's 1503 in the headline case, and 1374 against 1386 with couples at the nodes. Going from a 5 mm to a 4 mm mesh changes this by 0.3 %; a 3 mm mesh failed to mesh on the Student licence (see `docs/stress_frame.md`).
+  - **Stresses are not confirmed.** The solid model's peaks sit where the point loads enter and are not used. The frame stresses and factors of safety are the beam model's nominal values.
+  - **What neither model includes:** both assume perfectly fused joints, with no welds as built, no brackets and no fabrication tolerances. The real frame will be softer than both by an amount neither can predict. Only a physical torsion test would settle it.
 - **Mass and CG.** 24 % of the mass is a placeholder (flag GUESS in `media/mass_table.md`), including the brackets and welds, the inverter, the wings and the bodywork. The CG height is therefore partly a guess too.
 - **Lap simulation.**
   - Quasi-steady, perfect driver, no transients.
@@ -132,7 +134,7 @@ These are the things the numbers above depend on that were not measured, or were
 
 ```
 params/     car_params.txt (single source of truth, with the mass and CG budget), suspension_hardpoints.txt, aero tables
-cad/        SolidWorks parts and assemblies, frame/ (node, tube and trim CSVs), generate/ (Python geometry), macros/
+cad/        SolidWorks parts and assemblies, frame/ (node, tube and trim CSVs), analysis/ (fused solid frame for the torsion cross-check), generate/ (Python geometry), macros/
 matlab/     run_all, make_media, mass_budget, suspension_geometry, suspension_optimise, load_cases; cad/ (frame_layout, frame_trims),
             stress/ (frame_fe, frame_diagonal_search), lapsim/, simulink/, aero/, cfd/
 tools/      sw_run.py and the C# SolidWorks harness (sw_harness/), README with every step

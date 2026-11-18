@@ -1,0 +1,29 @@
+cfd_variants: params params\car_params.txt, output C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\step\cfd
+
+variant E
+  clearance body+floor to front wing (no pylon): 49.9 mm
+  clearance body+floor to rear wing (no pylon): 231.9 mm
+  clearance car to front wheel: 105.6 mm
+  clearance car to rear wheel: 30.0 mm
+  fluid_E.step: 190 faces named (2 filled in after writing)
+  PASS  halfcar_E: car                         solids 1 shells 1 faces  171 valid True bad edges 0 bbox [-1060.0, 2320.0, -0.0, 806.0, 30.0, 1379.11]
+  PASS  halfcar_E: wheel_front                 solids 1 shells 1 faces   10 valid True bad edges 0 bbox [-228.5, 228.5, 510.0, 690.0, -0.0, 450.5]
+  PASS  halfcar_E: wheel_rear                  solids 1 shells 1 faces   10 valid True bad edges 0 bbox [1321.5, 1778.5, 485.0, 665.0, -0.0, 450.5]
+  PASS  fluid_E                                solids 1 shells 1 faces  190 valid True bad edges 0 bbox [-11200.0, 29360.0, -0.0, 6450.0, -0.0, 6200.0]
+  PASS  halfcar_E.step read back: car          solids 1 shells 1 faces  171 valid True bad edges 0 bbox [-1060.0, 2320.0, -0.0, 806.0, 30.0, 1379.11]
+  PASS  halfcar_E.step read back: wheel        solids 1 shells 1 faces   10 valid True bad edges 0 bbox [1321.5, 1778.5, 485.0, 665.0, -0.0, 450.5]
+  PASS  halfcar_E.step read back: wheel        solids 1 shells 1 faces   10 valid True bad edges 0 bbox [-228.5, 228.5, 510.0, 690.0, -0.0, 450.5]
+  PASS  fluid_E.step read back                 solids 1 shells 1 faces  190 valid True bad edges 0 bbox [-11200.0, 29360.0, -0.0, 6450.0, -0.0, 6200.0]
+  frontal area, half: car 0.651 m2, with wheels 0.677 m2 -> full car 1.354 m2
+  fluid faces by zone: {'car_body': 82, 'car_floor': 27, 'car_fw': 30, 'car_rw': 27, 'ground': 1, 'inlet': 1, 'outlet': 1, 'side': 1, 'symmetry': 1, 'top': 1, 'wheel_front': 9, 'wheel_rear': 9}
+  contact patch front {'length': 143.2, 'width': 172.1, 'area_mm2': 23497.9}, rear {'length': 143.2, 'width': 172.1, 'area_mm2': 23497.9}
+  built in 20.1 s
+
+  PASS  domain.step  bbox [-11200.0, 29360.0, 0.0, 6450.0, 0.0, 6200.0]  
+  PASS  boi_near.step  bbox [-1360.0, 3200.0, 0.0, 1100.0, 0.0, 1800.0]  
+  PASS  boi_wake.step  bbox [3200.0, 10700.0, 0.0, 1400.0, 0.0, 2200.0]  
+  PASS  boi_boxes.step  2 solids
+  PASS  boi_boxes_win.step  5 solids
+  cfd_geometry.json written (variants ['A', 'B', 'C', 'CP', 'D', 'E'])
+
+11 of 11 checks passed; variants built: E

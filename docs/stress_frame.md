@@ -2,7 +2,7 @@
 
 Model: `matlab/stress/frame_fe.m` (run alone, from `run_all`, or `frame_fe('--selftest')`).
 Output: `sim/stress/frame_fe_report.txt` and `media/frame_fe.png`.
-Cross-check: the torsion case on the frame as solids in SOLIDWORKS Simulation, `swh FrameSolid` (`tools/sw_harness/FrameSolid.cs`). The result is in `sim/stress/frame_solid_report.txt` and in the last section below.
+Cross-check: both free-free torsion cases on an analysis-only fused solid frame in SOLIDWORKS Simulation, `swh FrameAnalysis` (`tools/sw_harness/FrameAnalysis.cs`). It agrees within 1 % (1504 vs 1503 Nm/deg in the headline case). The result is in `sim/stress/frame_analysis_report.txt` and in the last section below.
 
 ## Model
 
@@ -222,36 +222,86 @@ The largest pickup deflection, about 1.8 mm in cornering, is at the front. That 
 ## Limits
 
 - Linear static, small deflection.
-- Rigid joints at node centres: real welded joints are a little softer, but the bigger difference is the joint offset (tube ends are not at a point), which beams ignore.
+- Rigid joints at node centres. The fused solid model, which has finite joints and wall flexibility, agrees within 1 % in torsion: on this frame the two effects cancel. Welds as built are softer than either model.
 - No brackets, no weld detail, no fatigue.
 - The peak stresses are nominal: real values near the welds are higher by a stress-concentration factor of roughly 1.5 to 3. The FoS above should be read against that.
 
-## Cross-check on solids (SOLIDWORKS Simulation): runs, but no valid number
+## Cross-check on solids (SOLIDWORKS Simulation, 2026-11-18): the beam model's torsion is confirmed within 1 %
 
-`python tools/sw_run.py FrameSolid 5` sets up the torsion case "couples at the wishbone nodes" on the frame as solids, through the harness:
-- copy of `chassis.SLDPRT`;
-- static study, solid mesh;
-- AISI 4130;
-- free-free with inertia relief;
-- each node force on the tube edge nearest the node.
+`python tools/sw_run.py FrameAnalysis 4` (`tools/sw_harness/FrameAnalysis.cs`). Report: `sim/stress/frame_analysis_report.txt`. Mesh study: `sim/stress/frame_analysis_mesh_study.txt`. Overlap study: `sim/stress/frame_analysis_ov05_report.txt` and `_ov15_report.txt`.
 
-That is a load on the geometry, not on a joint. Face loads were not used, because a tube face here runs the full tube length and would spread the load along it.
+### The analysis-only solid frame
 
-**Student can run it.** At 5 mm it meshes to 722k second-order tets and 1.46 M nodes in 38 s, and solves in about 60 s.
+`cad/analysis/frame_analysis.SLDPRT` is a separate part. It is built by the harness from the same `cad/frame/frame_nodes.csv`, `frame_tubes.csv` and `frame_trims.csv` as the production chassis. `chassis.SLDPRT` is never opened.
 
-**The result is not valid:**
-- **Stiffness:** the solid model gives 18 to 43 Nm/deg depending on the run, against 763 for the beam model.
-- **Joint check:** the step looks at the mesh nodes within 20 mm of each frame node. In every run, one or two tubes do not move with their node; their displacement spreads are huge. A different set failed in each of the four runs: around FH_M_R/MH_M_R, then RS1_L, then MH_T. Those tubes are not joined to the frame and float on the soft springs.
+**Construction:**
+- Every tube is a hollow cylinder on its centreline, with OD and wall from the CSV.
+- **Coped ends:** where `frame_trims.csv` trims a tube at a node, the tube runs to the node centre and is coped against each of its boundary tubes by a cylinder of the boundary tube's radius minus 1.0 mm. The end therefore sits 1.0 mm deep in the neighbour's 1.6 mm wall. The two solids share volume, and the neighbour's bore stays closed. This is the weldment's cope, pushed 1 mm into the wall.
+- **Run-through ends:** where a tube is not trimmed (it runs through, or is one of two collinear halves), it runs OD/2 past the node, so it covers the copes of the tubes trimmed against it, at corners too.
+- **Fusing:** all 124 tubes are united into one body in about 15 s. Count: 196 coped ends, 52 run-through ends. A few cope scraps under 6 mm³ were left out.
+- **Mass:** 47.0 kg of steel, against 49.3 kg for centreline-length tubes. The difference is the tube ends inside their neighbours at the joints.
+- **Load faces:** a 40 mm cube is imprinted on the body around each of the 20 loaded nodes, which splits the tube faces there.
 
-**Why:**
-- **Geometry check:** the trimmed weldment tubes touch their neighbours. The closest distance is under 0.01 mm for 356 of the 444 tube pairs that share a node, and all 114 tubes form one connected group.
-- **But only along lines and points, not across faces.** The coped ends of thin-wall tubes meet the next tube's cylinder at an edge. Bonded contact needs touching faces, so it joins some of these contacts and misses others.
-- **Combining the bodies fails for the same reason:**
-  - the Combine feature is refused;
-  - an in-memory Boolean union (`--fuse`) keeps 82 of 114 tubes apart, either as a disjoint result or with error 547.
+### The study
 
-**What would make it work** (not done; it changes the CAD build, not the analysis):
-- Build the solid frame for analysis separately from the weldment: each tube extended 1 to 2 mm into its neighbours, then all united. Overlapping solids fuse cleanly.
-- Or add weld beads (fillet bodies) at each node.
+- Static, solid mesh (second-order tetrahedra), AISI 4130 normalised (E 205 GPa, as frame_fe).
+- Free-free with inertia relief, no soft springs. The solver reports zero unbalanced force and moment.
+- **Loads:** the two free-free torsion cases of frame_fe, written by it to `sim/stress/frame_torsion_loads.csv`:
+  - **nodes:** ±F/4 at the 16 wishbone nodes (front couple 526.5 Nm, the rear one opposite);
+  - **links:** the 24 link forces of the headline case (1000 N up and down at the front contact patches, the same torque the other way at the rear) at the real inner pickup points, 1200 Nm per axle.
+- **Load application:** each force is a remote load (direct transfer, distributed coupling) at its point, on the faces inside its node's cube. It reaches the frame spread over the joint, as through a bracket. A force at the pickup point equals frame_fe's force plus bracket moment at the node.
+- **Twist,** measured as in frame_fe: per axle, the mean of atan(Δuz/Δy) over the four left/right wishbone node pairs. uz at a node is the mean over the mesh nodes on the faces in its cube (1,700 to 3,700 nodes each). Stiffness = frame_fe's torque / (front twist − rear twist).
 
-Until then, the frame numbers in this document are the MATLAB beam model's. The beam model is self-tested against hand calculations, but nothing independent has checked it on the full frame yet.
+### Result
+
+| Case | Solid, 5 mm mesh (1.87 M nodes) | Solid, 4 mm mesh (2.93 M nodes) | frame_fe (beam) | Difference at 4 mm |
+|---|---|---|---|---|
+| Couples at the wishbone nodes | 1379 Nm/deg | 1374 Nm/deg | 1386 Nm/deg | −0.9 % |
+| Wheel forces through the links (headline) | 1509 Nm/deg | 1504 Nm/deg | 1503 Nm/deg | +0.1 % |
+
+**Mesh convergence:** going from 5 to 4 mm changes the stiffness by 0.3 % or less. A 3 mm mesh (about 6 M nodes) failed in both studies with mesh error 8 after about 250 s. Code 8 is not in the API's documented list (0–7), and the cause was not found; memory or a size limit of the Student licence are possible. So the wall is resolved by one or two quadratic elements through its 1.6 mm, and that was not refined further.
+
+**Overlap sensitivity** (5 mm mesh): the overlap only makes the union possible; it does not change the result.
+
+| Overlap into the neighbour's wall | Fused volume | Nodes case | Links case |
+|---|---|---|---|
+| 0.5 mm | 5990.7 cm3 | 1379 Nm/deg | 1509 Nm/deg |
+| 1.0 mm (used) | 5990.6 cm3 | 1379 | 1509 |
+| 1.5 mm | 5989.9 cm3 | 1379 | 1509 |
+
+Once a tube end sits inside its neighbour's wall, the union is the same shape for any overlap between 0 and the 1.6 mm wall.
+
+**Checks on the solution:**
+- Left and right displacements are equal and opposite within 2 %.
+- Inside each node's 40 mm cube, the spread of uz is 0.07 to 0.17 mm (nodes case). That is what a rigid rotation of 0.2° across 40 mm gives, so every joint moves as one piece. In the 2026-11-17 weldment try, unjoined tubes showed spreads of 50 to 160 mm.
+- The front/rear split of the twist differs from frame_fe by an almost equal amount at both axles (nodes case: front 0.218° vs 0.256°, rear −0.165° vs −0.124°). That is a rigid-body rotation about x. It comes from the inertia-relief reference: frame_fe carries the 300 kg of lumped sprung masses, the solid only its own 47 kg of steel. It cancels in the front − rear twist that defines stiffness.
+- **Peak von Mises: not a frame stress.** It is 162 MPa (nodes) and 668 MPa (links) at 4 mm, and does not converge between meshes (256 and 648 MPa at 5 mm). Both peaks lie inside a load cube, 17 mm from a pickup node, where a whole link force enters through a few faces. The frame stresses in this document stay frame_fe's. The solid model was not used to check them.
+
+### What it says about both models
+
+- **The beam model's torsional stiffness is confirmed** to about 1 % in both load cases. The 1503 Nm/deg headline holds, and so does the diagonal search judged by it.
+- **The agreement is closer than the modelling differences would suggest.** Two effects the beam model ignores push in opposite directions:
+  - Finite joints stiffen the solid: the tube ends overlap inside the joint, so the free tube lengths are shorter than node to node.
+  - Local wall flexibility softens it: tube walls ovalise where a neighbour lands on them, which rigid beam joints cannot show.
+
+  In this frame the two cancel to within 1 %. This run does not show how large each one is separately. On a frame with shorter tubes or thinner walls, they need not cancel.
+- **What neither model includes,** so this check does not cover it:
+  - welds as built (both models assume perfectly fused joints);
+  - brackets and their own compliance;
+  - heat-affected material;
+  - fabrication tolerances;
+  - the suspension links' own stretch.
+
+  A measured frame will be softer than both, by an amount neither model can say. A physical torsion test is the remaining check.
+- **Mass:** the solid has 47.0 kg of steel against frame_fe's 49.3 kg. The beam model counts full centreline lengths, which overlap at the joints. The CAD weldment (47.5 kg in BuildTubes) agrees with the solid. The mass budget's 49.3 kg is therefore about 2 kg (4 %) high for the tubes alone, which is inside the 6.4 kg brackets-and-welds allowance's uncertainty. It was not changed.
+
+### The earlier attempt (2026-11-17): why the weldment itself could not be used
+
+`FrameSolid` used a copy of the trimmed weldment `chassis.SLDPRT`. It meshed and solved on the Student licence, but gave 18 to 44 Nm/deg against 763 for the beam model of that frame. One or two tubes floated in every run.
+
+The coped thin-wall ends touch their neighbours only along lines and points, not across faces. Because of that:
+- bonded contact joins some contacts and misses others;
+- the Combine feature is refused;
+- an in-memory union kept 82 of 114 tubes apart.
+
+That step is kept as the record (`sim/stress/frame_solid_report.txt`). FrameAnalysis replaces its result.

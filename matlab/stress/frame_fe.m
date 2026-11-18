@@ -393,7 +393,7 @@ r.torque_Nm = sum(F(3:6:end) .* fr.xyz(:, 2) .* front - F(2:6:end) .* fr.xyz(:, 
 r.twist_front = tw(1, 2); r.twist_rear = tw(3, 4);
 r.twist_deg = r.twist_front - r.twist_rear;
 r.k_Nm_deg = abs(r.torque_Nm / r.twist_deg);
-r.u = u;
+r.u = u; r.F = F;
 r.stress = element_stress(mdl, u);
 % twist along the car: rotation about x of each station (nodes at one x, left/right pairs)
 xs = unique(round(fr.xyz(:, 1)));
@@ -414,14 +414,19 @@ function r = torsion_wheel_case(mdl, fr, C, pick, lump, Fw)
 tF = 2 * C(2).wc(2); tR = 2 * C(4).wc(2);
 fz = [Fw, -Fw, -Fw * tF / tR, Fw * tF / tR];
 F = zeros(mdl.ndof, 1);
+PL = zeros(0, 8);                       % corner, link, pickup point (mm), force on the frame (N): for the solid cross-check
 for k = 1:4
     t = link_forces(C(k), [0 0 fz(k)], C(k).cp);
     F = apply_links(F, C(k), pick(k, :), t);
+    for i = 1:6
+        uu = C(k).inner(i, :) - C(k).outer(i, :); uu = uu / norm(uu);
+        PL(end + 1, :) = [k, i, C(k).inner(i, :), -t(i) * uu]; %#ok<AGROW>
+    end
 end
 [u, a] = solve_inertia_relief(mdl, lump, F, fr);
 r = torsion_measures(mdl, fr, pick, F, u, sprintf(['free-free, %g N up and down at the front contact patches and the same ' ...
     'torque the other way at the rear, through the links (inertia relief)'], Fw));
-r.accel = a;
+r.accel = a; r.pickup_loads = PL;
 end
 
 function F = apply_links(F, c, pk, t)
@@ -489,7 +494,41 @@ for k = 1:numel(out.cases)
 end
 end
 
+function write_torsion_loads(out, root)
+% The two free-free torsion cases as point loads, for the SOLIDWORKS solid cross-check (swh FrameAnalysis):
+% each row is one force at a point (the frame node for the node couples, the real inner pickup point for the
+% links case; a force at the pickup is the same as the force plus its bracket moment at the node, as here).
+% role/pair: the four wishbone nodes per corner whose vertical displacements give the twist, in the
+% order torsion_measures pairs them (left i with right i).
+fr = out.frame; pick = out.pickups; cn = ["FL", "FR", "RL", "RR"];
+f = fullfile(root, 'sim', 'stress', 'frame_torsion_loads.csv');
+fid = fopen(f, 'w'); c = onCleanup(@() fclose(fid));
+fprintf(fid, 'case,kind,name,x_mm,y_mm,z_mm,Fx_N,Fy_N,Fz_N,torque_Nm,twist_deg,k_Nm_deg\n');
+cases = {'nodes', out.torsion_nodes; 'links', out.torsion};
+for j = 1:2
+    t = cases{j, 2}; nm = cases{j, 1};
+    if strcmp(nm, 'nodes')
+        Fz = t.F(3:6:end);
+        for n = find(abs(Fz) > 1e-9).'
+            fprintf(fid, '%s,load,%s,%.3f,%.3f,%.3f,0,0,%.6f,%.6f,%.6f,%.3f\n', nm, fr.node(n), fr.xyz(n, :), Fz(n), t.torque_Nm, t.twist_deg, t.k_Nm_deg);
+        end
+    else
+        for r = 1:size(t.pickup_loads, 1)
+            L = t.pickup_loads(r, :); n = pick(L(1), L(2)).node;
+            fprintf(fid, '%s,load,%s,%.3f,%.3f,%.3f,%.6f,%.6f,%.6f,%.6f,%.6f,%.3f\n', nm, fr.node(n), L(3:5), L(6:8), t.torque_Nm, t.twist_deg, t.k_Nm_deg);
+        end
+    end
+    for k = 1:4
+        for i = 1:4
+            n = pick(k, i).node;
+            fprintf(fid, '%s,%s%d,%s,%.3f,%.3f,%.3f,0,0,0,%.6f,%.6f,%.3f\n', nm, cn(k), i, fr.node(n), fr.xyz(n, :), t.torque_Nm, t.twist_deg, t.k_Nm_deg);
+        end
+    end
+end
+end
+
 function write_report(out, p, root)
+write_torsion_loads(out, root);
 f = fullfile(root, 'sim', 'stress', 'frame_fe_report.txt');
 fid = fopen(f, 'w');
 c = onCleanup(@() fclose(fid));

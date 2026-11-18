@@ -86,6 +86,47 @@ def airfoil_points(name: str, chord: float, aoa_deg: float, le_x: float, le_z: f
     return out
 
 
+# Derived variants: built from a base variant's parameters with overrides.
+#   E  (2026-11-18): C with a lower, wider rear wing at D's angles, D's 14 deg diffuser and
+#                    a blunt tail (body cut at X 1745). Aim: a lower, more turbulent wake at
+#                    C's downforce. Physics and prediction: cfd/variant_E.md (written before the run).
+#   CP (2026-11-18): C with the SolidWorks bodywork of cad/generate/build_parts.py: nose
+#                    sections from the frame, taller and longer sidepods, 10 mm floor plate.
+#                    Simplifications against the parts: cfd/geometry_notes.md.
+VARIANT_DEFS = {
+    "A": {"base": "A"}, "B": {"base": "B"}, "C": {"base": "C"}, "D": {"base": "D"},
+    "E": {"base": "C", "rw_angles_from": "D", "set": {"rw_height": 950.0, "rw_span": 1330.0}, "diffuser_angle": 14.0,
+          "tail_cut_x": 1700.0},
+    "CP": {"base": "C", "body": "parts"},
+}
+
+
+def kind(variant: str) -> str:
+    """The base variant whose features (wings, diffuser, beam wing ...) a variant has."""
+    return VARIANT_DEFS[variant]["base"]
+
+
+def variant_params(p: dict, variant: str) -> dict:
+    """Parameter dict for a derived variant: the base's *_<base> keys copied to
+    *_<variant>, then the overrides."""
+    d = VARIANT_DEFS[variant]
+    if d["base"] == variant and len(d) == 1:
+        return p
+    q = dict(p)
+    b = d["base"]
+    for k, v in p.items():
+        if k.endswith(f"_{b}"):
+            q[k[: -len(b)] + variant] = v
+    src = d.get("rw_angles_from")
+    if src:
+        for el in ("main", "flap1", "flap2"):
+            q[f"rw_{el}_aoa_{variant}"] = p[f"rw_{el}_aoa_{src}"]
+    if "diffuser_angle" in d:
+        q[f"diffuser_angle_{variant}"] = d["diffuser_angle"]
+    q.update(d.get("set", {}))
+    return q
+
+
 VG_T = 10.0          # mm, thickness of the variant-D endplate fins (5 mm fins gave many tiny faces and a fragile surface mesh)
 SLOT_EXTRA = 8.0     # mm added to wing_element_gap: the CAD's 14 mm leaves 5 to 8 mm between the surfaces, too thin to mesh inside the cell limit
 TE_CUT = 0.97        # wing sections are cut at this chord fraction at most: a blunt trailing edge instead of a knife edge
@@ -193,23 +234,115 @@ def body_sections(p):
     ]
 
 
-def build_body(p):
+def plate_top(p, x: float) -> float:
+    """Top of the 10 mm floor plate of build_parts.build_floor at station x (raked)."""
+    x0, xa = p["floor_start_from_front_axle"], p["wheelbase"]
+    z0, z1 = p["ride_height_front"], p["ride_height_rear"]
+    return z0 + (z1 - z0) * (x - x0) / (xa - x0) + PLATE_T
+
+
+PLATE_T = 10.0       # mm, floor plate of the SolidWorks parts (variant CP)
+CP_R_NOSE_MIN = 40.0 # mm: CP nose corner radius at least this (parts: 10..20 mm); cell budget, see docs/geometry_notes.md
+CP_R_POD = 25.0      # mm: CP sidepod corner radius (parts: 6 mm); cell budget
+SINK = 4.0           # mm: with the plate floor, hull and sidepod bottoms sit this far INTO the plate (a 1 mm gap as in the parts is unmeshable)
+
+
+def body_sections_parts(p):
+    """Hull sections with the SolidWorks nose (build_parts.build_nose): the two tip
+    sections, then sections sized from the frame tubes (+10 mm clearance, 2 mm skin:
+    the outer face), up to the front hoop; behind it the CFD cockpit sections.
+    Differences to the parts, all so that no thin air gap is left for the mesher:
+    the nose is solid (no skin, no 12 link slots, not open at the hoop); from the
+    floor's leading edge back, every section's bottom is moved down into the
+    floor plate (SINK), i.e. the floor is taken as closed against the chassis, and
+    two sections are added (X 310 just behind the floor leading edge, X 1550 at the
+    rear axle) so the ruled hull bottom follows the raked plate."""
+    import build_parts as bp
+    pts = bp.frame_samples()
+    x_end = p["front_hoop_x"] - 12.7 - bp.TUBE_CLEAR
+    secs = [(-p["nose_overhang"], 160, 80, 30, 200), (-450, 320, 180, 60, 160)]
+    st = [-325.0, -230.0, -160.0, -80.0, 0.0, 80.0, 160.0, 280.0, 400.0, 520.0, x_end]
+    for i, x in enumerate(st):
+        lo = st[max(i - 1, 0)] if i > 0 else -340.0
+        hi = st[min(i + 1, len(st) - 1)]
+        w, h, R, zb = bp.section_from_frame(pts, lo, hi, 90.0)
+        R = min(max(R, CP_R_NOSE_MIN), 0.45 * min(w, h))   # budget: small radii are refined by curvature
+        secs.append((x, w, h, R, zb))
+    cfd = {s_[0]: s_ for s_ in body_sections(p)}
+    secs += [cfd[p["front_hoop_x"]], cfd[p["main_hoop_x"]], cfd[1600], cfd[1900]]
+    # section at X 310 (shape of the X 280 one) and at the rear axle (between main hoop and 1600)
+    s280 = next(s_ for s_ in secs if s_[0] == 280.0)
+    secs.append((310.0,) + s280[1:])
+    a, b = cfd[p["main_hoop_x"]], cfd[1600]
+    t = (p["wheelbase"] - a[0]) / (b[0] - a[0])
+    secs.append(tuple([float(p["wheelbase"])] + [a[k] + t * (b[k] - a[k]) for k in range(1, 5)]))
+    secs.sort(key=lambda s_: s_[0])
+    out = []
+    x_lo, x_hi = p["floor_start_from_front_axle"] + 10.0 - 1e-6, p["wheelbase"] + 1e-6
+    for (x, w, h, R, zb) in secs:
+        if x_lo <= x <= x_hi:
+            znew = plate_top(p, x) - SINK
+            h, zb = h + (zb - znew), znew          # keep the top, move the bottom into the plate
+        out.append((x, w, h, R, zb))
+    return out
+
+
+def sidepod_parts(p):
+    """Outer surface of build_parts.build_sidepod as a solid (the parts' pod is a 2 mm
+    shell open inboard and at the bottom; here it is closed, its inboard face moved to
+    Y 300 into the hull and its bottom SINK into the floor plate, raked with it)."""
+    import build_parts as bp
+    t, TC = bp.SKIN, bp.TUBE_CLEAR
+    m = TC + t
+    y_in = 310.0 + 12.7 + TC
+    x_tail = p["main_hoop_x"] + 12.7 + TC + 3.0 + 25.0
+    behind = [q for q in bp.frame_samples() if p["main_hoop_x"] + 13.0 < q[0] <= x_tail + 5.0 and 0.0 < q[1] < 360.0]
+    if behind:
+        y_in = max(y_in, max(y + r for (x, y, z, r) in behind) + TC)
+    pts = [q for q in bp.frame_samples() if q[1] >= y_in and 600.0 <= q[0] <= 1300.0]
+    y_out = max(562.0, max(y + r for (x, y, z, r) in pts) + m)
+    z_top = max(342.0, max(z + r for (x, y, z, r) in pts) + m + 1.0)
+    x_full0 = p["front_hoop_x"] - 12.7 - TC - 3.0
+    x_full1 = p["main_hoop_x"] + 12.7 + TC + 3.0
+    yi = 300.0                                                          # into the hull (parts: open at y_in)
+    zb0, zb1, zbt = (plate_top(p, x) - SINK for x in (x_full0, x_full1, x_full1 + 25))
+    tail_top = 70.0 + 180.0
+    pod = loft([section_ellipse(x_full0 - 100, 60, 180, 440, 200),
+                section_rounded(x_full0, y_out - yi, z_top - zb0, CP_R_POD, zb0, (yi + y_out) / 2),
+                section_rounded(x_full1, y_out - yi, z_top - zb1, CP_R_POD, zb1, (yi + y_out) / 2),
+                section_rounded(x_full1 + 25, 430 - yi, tail_top - zbt, 30, zbt, (yi + 430) / 2)], ruled=True)
+    info = {"y_in_parts": round(y_in, 1), "y_in_cfd": yi, "y_out": y_out, "z_top": round(z_top, 1), "x_full": (x_full0, x_full1),
+            "tail_x": x_full1 + 25}
+    return pod, info
+
+
+def build_body(p, variant: str = "C"):
     """Chassis envelope, closed cockpit, driver (torso and helmet), roll-hoop
-    fairing, sidepod with the battery pack inside."""
-    hull = loft([section_rounded(*s) for s in body_sections(p)], ruled=True)
+    fairing, sidepod with the battery pack inside. Variant CP: the SolidWorks
+    nose and sidepods (body_sections_parts, sidepod_parts). Variant E: cut off
+    square at tail_cut_x (blunt base)."""
+    d = VARIANT_DEFS[variant]
+    parts_body = d.get("body") == "parts"
+    hull = loft([section_rounded(*s) for s in (body_sections_parts(p) if parts_body else body_sections(p))], ruled=True)
     xd = 1120.0                                             # driver's head, between the hoops
     torso = Pos(xd, 0, 680) * Cylinder(130, 240)            # Z 560 .. 800
     helmet = Pos(xd, 0, 800) * Sphere(140)
     hoop = loft([section_rounded(1200, 240, p["main_hoop_height"] + 10 - 560, 60, 560),
                  section_rounded(1750, 120, 100, 30, 440)], ruled=True)
     # sidepod: solid, 20 mm into the hull so the union is clean; tail ends ahead of the rear tyre
-    y_in, y_out, z_bot, z_top = 300.0, 562.0, 50.0, 342.0
-    yc, w, h = (y_in + y_out) / 2, y_out - y_in, z_top - z_bot
-    pod = loft([section_ellipse(560, 60, 180, 440, 200),
-                section_rounded(660, w, h, 25, z_bot, yc),
-                section_rounded(1240, w, h, 25, z_bot, yc),
-                section_rounded(1295, 120, 180, 30, 70, 370)], ruled=True)
-    return fuse_all({"hull": hull, "torso": torso, "helmet": helmet, "hoop fairing": hoop, "sidepod": pod}, "body")
+    if parts_body:
+        pod, _ = sidepod_parts(p)
+    else:
+        y_in, y_out, z_bot, z_top = 300.0, 562.0, 50.0, 342.0
+        yc, w, h = (y_in + y_out) / 2, y_out - y_in, z_top - z_bot
+        pod = loft([section_ellipse(560, 60, 180, 440, 200),
+                    section_rounded(660, w, h, 25, z_bot, yc),
+                    section_rounded(1240, w, h, 25, z_bot, yc),
+                    section_rounded(1295, 120, 180, 30, 70, 370)], ruled=True)
+    body = fuse_all({"hull": hull, "torso": torso, "helmet": helmet, "hoop fairing": hoop, "sidepod": pod}, "body")
+    if "tail_cut_x" in d:
+        body = one_solid(body & box_between(-1e4, d["tail_cut_x"], -1e4, 1e4, -1e4, 1e4), "body with blunt tail")
+    return body
 
 
 def floor_dims(p):
@@ -218,6 +351,42 @@ def floor_dims(p):
 
 
 def build_floor(p, variant: str):
+    """(see below; variant CP: a PLATE_T plate instead of the block up to Z 75)"""
+    if VARIANT_DEFS[variant].get("body") == "parts":
+        return build_floor_plate(p, variant)
+    return build_floor_block(p, variant)
+
+
+def diffuser_parts(p, variant: str, d: dict, parts: dict):
+    ang = math.radians(p[f"diffuser_angle_{variant}"]); Ld = p["diffuser_length"]
+    xa, z1, t = d["xa"], d["z1"], 12.0
+    xe, ze = xa + Ld, z1 + Ld * math.tan(ang)
+    parts["diffuser roof"] = prism_xz([(xa, z1), (xe, ze), (xe, ze + t), (xa, z1 + t)], -OVER, d["hw_rear"])
+    # filler on top of the roof start: the roof top (Z 62 at the axle) is below the
+    # hull bottom (Z 60-70 rising) for ~40 mm, leaving a sliver gap at Y = 0
+    parts["roof filler"] = prism_xz([(xa - 5, z1 + 5), (xa + 70, z1 + 5), (xa + 70, z1 + 30), (xa - 5, z1 + 30)], -OVER, 200.0)
+    fin = [(xa, z1), (xe, z1), (xe, ze + 1.0), (xa, z1 + 1.0)]     # 1 mm into the roof
+    for k, y in enumerate((150.0, 350.0)):
+        parts[f"strake {k + 1}"] = prism_xz(fin, y - 4, y + 4)
+    parts["side fence"] = prism_xz(fin, d["hw_rear"] - 8, d["hw_rear"])
+    return {"diffuser": True, "angle_deg": p[f"diffuser_angle_{variant}"], "x_exit": xe, "z_exit": ze}
+
+
+def build_floor_plate(p, variant: str):
+    """Variant CP: the floor of build_parts.build_floor, a PLATE_T thick raked plate
+    (wide to X 1290, then stepped in to |y| 455 to the rear axle), plus the diffuser."""
+    d = floor_dims(p)
+    side = [(d["x0"], d["z0"]), (d["xa"], d["z1"]), (d["xa"], d["z1"] + PLATE_T), (d["x0"], d["z0"] + PLATE_T)]
+    wide = prism_xz(side, -OVER, d["hw"]) & box_between(d["x0"] - 1, d["x_step"], -OVER - 1, d["hw"] + 1, 0, 100)
+    narrow = prism_xz(side, -OVER, d["hw_rear"])
+    parts = {"floor": wide + narrow}
+    info = {"diffuser": False, "plate_mm": PLATE_T}
+    if kind(variant) in ("C", "D"):
+        info.update(diffuser_parts(p, variant, d, parts))
+    return fuse_all(parts, "floor"), info
+
+
+def build_floor_block(p, variant: str):
     """Raked floor (underside ride_height_front at the leading edge to
     ride_height_rear at the rear axle, top flat at Z 75 so it overlaps the hull bottom (60-70)
     and the sidepod without slivers). C and D add the diffuser roof (12 mm
@@ -228,20 +397,8 @@ def build_floor(p, variant: str):
     narrow = prism_xz(side, -OVER, d["hw_rear"])
     parts = {"floor": wide + narrow}
     info = {"diffuser": False}
-    if variant in ("C", "D"):
-        ang = math.radians(p[f"diffuser_angle_{variant}"]); Ld = p["diffuser_length"]
-        xa, z1, t = d["xa"], d["z1"], 12.0
-        xe, ze = xa + Ld, z1 + Ld * math.tan(ang)
-        roof = prism_xz([(xa, z1), (xe, ze), (xe, ze + t), (xa, z1 + t)], -OVER, d["hw_rear"])
-        parts["diffuser roof"] = roof
-        # filler on top of the roof start: the roof top (Z 62 at the axle) is below the
-        # hull bottom (Z 60-70 rising) for ~40 mm, leaving a sliver gap at Y = 0
-        parts["roof filler"] = prism_xz([(xa - 5, z1 + 5), (xa + 70, z1 + 5), (xa + 70, z1 + 30), (xa - 5, z1 + 30)], -OVER, 200.0)
-        fin = [(xa, z1), (xe, z1), (xe, ze + 1.0), (xa, z1 + 1.0)]     # 1 mm into the roof
-        for k, y in enumerate((150.0, 350.0)):
-            parts[f"strake {k + 1}"] = prism_xz(fin, y - 4, y + 4)
-        parts["side fence"] = prism_xz(fin, d["hw_rear"] - 8, d["hw_rear"])
-        info = {"diffuser": True, "angle_deg": p[f"diffuser_angle_{variant}"], "x_exit": xe, "z_exit": ze}
+    if kind(variant) in ("C", "D"):
+        info = diffuser_parts(p, variant, d, parts)
     return fuse_all(parts, "floor"), info
 
 
@@ -316,10 +473,10 @@ def build_front_wing(p, variant: str):
     xa = m["le"][0] + 0.72 * m["chord"]; xb = m["le"][0] + 0.93 * m["chord"]
     pyl = prism_xz([(xa, mid_z_at(pts, xa)), (xb, mid_z_at(pts, xb)), (xb, 230.0), (xa, 230.0)], 60.0, 76.0)
     parts = {"endplate": ep}; parts.update(solids)          # the endplate is what joins the three elements
-    if variant == "D":
+    if kind(variant) == "D":
         parts.update({f"fw {k}": v for k, v in strakes(p, epi, p["vg_count_fw"]).items()})
     wing = fuse_all(parts, "front wing")
-    return wing, pyl, {"geo": geo, "endplate": epi, "pylon_x": (xa, xb)}
+    return wing, pyl, {"geo": geo, "endplate": epi, "pylon_x": (xa, xb), "no_pylon": wing}
 
 
 def build_rear_wing(p, variant: str):
@@ -329,9 +486,11 @@ def build_rear_wing(p, variant: str):
     yc, t = p["rw_pylon_y"], p["rw_pylon_thickness"]
     xa = m["le"][0] + 60.0; xb = min(xa + p["rw_pylon_chord"], 1895.0)
     pyl = prism_xz([(xa, 300.0), (xb, 300.0), (xb, mid_z_at(pts, xb)), (xa, mid_z_at(pts, xa))], yc - t / 2, yc + t / 2)
-    parts = {"endplate": ep}; parts.update(solids); parts["pylon"] = pyl
+    parts = {"endplate": ep}; parts.update(solids)
     info = {"geo": geo, "endplate": epi, "pylon_x": (xa, xb)}
-    if variant == "D":
+    info["no_pylon"] = fuse_all(dict(parts), "rear wing without pylon")      # for the wing-to-body clearance check
+    parts["pylon"] = pyl
+    if kind(variant) == "D":
         parts.update({f"rw {k}": v for k, v in strakes(p, epi, p["vg_count_rw"]).items()})
         f, binfo = airfoil_face_cfd("rw_flap1", p["beam_chord"], p["beam_aoa_D"], p["beam_x_le"], p["beam_z_le"])
         binfo.pop("points")
@@ -549,15 +708,23 @@ def export_named_step(solid: Solid, rows, path: Path, label: str):
 # ---------------------------------------------------------------------------
 def build_variant(p, variant: str, out: Path, log, dom_fixed=None):
     t0 = time.time()
+    p = variant_params(p, variant)
     L = p["wheelbase"]
-    body = build_body(p)
+    body = build_body(p, variant)
     floor, finfo = build_floor(p, variant)
     comps = {"car_body": body, "car_floor": floor}
     parts = {"body": body, "floor": floor}
     winfo = {}
-    if variant != "A":
+    if kind(variant) != "A":
         fw, fw_pylon, fwi = build_front_wing(p, variant)
         rw, rwi = build_rear_wing(p, variant)
+        # wings (without their pylons) must clear the body and floor: the mesher needs room
+        bf = body + floor
+        for nm, w in (("front wing", fwi.pop("no_pylon")), ("rear wing", rwi.pop("no_pylon"))):
+            gapmm = bf.distance_to(w)
+            log(f"  clearance body+floor to {nm} (no pylon): {gapmm:.1f} mm")
+            if gapmm < 15.0:
+                raise RuntimeError(f"variant {variant}: only {gapmm:.1f} mm between the body and the {nm}")
         fw = one_solid(fw + fw_pylon, "front wing + pylon")
         comps.update({"car_fw": fw, "car_rw": rw}); parts.update({"front wing": fw, "rear wing": rw})
         winfo = {"fw": fwi, "rw": rwi}
@@ -618,7 +785,7 @@ def build_variant(p, variant: str, out: Path, log, dom_fixed=None):
             results[-1]["ok"] = False; results[-1]["problems"].append(f"wetted area of {k}: {wet_got[k]:.0f} mm2 in the fluid, {wet_expect[k]:.0f} on the body")
     results[-1]["wetted_check_mm2"] = {k: (round(wet_got[k]), round(wet_expect[k])) for k in wet_expect}
     zones = sorted({r_["zone"] for r_ in rows})
-    need = [z for z in ZONES if not (variant == "A" and z in ("car_fw", "car_rw"))]
+    need = [z for z in ZONES if not (kind(variant) == "A" and z in ("car_fw", "car_rw"))]
     if sorted(need) != zones:
         results[-1]["ok"] = False; results[-1]["problems"].append(f"zones {zones}, expected {sorted(need)}")
 
@@ -687,6 +854,9 @@ def main() -> int:
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     only = [s.strip().upper() for s in args.only.split(",") if s.strip()] or ["A", "B", "C", "D"]
+    bad = [v for v in only if v not in VARIANT_DEFS]
+    if bad:
+        sys.exit(f"unknown variant(s) {bad}; known: {list(VARIANT_DEFS)}")
     p = read_car_params()
     lines = []
 
@@ -701,7 +871,7 @@ def main() -> int:
     car_h = 1549.0 if "rw_height" not in p else None
     all_results, summaries, ok = [], {}, True
     dom = None
-    order = [v for v in ("C", "D", "B", "A") if v in only]           # C first: it fixes the domain height
+    order = [v for v in ("C", "D", "B", "A") if v in only] + [v for v in only if v not in "ABCD"]   # C first: it fixes the domain height
     for v in order:
         log(f"\nvariant {v}")
         try:
@@ -758,6 +928,20 @@ def main() -> int:
         n_back = len(import_step(str(out / "boi_boxes.step")).solids())
         log(f"  {'PASS' if n_back == 2 else 'FAIL'}  boi_boxes.step  {n_back} solids")
         ok = ok and n_back == 2
+        # wake-window boxes (fluent_halfcar.py --boi win): the following car's window region
+        # around 1, 2 and 3 car lengths behind the rear axle, 0.7 m deep, Y 0..0.9, Z 0..1.6 m
+        win = {}
+        for n in (1, 2, 3):
+            xc = L + n * p["overall_length"]
+            win[f"boi_w{n}"] = (xc - 350.0, xc + 350.0, 0.0, 900.0, 0.0, 1600.0)
+        allb = dict(boi); allb.update(win)
+        comp = Compound(label="boi_boxes_win", children=[box_between(*b) for b in allb.values()])
+        for ch, nm in zip(comp.children, allb):
+            ch.label = nm
+        export_step(comp, str(out / "boi_boxes_win.step"))
+        n_back = len(import_step(str(out / "boi_boxes_win.step")).solids())
+        log(f"  {'PASS' if n_back == 5 else 'FAIL'}  boi_boxes_win.step  {n_back} solids")
+        ok = ok and n_back == 5
         planes = [0.5, 1.0, 2.0, 3.0]
         meta = {
             "units": "m unless the key says mm", "frame": "X rearward (flow direction) from the front axle, Y right from the centre plane, Z up from the ground",
@@ -765,7 +949,7 @@ def main() -> int:
             "domain_m": {k: dom[k] / 1000 for k in ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")},
             "domain_rule": {"car_length_m": dom["car_length"] / 1000, "car_width_m": dom["car_width"] / 1000, "car_height_m": dom["car_height"] / 1000,
                             "ahead_lengths": 3, "behind_lengths": 8, "above_heights": 4, "side_widths": 4},
-            "boi_m": {k: [v / 1000 for v in b] for k, b in boi.items()},
+            "boi_m": {k: [v / 1000 for v in b] for k, b in allb.items()},
             "wheelbase_m": L / 1000,
             "wheels": {"radius_unloaded_m": r / 1000, "radius_loaded_m": p["tyre_rolling_radius"] / 1000, "width_m": p["tyre_width"] / 1000,
                        "front_centre_m": [0.0, p["track_front"] / 2000, p["tyre_rolling_radius"] / 1000],
@@ -775,12 +959,18 @@ def main() -> int:
                             "window_half_width_m": p["wake_window_width"] / 2, "window_height_m": p["wake_window_height"]},
             "zones": ZONES, "reference": {"area_m2": p["frontal_area"], "length_m": L / 1000, "density": p["air_density"], "speed": p["cfd_speed"]},
             "variants": summaries,
+            "variant_defs": VARIANT_DEFS,
         }
+        old = out / "cfd_geometry.json"
+        if old.is_file():                                              # keep the variants not rebuilt this time
+            prev = json.loads(old.read_text()).get("variants", {})
+            meta["variants"] = {**{k: v for k, v in prev.items() if k not in summaries}, **summaries}
         (out / "cfd_geometry.json").write_text(json.dumps(meta, indent=1))
-        log("  cfd_geometry.json written")
+        log(f"  cfd_geometry.json written (variants {sorted(meta['variants'])})")
 
     log(f"\n{sum(1 for r_ in all_results if r_['ok'])} of {len(all_results)} checks passed; variants built: {', '.join(summaries) or 'none'}")
-    (out / "check_report.txt").write_text("\n".join(lines) + "\n")
+    rep_name = "check_report.txt" if set(only) >= set("ABCD") else f"check_report_{'_'.join(only)}.txt"
+    (out / rep_name).write_text("\n".join(lines) + "\n")
     return 0 if ok and summaries else 1
 
 

@@ -20,6 +20,15 @@ Ring 5 lives here. Ansys Student 2026 R1 (Fluent), driven entirely from Python (
 
 **Status 2026-11-17:** all four variants meshed under the Student limit and solved, 1500 iterations each. Results in `../media/cfd/cfd_results.md`. CFD rows are in `params/aero_variants.csv`; variant A is marked NOT converged (its downforce is near zero and swings by ClA +-0.006).
 
+**Status 2026-11-18:**
+- Mesh checks on C (volume coarsening, wake-window refinement, 1 prism layer) and on D (1 layer): ClA moves by under 0.3 %, CdA by under 2.4 %, and the B/C/D lap ranking does not change.
+- The force-based stop now works.
+- Variant E (wake test, `variant_E.md`): keeps C's downforce but makes the wake higher, not lower.
+- Variant CP (SolidWorks bodywork): ClA −2.3 %, CdA +1.8 % against C.
+- Details are in `fluent_halfcar_setup.md`.
+- `params/aero_variants.csv`: row C now comes from run CP, the SolidWorks bodywork (`TABLE_RUN` in `postprocess.py`, user's choice 2026-11-18). A, B and D are still on the older CFD bodywork. The following-car penalty still uses C's wake planes.
+- New actions in `fluent_halfcar.py`: `post` (re-export wake planes, window boxes and y+ from a saved run) and `cont` (continue a run). New options: `--boi win`, `--set KEY=VALUE`.
+
 ## forces.csv columns
 
 ```
@@ -34,7 +43,8 @@ Full-car values. `downforce_front_N` is the aero load on the **front axle** (fro
 |---|---|
 | Ranking of variants | Reasonable: same meshing and solver settings for all four. The only result to act on. |
 | Size of differences between variants | Indicative |
-| Absolute downforce and drag | Rough, could be off by tens of percent (one mesh per variant under the Student cell limit, wall functions, no mesh study); never quoted without that warning |
+| Absolute downforce and drag | Rough. The mesh checks move them by under 0.3 % (ClA) and 2.4 % (CdA), but the surface mesh could not be varied, and model error (steady RANS, wall functions at y+ 30 to 150, no test data) is unmeasured: could still be off by tens of percent; never quoted without that warning |
 | Open-wheel flow, wheel wake | Poor; steady RANS cannot capture the unsteady separation off rotating wheels |
 | Front/rear aero balance | Rough; floor and diffuser are sensitive to the near-ground mesh |
+| Wake in the following car's window (`results/wake_boxes.csv`) | Deficit and TKE change by under 10 % when the window mesh is refined to 50 mm (C_w against C); vorticity changes by 30 %, so it is mesh-dependent. E's wake numbers are snapshots of an unsteady flow (about 10 %) |
 | Wake at 2 to 3 lengths | Weakest result; the mesh coarsens downstream (only about 750 mesh nodes per half plane beyond 1 length) and RANS smears the wake. Good for comparing variants, not for absolute decay |

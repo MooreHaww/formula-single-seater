@@ -60,6 +60,7 @@ namespace SwHarness
                 case "suspensionmotion": return SuspensionMotion.Run(rest);
                 case "chassisstatics": return ChassisStatics.Run(rest);
                 case "framesolid": return FrameSolid.Run(rest);
+                case "frameanalysis": return FrameAnalysis.Run(rest);
                 case "restart-sw":
                 {
                     // a fresh SolidWorks for a rebuild: after several rebuilds in one session (7 GB, 14,700 handles,

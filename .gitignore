@@ -79,4 +79,5 @@ __pycache__/
 
 # ---- SolidWorks Simulation solver files (re-made by: python tools/sw_run.py ChassisStatics) ----
 sim/stress/results/
+cad/analysis/old/
 cad/chassis/old/sim_results/

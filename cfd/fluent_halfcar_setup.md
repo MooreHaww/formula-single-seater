@@ -73,7 +73,7 @@ What 2 prism layers mean: wall functions (SST with Fluent's y+-insensitive treat
 | Symmetry | Y = 0, side and top (slip) |
 | Reference | area 1.1 / 2 m2 (half model), length 1.55 m |
 | Reports | drag (+X) and downforce (-Z) for the total, the wheels and each car zone; pitching moment about the Y axis through the front contact point; all every iteration to `cfd/results/runs/<V><tag>/forces.out` |
-| Stop | residuals 1e-4 or force convergence (0.2 % over 100 iterations after 300) or the iteration count |
+| Stop | since 2026-11-18: residuals are monitored only (`criterion_type none`); the run stops when downforce, drag and pitching moment each vary by less than 0.1 % over the previous 100 iterations (first 300 ignored), or at `--iters` (default 1200). Before 2026-11-18: residuals 1e-4 AND forces, which never stopped a run (see below) |
 | Exports | four wake planes (0.5, 1, 2, 3 car lengths behind the rear axle) as node CSV: u, v, w, k, total pressure |
 
 ## What has run on this PC
@@ -92,8 +92,59 @@ What 2 prism layers mean: wall functions (SST with Fluent's y+-insensitive treat
 | D | 4.20 | 1.77 | 2.37 | 0.38 | converged | 2.1 orders |
 
 Forces were flat from about iteration 200 on B, C and D, but the residuals stalled 1 to 2 orders short of the checklist's three (a common state for a steady RANS run around a bluff body with an unsteady wake). Two things did not work as planned:
-- The force-based stop (0.2 % over 100 iterations) was accepted by Fluent without error but never stopped a run, so every run used the full 1500 iterations. Cause not found. It cost time only: about 600 iterations would have been enough.
+- The force-based stop (0.2 % over 100 iterations) was accepted by Fluent without error but never stopped a run, so every run used the full 1500 iterations. **Cause, found 2026-11-18:** with residual criteria active, Fluent stops only when the residuals AND the report criteria are met, and continuity stalls at 6e-3. Fix in `set_convergence()`: residual `criterion_type = "none"`, stop on the three force reports alone. First run with the fix: C_coarse stopped at iteration 407.
 - B and D each had one failed launch ("Connection refused" from the gRPC channel); the retry in `fluent_halfcar.py` started them on the second attempt.
+
+### 2026-11-18: mesh checks, convergence, y+, variants E and CP
+
+| Run | Cells | What changed against the base run | Iterations | ClA | CdA | front share |
+|---|---|---|---|---|---|---|
+| C_num | 955,009 | C continued 400 iterations with poor-mesh numerics and high-order relaxation | 1500+400 | +0.03 % | 0.00 % | 0.000 |
+| C_coarse | 941,430 | `--scale 2.6` (volume, ground and non-wing faces 1.3x coarser) | 407 (force stop) | −0.29 % | −0.10 % | +0.001 |
+| C_w | 1,037,523 | three wake-window boxes at 50 mm (`--boi win --win-size 50`) | 401 | −0.15 % | −0.09 % | 0.000 |
+| C_bl1 | 871,424 | 1 prism layer instead of 2 (`--set bl_layers=1`) | 401 | +0.12 % | −2.40 % | +0.010 |
+| D_bl1 | 949,206 | the same on D | 1200 | −0.28 % | −1.19 % | +0.010 |
+| C_curv, D_curv | - | curvature angle 24 or 21 deg instead of 18 (coarser surface) | - | surface mesh failed at the wing slots, no result | | |
+| E | 964,025 | new variant, `cfd/variant_E.md` | 1200 | 4.03 | 1.71 | 0.45 |
+| E_w | 1,046,660 | E with the wake windows | 1200 | 4.05 | 1.72 | 0.45 |
+| CP | 1,007,086 | C with the SolidWorks nose, sidepods and 10 mm floor plate | 1200 | 3.89 (−2.3 %) | 1.66 (+1.8 %) | 0.43 |
+
+**Why the body surface does not coarsen with `--scale`:** the curvature (18 deg) and proximity size functions set the face size on the car, not the zone face size. At `--scale 2.6` the body had 27,944 faces against 28,079. A `--scale` change is a volume-mesh check. The surface cannot be coarsened or refined in a useful way under the limit: a coarser curvature angle breaks the wing slots, and a finer one goes over 1,048,576 cells.
+
+**Mesh uncertainty (measured, discretisation only):**
+- ClA: within 0.3 % in all checks.
+- CdA: within 2.4 %, mostly from the prism layers.
+- Front share: within 0.01.
+- These are lower bounds: no finer surface mesh was possible.
+- Model error is not measured: steady RANS SST, wall functions, no wind-tunnel data. So the +-20 % ClA / +-15 % CdA ranges in `params/aero_variants.csv` stay assumptions.
+- What was measured: **the ranking does not move with the mesh.** With 1 layer the D-to-C ClA gap is 5.0 % against 5.4 %. The lap sim needs a 5.5 % error in D's ClA relative to C to swap them on the autocross, 10.7 % in C's relative to B, and 23.6 % in B's CdA relative to C on the fast circuit.
+
+**y+ (C, area average / median; share of faces with y+ 5 to 30):**
+- front wing 75 / 31 (45 %);
+- rear wing 70 / 40 (36 %);
+- floor 82 / 31 (46 %);
+- body 151 / 42 (36 %);
+- wheels 123 / 70 to 76 (6 to 11 %).
+
+The first cell sits in the log layer on most of the car, and the buffer layer on 36 to 46 % of the wings and floor. With SST, Fluent then uses wall functions (its y+-insensitive treatment blends to the log law above y+ of about 11). Separation on the flaps and the diffuser is modelled, not resolved. Going from 2 layers to 1 raises the wing y+ by about 15 % and changes CdA by 1 to 2 %.
+
+**Convergence:**
+- **Residuals** (scaled, final):
+
+  | Run | continuity | momentum | k and omega |
+  |---|---|---|---|
+  | A | 6.7e-2 | 1e-6 | 1e-3 |
+  | B | 1.9e-2 | 1e-6 | 5e-4 |
+  | C | 6.3e-3 | 3e-7 | 1e-4 |
+  | D | 8.3e-3 | 4e-7 | 1.6e-4 |
+
+  - Continuity stalls and does not drop further with 400 more iterations and stiffer numerics (C_num: 4.3e-3, forces +0.03 %).
+  - Global mass imbalance is 1e-7 to 5e-7 of the inlet flow, so mass is conserved. The stalled residual is local unsteadiness in the wakes.
+- **Forces:**
+  - C is steady: band 0.04 %. The force stop would have ended it at about iteration 560, and its checks stopped at about 400.
+  - B and D oscillate with a fixed amplitude (downforce band 0.13 to 0.16 %, period 14 to 36 iterations). They are stationary, not drifting, and their means are good to under 0.1 %. They do not meet the 0.1 % stop and run to `--iters`.
+  - E and CP are unsteady (bands 3 to 6 % and 2.5 %): the blunt base and the parts' sidepod tails shed vortices. Their 200-iteration means drift by 0.2 to 0.8 %. Postprocess marks them NOT converged; their means are good to about 1 %.
+  - A steady solver cannot do better on these flows; a transient run would, but it costs far more than the Student setup allows here.
 
 ## Reading the results
 
@@ -108,7 +159,7 @@ Forces were flat from about iteration 200 on B, C and D, but the residuals stall
 3. The downforce sign: variants B to D positive, A near zero.
 4. Wake CdA from the 0.5 L plane (momentum only, in `cfd_results.md`) of the same order as the force CdA.
 5. Open the case in the Fluent GUI (`cfd/cases/halfcar_<V>.cas.h5`): contours of y+ on the wings (expect 30 to 150), pressure on the floor, no reversed flow at the outlet.
-6. Mesh check on one variant (C): a mesh about half the size (`--scale 2.6 --tag coarse`, wings unchanged) and compare ClA and CdA; differences of more than 5 % mean the absolute numbers move with the mesh.
+6. Mesh check on one variant (C): `--scale 2.6 --tag coarse` (done 2026-11-18: a volume check, only 1.4 % fewer cells) and `--set bl_layers=1` (near-wall check); differences of more than 5 % would mean the numbers move with the mesh. Measured: under 0.3 % ClA, 2.4 % CdA.
 
 ## Fallbacks
 

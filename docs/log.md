@@ -3,6 +3,82 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-18 evening: CFD mesh checks, convergence, wake variant E, SolidWorks bodywork (CP)
+
+**Status: finished, nothing waits on you. No commits.** Only `cfd/`, `cad/generate/cfd_variants.py`, `cad/step/cfd/`, `media/cfd/` and the docs named below were changed. `postprocess.py --selftest` PASS; MATLAB `run_all('test')` 26 of 26 PASS. Full entry at the bottom.
+
+1. **Mesh sensitivity (C, and D for the ranking):**
+   - **What was checked:** volume coarsening (`--scale 2.6`), a finer wake-window mesh, and 1 prism layer instead of 2. Results: ClA within 0.3 %, CdA within 2.4 %, front share within 0.01.
+   - **Limits of the check:** `--scale` hardly changes the car surface (curvature sets it), and a coarser curvature angle breaks the wing slots. So the surface mesh could not be tested, and these numbers are a lower bound.
+   - **y+:** median 31 to 42 on wings, floor and body, 70 to 76 on the wheels; 36 to 46 % of wing and floor faces sit in the buffer layer (5 to 30). The result is wall functions, not a resolved boundary layer.
+   - **Ranking: survives.** Autocross is D < C < B, the fast circuit B < C < D, in every check. A swap would need a 5.5 % relative ClA error between C and D; the mesh moves that gap by 0.4 %. Absolute values keep the assumed ±20 % / ±15 % ranges (model error unmeasured).
+2. **Convergence:**
+   - **Fix:** the force stop never triggered because Fluent also waited for the residuals. Now the residuals are monitored only, and the run stops on downforce, drag and moment at 0.1 % over 100 iterations. The C checks stopped at about 400 iterations instead of 1500.
+   - **C:** steady (band 0.04 %).
+   - **B and D:** a stationary oscillation (0.13 to 0.16 %, means good to under 0.1 %). They run to the iteration cap.
+   - **E and CP:** unsteady (bands 2.5 to 6 %, means good to about 1 %), marked NOT converged.
+   - **Residuals:** continuity stalls at 6e-3 to 2e-2. Mass imbalance is 1e-7, so the stalled residual is the unsteady wakes, not an error.
+3. **Wake and variant E:**
+   - **New measurements:** TKE, deficit, vorticity and upwash in boxes at 1, 2 and 3 L, low (Z 0 to 0.5 m) and high (1.0 to 1.5 m): `cfd/results/wake_boxes.csv`.
+   - **Variant E:** lower, wider rear wing; D's angles; 14° diffuser; blunt tail. Physics written before the run: `cfd/variant_E.md`.
+   - **E result:** ClA 4.03 (+1.2 %), CdA +4.4 %.
+   - **But the wake went up, not down.** At 1 L the centre is at Z 1.49 against 0.95 m. Low-window TKE is −24 %; high-window TKE is +28 % at 1 L and ×4 at 3 L.
+   - **Why:** the lower wing sits right over the base wake and lifts it at once.
+   - **Verdict:** failed on 2 of 3 criteria. A dirtier wake, but at the following car's rear-wing height.
+4. **SolidWorks bodywork (CP):**
+   - **Fits:** 1,007,086 cells, after rounding the nose corners to ≥ 40 mm and the pod corners to 25 mm. With the parts' radii the mesh had 1,153,899 cells.
+   - **Also simplified:** pods closed, not open-bottomed (an open 2 mm shell cannot be meshed); bottoms 4 mm into the plate.
+   - **Shape against the parts:** within 8 mm on the pods and about 12 mm at the nose corners (medians 2 to 4 mm).
+   - **Effect against C:** ClA −2.3 %, CdA +1.8 %, front share 0.43 against 0.45. Lap time +0.13 s autocross, +0.44 s fast circuit.
+   - **Unmeasured:** the effect of the radius simplification itself. Estimate: under 0.5 %, from the 0.001 m² frontal-area change.
+
+**Lap sim now uses CP for variant C** (your choice, after the first version of this summary):
+- **What changed:** `params/aero_variants.csv` row C is CP's numbers, ClA 3.89, CdA 1.66, front 0.43. `postprocess.py` maps row C to run CP (`TABLE_RUN`).
+- **Lap times for C:** autocross 61.22 s (was 61.09), fast circuit 83.03 s (was 82.58). `media/results_table.md` was regenerated. Ranking unchanged: autocross D < C < B, fast circuit B < C < D.
+- **Caveats:**
+  - A, B and D are still on the older CFD bodywork, so C is compared with them on slightly different bodies.
+  - CP is unsteady (mean good to about 1 %).
+  - The following-car penalty still uses C's wake.
+- **Tests:** MATLAB 26 of 26 PASS after the change.
+
+## Summary, 2026-11-18 afternoon: solid cross-check of the frame torsion is valid and agrees with the beam model
+
+**Status: finished, nothing waits on you. No commits.**
+- The production CAD (chassis, layout, assembly) was not opened. Everything is in a separate part, `cad/analysis/frame_analysis.SLDPRT`.
+- MATLAB `run_all('test')`: 26 of 26 PASS.
+- `cfd/`, `cad/step/cfd/` and `cad/generate/cfd_variants.py` were not touched.
+- Details are in the entry at the bottom and in `docs/stress_frame.md` (last section).
+
+**Result: the solid model confirms frame_fe's torsional stiffness within 1 %.**
+
+| Free-free torsion case | Solid, 5 mm mesh (1.87 M nodes) | Solid, 4 mm mesh (2.93 M nodes) | frame_fe (beam) |
+|---|---|---|---|
+| Wheel forces through the links (the headline) | 1509 Nm/deg | **1504 Nm/deg** | **1503 Nm/deg** |
+| Couples at the 16 wishbone nodes | 1379 | 1374 | 1386 |
+
+- **How the solid frame is built:** `swh FrameAnalysis` builds it from the same frame CSVs and trim plan as the chassis:
+  - hollow tubes;
+  - each trimmed end coped against its boundary tubes 1 mm into their wall;
+  - untrimmed ends run OD/2 past the node;
+  - all 124 tubes fused into one body (15 s);
+  - a 40 mm cube imprinted around each loaded node, to give load faces.
+- **Loads:** the exact frame_fe load sets, exported by frame_fe to `sim/stress/frame_torsion_loads.csv`. They go on as remote loads with distributed coupling on those faces.
+- **Material and supports:** AISI 4130, free-free with inertia relief.
+- **Twist:** measured the same way as frame_fe.
+- **Checks:**
+  - **Mesh:** 5 → 4 mm changes the result by 0.3 % or less. A 3 mm mesh failed with an undocumented mesh error 8 on the Student licence (cause not found).
+  - **Overlap:** 0.5, 1.0 and 1.5 mm give identical results. The union is the same shape for any overlap inside the wall.
+  - **Joints:** every one moves as one piece. The uz spread in each joint is 0.07–0.17 mm, which is the rigid rotation; the old weldment try had 50–160 mm.
+  - **Loads:** they balance to zero.
+- **What it says:**
+  - The beam model's stiffness, and the 1500 Nm/deg diagonal decision made with it, hold.
+  - The close agreement means two effects the beams ignore cancel on this frame: stiffer finite joints and softer local wall flexibility. That need not hold for other frames.
+  - Neither model has real welds, brackets or tolerances, so a built frame will be softer than both by an unknown amount. Only a physical torsion test would settle it.
+- **Not confirmed:**
+  - **Stresses:** the solid's peaks (162 MPa and 668 MPa) sit inside the load cubes, where a whole link force enters. They change with the mesh and are not used. The frame stresses stay frame_fe's nominal beam values.
+  - **Frame mass:** the solid has 47.0 kg of steel against the 49.3 kg in the mass budget, because centreline lengths double-count the joints. The weldment agrees with the solid (47.5 kg). The budget was not changed.
+- **README and docs:** `README.md` (results row and limits) and `docs/stress_frame.md` now say this. `tools/README.md` has the new step and the API lessons.
+
 ## Summary, 2026-11-18: torsion diagonals, rear joint housings, media, README, low-GDI handling
 
 **Status: finished, nothing waits on you. No commits.** `python tools/sw_run.py rebuild` passed all 26 steps (10:08 to 10:28) with no GDI warning. MATLAB `run_all('test')`: 26 of 26 PASS. `cfd/`, `cad/step/cfd/` and `cad/generate/cfd_variants.py` were not touched. Details are in the entry at the bottom.
@@ -626,3 +702,85 @@ The summary and the rules are at the top of this file. Not touched: `cfd/`, `cad
 - An anti-roll bar.
 - Tyre data, to replace the assumed friction.
 
+## 2026-11-18 (afternoon), Ring 4: valid solid cross-check of the frame torsion
+
+**Asked:** make the SOLIDWORKS Simulation torsion cross-check valid without touching the production CAD, compare it with frame_fe (1503 Nm/deg), and say honestly what it shows.
+
+**Done:**
+- `tools/sw_harness/FrameAnalysis.cs` (new; step `FrameAnalysis [sizes] [--overlap mm] [--tag t] [--build-only] [--results]`, long timeout in `sw_run.py`):
+  - **Part:** builds `cad/analysis/frame_analysis.SLDPRT` from `frame_nodes.csv`, `frame_tubes.csv` and `frame_trims.csv` as temporary bodies:
+    - hollow tubes, coped against their trim boundaries 1 mm into the wall;
+    - untrimmed ends run OD/2 past the node;
+    - fused (BFS union over shared nodes);
+    - 40 mm load cubes imprinted at the 20 loaded nodes;
+    - an earlier part is moved to `cad/analysis/old/`, which is git-ignored.
+  - **Studies:** "Torsion nodes" and "Torsion links": static, AISI 4130, inertia relief, remote loads (direct, distributed) on the cube faces.
+  - **Twist:** from `GetDisplacementForEntities` on the faces at the 16 wishbone nodes.
+  - **Peak stress:** from the solver's `.OUT` file, located with one `GetNodeLocation` call.
+- `matlab/stress/frame_fe.m`: writes `sim/stress/frame_torsion_loads.csv`, holding both free-free torsion cases as point loads plus the 16 wishbone nodes with their twist pairing, frame_fe's torque, twist and stiffness. `torsion_measures` now keeps F, and the links case keeps its 24 pickup forces. No numbers changed.
+- **Docs:**
+  - `docs/stress_frame.md`: new last section with the method, the results, the mesh and overlap studies, the checks, and what it says. The Limits bullet and header were updated.
+  - `README.md`: the results row, the "assumptions and limits" frame bullet, the layout and media lines.
+  - `tools/README.md`: step row, FrameSolid marked superseded, and API lessons.
+- **Kept:** the old `FrameSolid` step and its report, as the record of why the weldment cannot be used.
+
+**Results** (`sim/stress/frame_analysis_report.txt` for 4 mm; `frame_analysis_mesh_study.txt` for 5/4/3 mm; `frame_analysis_ov05_report.txt` and `_ov15_report.txt`):
+- **Solid model:** one body, 124 tubes, 47.0 kg of steel (−4.6 % against centreline tubes).
+- **Links case:** 1509 (5 mm) / **1504 (4 mm)** against 1503 Nm/deg.
+- **Nodes case:** 1379 / 1374 against 1386 Nm/deg.
+- **3 mm mesh:** error 8 in both studies after about 250 s. Not in `swsStudyMeshError_e` (0–7); not investigated further.
+- **Overlap 0.5 / 1.0 / 1.5 mm:** 1379 / 1509 in every case, volume within 0.1 cm³.
+- **Joints:** uz spread in each 40 mm cube 0.07–0.17 mm; left/right antisymmetric within 2 %. The front/rear twist split differs from frame_fe by a common rigid rotation of about 0.04°, from the different inertia-relief masses; it cancels in the stiffness.
+- **Peak stress:** 162 MPa (nodes) and 668 MPa (links) at 4 mm, both inside a load cube 17 mm from a pickup node. These are load-introduction artefacts, not frame stresses, and are not used.
+
+**Harness lessons** (also in `tools/README.md`):
+- **Reading results:**
+  - `GetTranslationalDisplacement`'s second argument is a plane, not entities.
+  - Reading all 1.9 M nodes kept SolidWorks busy for over 20 minutes; per-face reads take seconds.
+  - A failed mesh discards the study's earlier results, which is why the 4 mm studies were solved again.
+- **Temporary bodies:**
+  - `ImprintingFaces` needs `Face2[]` arrays.
+  - Run `Operations2` on copies.
+- **Timing:** the 5 mm solves took about 2.5 min each, 4 mm about 3.5 min, with GDI under 2,400.
+
+**Not done:**
+- **Stress:** no stress comparison. The solid peaks are at the load patches; a fair one would need bracket-like load introduction.
+- **Rebuild:** `FrameAnalysis` is not in `rebuild`. It adds about 12 minutes, and the CSVs it reads come from MATLAB, not from SolidWorks.
+
+**Next:**
+- **Physical check:** a torsion test of the real frame, the only check of welds and brackets.
+- **Optional mass fix:** if the mass budget should match the solid and the weldment, set `m_frame` to about 47.3 kg. Not changed without your call.
+
+
+## 2026-11-18 (evening), Ring 5: CFD mesh checks, convergence, wake variant E, bodywork CP
+
+**Done:**
+- **`cfd/fluent_halfcar.py`:**
+  - force-only stop (`set_convergence`);
+  - wake-window boxes (`--boi win`, `--win-size`);
+  - `post_run`: wake planes with TKE and vorticity, box planes at 1, 2 and 3 L, y+ per wall, mass imbalance;
+  - actions `post` and `cont`;
+  - any variant with a faces CSV.
+- **`cad/generate/cfd_variants.py`:**
+  - variants E and CP, the floor plate, a clearance check, the window boxes;
+  - E's tail cut at X 1700, not 1745 (sliver faces against the diffuser broke the surface mesh);
+  - CP corner radii `CP_R_NOSE_MIN` 40 mm and `CP_R_POD` 25 mm, for the cell limit.
+- **`cfd/postprocess.py`:** joins continuation histories; writes `wake_boxes.csv`, `yplus.csv` and `cfd_checks.csv`; new md sections.
+- **Runs:** E, E_w, C_w, C_coarse, C_num, C_bl1, D_bl1, CP.
+  - C_curv and D_curv (curvature 24 deg, and 21 deg on C) failed the surface mesh at the wing slots.
+  - C_w at 40 mm windows was over the limit (1,055,706); at 50 mm it fits.
+
+**Checked:**
+- geometry checks 11 of 11 for E and CP;
+- postprocess self-test PASS;
+- MATLAB 26 of 26 PASS;
+- lap times recomputed by hand for each check run (MATLAB, not written to `media/results_table.md`, because A to D are unchanged).
+
+**Decisions:**
+- Sidepods in CP are closed at the bottom, although the parts are open-bottomed. An open 2 mm shell cannot be meshed under the limit; flow inside the pod is not modelled.
+- `docs/cfd_parts_mismatch.csv` (the other session's file) is left as it was; CP's comparison is in `docs/cfd_parts_mismatch_CP.csv`.
+- E and CP were not put into `params/aero_variants.csv`: neither is force-converged, and the brief did not ask for the lap sim to change.
+
+**Next:**
+- If the parts bodywork is final, rerun B and D on it and replace the variant table.
+- For a low dirty-air wake, keep the rear wing high and add turbulence low and away from it (ideas in `cfd/variant_E.md`).

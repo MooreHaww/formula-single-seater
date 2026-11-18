@@ -1,0 +1,74 @@
+ALL PASS   (2026-11-18 15:09, harness swh.exe)  FrameAnalysis, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\analysis\frame_analysis_ov05.SLDPRT
+
+PASS  tubes from frame_tubes.csv: 124 of 124, hollow, coped against their frame_trims.csv boundaries 0.5 mm into the wall (196 ends), 52 ends run 12.7 mm past the node
+INFO  copes: 0 boundary cutters did not reach the piece (nothing to cut); scraps beyond a boundary tube left out (under 1 % of the tube): MH_T-RT1_R: 1 scrap piece(s) of 0 mm3 left out; MH_T-RT1_L: 1 scrap piece(s) of 0 mm3 left out; FB_U-FS1_U_diag: 1 scrap piece(s) of 0 mm3 left out; SP1_U-SP2_U_R: 1 scrap piece(s) of 0 mm3 left out; SP1_U-SP2_U_L: 1 scrap piece(s) of 0 mm3 left out
+PASS  fused into one solid: 1 body after the union (14 s)
+PASS  part C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\analysis\frame_analysis_ov05.SLDPRT: 1 solid body
+PASS  load faces imprinted: a 40 mm cube around each of 20 loaded nodes, body faces 885 -> 1152
+PASS  volume 5990.7 cm3 = 47.03 kg of steel, centreline tubes in frame_tubes.csv 6278.3 cm3 (-4.6 %, limit 8 %); pieces before the union 6026.8 cm3
+PASS  load faces: 20 loaded nodes, 495 faces inside their 40 mm cubes (10 to 45 per node)
+PASS  study 'Torsion nodes': static, solid mesh, 1 solid body, material 'AISI 4130 Steel, normalized at 870C' on 1, free-free with inertia relief (no soft springs)
+PASS  study 'Torsion nodes': 16 of 16 remote loads (direct, distributed coupling) on the faces at their nodes; sum of forces 0.000 0.000 0.000 N, moment about x front -526.5 / rear 526.5 Nm
+PASS  Torsion nodes, 5.0 mm: mesh 939787 elements, 1869529 nodes (56 s)
+PASS  Torsion nodes, 5.0 mm: run ok (123 s)
+INFO  GetDisplacementForEntities UZ at FS1_L_L: 4116 numbers, read as (node, value) pairs; first 24 1.01485 25 1.01072 30 1.00742
+PASS  torsion 'nodes' on the fused solid, 5.0 mm mesh: 1379 Nm/deg; frame_fe 1386 Nm/deg; difference +0 %
+PASS  study 'Torsion links': static, solid mesh, 1 solid body, material 'AISI 4130 Steel, normalized at 870C' on 1, free-free with inertia relief (no soft springs)
+PASS  study 'Torsion links': 24 of 24 remote loads (direct, distributed coupling) on the faces at their nodes; sum of forces 0.000 0.000 0.000 N, moment about x front -1200.0 / rear 1200.0 Nm
+PASS  Torsion links, 5.0 mm: mesh 939787 elements, 1869529 nodes (61 s)
+PASS  Torsion links, 5.0 mm: run ok (141 s)
+INFO  GetDisplacementForEntities UZ at FS1_L_L: 4116 numbers, read as (node, value) pairs; first 24 2.3247 25 2.30976 30 2.29554
+PASS  torsion 'links' on the fused solid, 5.0 mm mesh: 1509 Nm/deg; frame_fe 1503 Nm/deg; difference +0 %
+PASS  saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\analysis\frame_analysis_ov05.SLDPRT with the studies
+
+No failures.
+Model: one fused solid from the frame CSVs, 124 tubes, overlap 0.5 mm, load cubes 40 mm
+
+Torsion 'nodes', mesh 5.0 mm (939787 elements, 1869529 nodes, mesh 56 s, run 123 s)
+  torque (frame_fe's figure) 526.5 Nm, front twist 0.21763 deg, rear twist -0.16421 deg
+  -> 1379 Nm/deg; frame_fe 1386 Nm/deg (twist 0.37995 deg); solid +0 %
+  peak von Mises 254.1 MPa (solver output) at mesh node 1560581 (1496, 288, 143 mm), 17 mm from frame node RS1_L_R, INSIDE the load cube of RS1_L_R (where a remote load enters: a local artefact)
+  uz at the wishbone nodes (mean over the mesh nodes on the faces in the node's cube; count; spread), mm:
+    FL1 FS1_L_L      1.09093   2058   0.16422
+    FL2 FS2_L_L      0.83633   1992   0.16981
+    FL3 FS1_U_L      1.15078   2168   0.15803
+    FL4 FS2_U_L      0.92412   2414   0.15092
+    FR1 FS1_L_R     -1.07729   2101   0.16638
+    FR2 FS2_L_R     -0.85420   1855   0.16190
+    FR3 FS1_U_R     -1.13360   2117   0.16143
+    FR4 FS2_U_R     -0.93329   2264   0.14447
+    RL1 RS1_L_L     -0.78100   2274   0.10526
+    RL2 RS2_L_L     -0.98859   1691   0.10043
+    RL3 RS1_U_L     -0.85045   2290   0.08450
+    RL4 RS2_U_L     -1.05968   1792   0.07436
+    RR1 RS1_L_R      0.79317   2155   0.09971
+    RR2 RS2_L_R      1.01015   1704   0.10158
+    RR3 RS1_U_R      0.86054   2270   0.08676
+    RR4 RS2_U_R      1.07892   1804   0.07544
+
+Torsion 'links', mesh 5.0 mm (939787 elements, 1869529 nodes, mesh 61 s, run 141 s)
+  torque (frame_fe's figure) 1194.4 Nm, front twist 0.48099 deg, rear twist -0.31078 deg
+  -> 1509 Nm/deg; frame_fe 1503 Nm/deg (twist 0.79474 deg); solid +0 %
+  peak von Mises 648.5 MPa (solver output) at mesh node 1563039 (1500, -354, 294 mm), 17 mm from frame node RS1_U_L, INSIDE the load cube of RS1_U_L (where a remote load enters: a local artefact)
+  uz at the wishbone nodes (mean over the mesh nodes on the faces in the node's cube; count; spread), mm:
+    FL1 FS1_L_L      2.49899   2058   0.40264
+    FL2 FS2_L_L      1.75520   1992   0.44065
+    FL3 FS1_U_L      2.62968   2168   0.42143
+    FL4 FS2_U_L      1.99121   2414   0.42319
+    FR1 FS1_L_R     -2.44929   2101   0.40865
+    FR2 FS2_L_R     -1.77166   1855   0.42673
+    FR3 FS1_U_R     -2.58586   2117   0.43886
+    FR4 FS2_U_R     -2.00388   2264   0.41639
+    RL1 RS1_L_L     -1.39979   2274   0.28179
+    RL2 RS2_L_L     -1.80463   1691   0.27714
+    RL3 RS1_U_L     -1.70152   2290   0.25030
+    RL4 RS2_U_L     -2.10122   1792   0.25255
+    RR1 RS1_L_R      1.41391   2155   0.28397
+    RR2 RS2_L_R      1.83045   1704   0.27960
+    RR3 RS1_U_R      1.71810   2270   0.25317
+    RR4 RS2_U_R      2.13099   1804   0.25468
+
+Summary (stiffness = frame_fe's torque / twist of the solid, same twist measure)
+  nodes   5.0 mm   1869529 nodes  solid  1379  frame_fe  1386    +0 %
+  links   5.0 mm   1869529 nodes  solid  1509  frame_fe  1503    +0 %
+

@@ -171,7 +171,8 @@ def mesh_zone_ids(mu, object_name: str):
 # ---------------------------------------------------------------------------
 # meshing
 # ---------------------------------------------------------------------------
-def run_mesh(variant: str, scale: float, tag: str, cores: int, gui: bool, keep_session=False, wing_scale: float = 1.0):
+def run_mesh(variant: str, scale: float, tag: str, cores: int, gui: bool, keep_session=False, wing_scale: float = 1.0,
+             boi: str = "", win_size: float = 40.0):
     geo = load_geometry()
     rows = read_faces(variant)
     names_expected = sorted({r["zone"] for r in rows})
@@ -179,7 +180,12 @@ def run_mesh(variant: str, scale: float, tag: str, cores: int, gui: bool, keep_s
     name = f"halfcar_{variant}{tag}"
     run_dir = RESULTS / "runs" / f"{variant}{tag}"; run_dir.mkdir(parents=True, exist_ok=True)
     s = launch("meshing", cores, gui, CASES)
-    info = {"variant": variant, "scale": scale, "wing_scale": wing_scale, "sizes_mm": SIZES, "started": time.strftime("%Y-%m-%d %H:%M:%S")}
+    info = {"variant": variant, "scale": scale, "wing_scale": wing_scale, "sizes_mm": SIZES, "boi": boi,
+            "win_size_mm": win_size if boi == "win" else None, "started": time.strftime("%Y-%m-%d %H:%M:%S")}
+    boi_file = GEO / ("boi_boxes_win.step" if boi == "win" else "boi_boxes.step")
+    boi_sizes = {"boi_near": SIZES["boi_near"] * k, "boi_wake": SIZES["boi_wake"] * k}
+    if boi == "win":
+        boi_sizes.update({f"boi_w{n}": win_size for n in (1, 2, 3)})      # not scaled
     try:
         wt = s.watertight(); mu = s.meshing_utilities
         # 1. import: one zone per CAD face, and keep that separation in the surface mesh
@@ -198,14 +204,14 @@ def run_mesh(variant: str, scale: float, tag: str, cores: int, gui: bool, keep_s
         # 2. bodies of influence
         wt.import_geometry.insertable_tasks.import_boi_geometry.insert()
         b = wt.import_boi_geometry
-        b.geometry_file_name.set_state(str(GEO / "boi_boxes.step"))
+        b.geometry_file_name.set_state(str(boi_file))
         b()
         ls = wt.add_local_sizing_wtm
         ls.add_child.set_state("yes")
         ls.boi_execution.set_state("Body Of Influence")
         labels = list(ls.boi_face_label_list.allowed_values() or [])
         info["labels_after_boi_import"] = labels
-        for bname in ("boi_near", "boi_wake"):
+        for bname, bsize in boi_sizes.items():
             lab = [x for x in labels if bname in x]
             if len(lab) != 1:
                 raise RuntimeError(f"body of influence {bname}: labels offered are {labels}")
@@ -214,7 +220,7 @@ def run_mesh(variant: str, scale: float, tag: str, cores: int, gui: bool, keep_s
             ls.boi_control_name.set_state(bname)
             ls.boi_zoneor_label.set_state("label")
             ls.boi_face_label_list.set_state(lab)
-            ls.boi_size.set_state(SIZES[bname] * k)
+            ls.boi_size.set_state(bsize)
             ls.add_child_and_update()
         # 3. face sizes per zone
         for zname, size in SIZES["face"].items():
@@ -319,6 +325,186 @@ def run_mesh(variant: str, scale: float, tag: str, cores: int, gui: bool, keep_s
 # ---------------------------------------------------------------------------
 # solver
 # ---------------------------------------------------------------------------
+CONV = {"reports": ("downforce_total", "drag_total", "pitch_moment_total"), "stop": 0.001, "previous": 100, "ignore": 300}
+
+
+def set_convergence(st, ignore: int | None = None) -> str:
+    """Stop on the forces, not on the residuals.
+
+    2026-11-17: with residual criteria 1e-4 AND force reports, Fluent printed
+    "Solution for report definition ... has converged" from iteration ~500 on
+    and still ran all 1500 iterations: the run stops only when the residual
+    criteria are met as well, and continuity stalls at 6e-3. The residuals stay
+    monitored (printed, in the log) but no longer decide the stop
+    (criterion_type "none"); Fluent stops when downforce, drag and pitching
+    moment each vary by less than CONV["stop"] (relative) over the last
+    CONV["previous"] iterations, after CONV["ignore"]. cfd/postprocess.py
+    judges convergence again with its own, stricter windows."""
+    res = st.solution.monitor.residual
+    for eq in ("continuity", "x-velocity", "y-velocity", "z-velocity", "k", "omega"):
+        res.equations[eq].absolute_criteria = 1e-4
+    res.options.criterion_type = "none"
+    cc = st.solution.monitor.convergence_conditions
+    have = list(cc.convergence_reports.get_object_names())
+    ign = CONV["ignore"] if ignore is None else ignore
+    for n in CONV["reports"]:
+        cn = f"conv_{n}"
+        if cn not in have:
+            cc.convergence_reports.create(cn)
+        cc.convergence_reports[cn] = {"report_defs": n, "stop_criterion": CONV["stop"], "previous_values_to_consider": CONV["previous"],
+                                      "initial_values_to_ignore": ign, "print": True, "active": True}
+    cc.condition = "all-conditions-are-met"
+    return (f"residuals monitored only (criterion_type none); stop when {', '.join(CONV['reports'])} each vary < {100 * CONV['stop']:g} % "
+            f"over {CONV['previous']} iterations after the first {ign}")
+
+
+BOX_OFFSETS = (-0.3, -0.15, 0.0, 0.15, 0.3)      # m around each wake station: five planes sample a 0.6 m deep box
+WAKE_QUANTITIES = ["x-velocity", "y-velocity", "z-velocity", "turb-kinetic-energy", "total-pressure", "x-vorticity", "vorticity-mag"]
+
+
+def fwd(p) -> str:
+    return str(p).replace("\\", "/")
+
+
+def post_run(s, variant: str, tag: str, run_dir: Path, info: dict):
+    """After a solve or on a saved case+data: wake planes, wake boxes, y+ on the
+    walls, mass balance. Writes run_dir/post_info.json; the big per-face y+
+    and box files go to cfd/cases/ (git-ignored)."""
+    st = s.settings
+    geo = load_geometry()
+    wake_dir = RESULTS / "wake"; wake_dir.mkdir(parents=True, exist_ok=True)
+    box_dir = CASES / "wake_boxes"; box_dir.mkdir(parents=True, exist_ok=True)
+    yp_dir = CASES / "yplus"; yp_dir.mkdir(parents=True, exist_ok=True)
+    post = {"variant": variant, "tag": tag, "started": time.strftime("%Y-%m-%d %H:%M:%S")}
+    surf = st.results.surfaces.plane_surface
+    have = set(surf.get_object_names())
+
+    def plane(pname, x):
+        if pname not in have:
+            surf.create(pname); have.add(pname)
+        surf[pname].method = "yz-plane"
+        surf[pname].x = x
+    # ---- the four wake planes (same files as before, more quantities)
+    wp = geo["wake_planes"]
+    exported = []
+    for n, x in zip(wp["lengths_behind_rear_axle"], wp["x_m"]):
+        pname = f"plane_{n:g}l".replace(".", "p")          # Fluent lower-cases surface names
+        plane(pname, x)
+        f = wake_dir / f"{variant}{tag}_{n:g}L.csv"
+        set_aside(f)
+        st.file.export.ascii(file_name=fwd(f), surface_name_list=[pname], delimiter="comma", location="node", quantities=WAKE_QUANTITIES)
+        exported.append(str(f))
+    post["wake_files"] = exported
+    # ---- wake boxes: five planes 0.6 m deep around 1, 2, 3 car lengths
+    boxes = []
+    for n in (1.0, 2.0, 3.0):
+        x0 = geo["wheelbase_m"] + n * wp["car_length_m"]
+        names = []
+        for k, d in enumerate(BOX_OFFSETS):
+            pname = f"box_{n:g}l_{k}"
+            plane(pname, x0 + d); names.append(pname)
+        f = box_dir / f"{variant}{tag}_box_{n:g}L.csv"
+        set_aside(f)
+        st.file.export.ascii(file_name=fwd(f), surface_name_list=names, delimiter="comma", location="node", quantities=WAKE_QUANTITIES)
+        boxes.append({"L": n, "x_centre_m": round(x0, 4), "offsets_m": list(BOX_OFFSETS), "file": str(f)})
+    post["wake_boxes"] = boxes
+    # ---- y+ on every wall that is not the ground
+    rd = st.solution.report_definitions
+    walls = [w for w in st.setup.boundary_conditions.wall.get_object_names() if w != "ground"]
+    yp = {}
+    for w in walls:
+        r = {}
+        for kind, rt in (("area_avg", "surface-areaavg"), ("max", "surface-facetmax"), ("min", "surface-facetmin")):
+            n = f"yp_{kind}_{w}"
+            if n not in rd.surface.get_object_names():
+                rd.surface.create(n)
+            rd.surface[n] = {"report_type": rt, "field": "y-plus", "surface_names": [w]}
+            r[kind] = float(rd.compute(report_defs=[n])[0][n][0])
+        f = yp_dir / f"{variant}{tag}_{w}.csv"
+        set_aside(f)
+        st.file.export.ascii(file_name=fwd(f), surface_name_list=[w], delimiter="comma", location="cell-center", quantities=["y-plus"])
+        r["face_file"] = str(f)
+        yp[w] = r
+    post["yplus"] = yp
+    # ---- mass balance
+    if "massflow" not in rd.flux.get_object_names():
+        rd.flux.create("massflow")
+    rd.flux["massflow"] = {"report_type": "flux-massflow", "boundaries": ["inlet", "outlet"], "per_zone": True}
+    mf = rd.compute(report_defs=["massflow"])[0]
+    m_in = float(mf["massflow(inlet)"][0]); net = float(mf["massflow"][0])
+    post["mass_flow_in_kg_s"] = m_in; post["mass_imbalance_rel"] = abs(net) / abs(m_in)
+    post["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    (run_dir / "post_info.json").write_text(json.dumps(post, indent=1, default=str))
+    avg = ", ".join(f"{k}: {v['area_avg']:.0f}" for k, v in yp.items())
+    log(f"  post: y+ area-avg {{{avg}}}, mass imbalance {post['mass_imbalance_rel']:.1e}")
+    info["wake_files"] = exported
+    return post
+
+
+def run_post(variant: str, tag: str, cores: int, gui: bool):
+    """Read a solved case+data and run post_run only."""
+    name = f"halfcar_{variant}{tag}"
+    run_dir = RESULTS / "runs" / f"{variant}{tag}"
+    s = launch("solver", cores, gui, CASES)
+    try:
+        s.settings.file.read_case_data(file_name=fwd(CASES / f"{name}.cas.h5"))
+        post_run(s, variant, tag, run_dir, {})
+    finally:
+        s.exit()
+
+
+def run_continue(variant: str, tag: str, iters: int, cores: int, gui: bool, solver_opts: list):
+    """Read a solved case+data, apply solver options, iterate on.
+
+    The forces of the extra iterations go to run_dir/forces_cont<k>.out
+    (iteration numbers carry on; cfd/postprocess.py joins the files). The case
+    and data are written over the old ones (moved to .prev first)."""
+    name = f"halfcar_{variant}{tag}"
+    run_dir = RESULTS / "runs" / f"{variant}{tag}"
+    k = 1
+    while (run_dir / f"forces_cont{k}.out").exists():
+        k += 1
+    info = json.loads((run_dir / "run_info.json").read_text())
+    cont = {"started": time.strftime("%Y-%m-%d %H:%M:%S"), "iterations_requested": iters, "options": solver_opts, "file": f"forces_cont{k}.out"}
+    s = launch("solver", cores, gui, CASES)
+    try:
+        st = s.settings
+        st.file.read_case_data(file_name=fwd(CASES / f"{name}.cas.h5"))
+        m = st.solution.methods
+        for opt in solver_opts:
+            if opt == "poor-mesh":            # cells under an orthogonal-quality threshold get first-order treatment
+                m.poor_mesh_numerics.cell_quality_based = True
+            elif opt == "hotr":               # high-order term relaxation (stabilises second order on a poor mesh)
+                m.high_order_term_relaxation.enable = True
+            elif opt.startswith("pseudo-relax="):
+                v = float(opt.split("=")[1])
+                gp = st.solution.controls.pseudo_time_explicit_relaxation_factor.global_dt_pseudo_relax
+                gp["k"] = v; gp["omega"] = v
+            elif opt == "fixed":
+                pass                          # handled below: run exactly iters iterations
+            else:
+                raise ValueError(f"unknown solver option {opt}")
+        cont["convergence"] = set_convergence(st, ignore=0)
+        if "fixed" in solver_opts:            # the saved report history is already converged: without this the run stops at once
+            for n in CONV["reports"]:
+                st.solution.monitor.convergence_conditions.convergence_reports[f"conv_{n}"].active = False
+            cont["convergence"] = "fixed iteration count (force stop off)"
+        st.solution.monitor.report_files["forces"].file_name = fwd(run_dir / cont["file"])
+        log(f"  continuing {name} for up to {iters} iterations with {solver_opts or 'no changes'}; forces to {cont['file']}")
+        t0 = time.time()
+        st.solution.run_calculation.iterate(iter_count=iters)
+        cont["solve_seconds"] = round(time.time() - t0, 1)
+        for ext in (".cas.h5", ".dat.h5"):
+            set_aside(CASES / f"{name}{ext}")
+        st.file.write_case_data(file_name=fwd(CASES / f"{name}.cas.h5"))
+        post_run(s, variant, tag, run_dir, info)
+        cont["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        info.setdefault("continuations", []).append(cont)
+        (run_dir / "run_info.json").write_text(json.dumps(info, indent=1, default=str))
+        log(f"  continuation done in {cont['solve_seconds']:.0f} s")
+    finally:
+        s.exit()
+
 def run_solve(variant: str, speed: float | None, iters: int, tag: str, cores: int, gui: bool, session=None):
     geo = load_geometry()
     U = float(speed if speed is not None else geo["reference"]["speed"])
@@ -326,7 +512,6 @@ def run_solve(variant: str, speed: float | None, iters: int, tag: str, cores: in
     name = f"halfcar_{variant}{tag}"
     run_dir = RESULTS / "runs" / f"{variant}{tag}"; run_dir.mkdir(parents=True, exist_ok=True)
     wake_dir = RESULTS / "wake"; wake_dir.mkdir(parents=True, exist_ok=True)
-    fwd = lambda p: str(p).replace("\\", "/")  # noqa: E731
     if session is not None:
         s = session.switch_to_solver()
     else:
@@ -403,21 +588,7 @@ def run_solve(variant: str, speed: float | None, iters: int, tag: str, cores: in
         rf["forces"] = {"file_name": fwd(run_dir / "forces.out"), "report_defs": defs, "frequency": 1, "print": False}
         info["report_defs"] = defs
 
-        res = st.solution.monitor.residual
-        for eq in ("continuity", "x-velocity", "y-velocity", "z-velocity", "k", "omega"):
-            res.equations[eq].absolute_criteria = 1e-4
-        # force convergence: stop when downforce and drag move less than 0.2 % over 100 iterations (after the first 300)
-        cc = st.solution.monitor.convergence_conditions
-        try:
-            for n in ("downforce_total", "drag_total"):
-                cc.convergence_reports.create(f"conv_{n}")
-                cc.convergence_reports[f"conv_{n}"] = {"report_defs": n, "stop_criterion": 0.002, "previous_values_to_consider": 100,
-                                                        "initial_values_to_ignore": 300, "print": True, "active": True}
-            cc.condition = "all-conditions-are-met"
-            info["force_convergence_criterion"] = "set: 0.2 % over 100 iterations after the first 300, on downforce_total and drag_total"
-        except Exception as e:  # noqa: BLE001
-            info["force_convergence_criterion"] = f"NOT SET ({type(e).__name__}: {str(e)[:200]}); judge convergence from forces.out (cfd/postprocess.py does)"
-            log("  " + info["force_convergence_criterion"])
+        info["force_convergence_criterion"] = set_convergence(st)
 
         st.solution.initialization.hybrid_initialize()
         for ext in (".cas.h5", ".dat.h5"):
@@ -431,21 +602,8 @@ def run_solve(variant: str, speed: float | None, iters: int, tag: str, cores: in
         set_aside(CASES / f"{name}.cas.h5")
         s.settings.file.write_case_data(file_name=fwd(CASES / f"{name}.cas.h5"))
 
-        # ---- wake planes ---------------------------------------------------
-        wp = geo["wake_planes"]
-        surf = st.results.surfaces.plane_surface
-        exported = []
-        for n, x in zip(wp["lengths_behind_rear_axle"], wp["x_m"]):
-            pname = f"plane_{n:g}l".replace(".", "p")        # Fluent lower-cases surface names
-            surf.create(pname)
-            surf[pname].method = "yz-plane"
-            surf[pname].x = x
-            f = wake_dir / f"{variant}{tag}_{n:g}L.csv"
-            set_aside(f)
-            st.file.export.ascii(file_name=fwd(f), surface_name_list=[pname], delimiter="comma", location="node",
-                                 quantities=["x-velocity", "y-velocity", "z-velocity", "turb-kinetic-energy", "total-pressure"])
-            exported.append(str(f))
-        info["wake_files"] = exported
+        # ---- wake planes and boxes, y+, mass balance ------------------------
+        post_run(s, variant, tag, run_dir, info)
         grid = s.scheme.eval("(inquire-grids)")           # ((id cells faces nodes dim))
         info["cells"] = int(grid[0][1]) if grid else None
         info["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -458,12 +616,15 @@ def run_solve(variant: str, speed: float | None, iters: int, tag: str, cores: in
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("action", choices=["mesh", "solve", "all"])
-    ap.add_argument("variant", choices=["A", "B", "C", "D"])
+    ap.add_argument("action", choices=["mesh", "solve", "all", "post", "cont"])
+    ap.add_argument("variant", help="A, B, C, D or any other variant with cad/step/cfd/faces_<V>.csv (E, CP, ...)")
     ap.add_argument("--scale", type=float, default=2.0, help="multiplies the body, floor, wheel, ground and refinement-box sizes")
     ap.add_argument("--wing-scale", type=float, default=1.0, help="multiplies the wing face sizes (the minimum size 2.5 mm is never scaled)")
     ap.add_argument("--speed", type=float, default=None)
-    ap.add_argument("--iters", type=int, default=1500)
+    ap.add_argument("--iters", type=int, default=1200, help="upper limit; the run stops earlier on force convergence")
+    ap.add_argument("--solver", action="append", default=[], help="cont only: poor-mesh, hotr, pseudo-relax=0.5, fixed (no force stop)")
+    ap.add_argument("--boi", default="", help="'win': add the wake-window boxes at 1, 2, 3 L (boi_boxes_win.step), size --win-size")
+    ap.add_argument("--win-size", type=float, default=40.0, help="mm, cell size in the wake-window boxes (not scaled)")
     ap.add_argument("--tag", default="")
     ap.add_argument("--cores", type=int, default=4)
     ap.add_argument("--gui", action="store_true")
@@ -478,10 +639,16 @@ def main() -> int:
             sys.exit(f"--set {k}: not a SIZES entry ({[q for q in SIZES if not isinstance(SIZES[q], dict)]})")
         SIZES[k] = type(SIZES[k])(v)
     tag = f"_{a.tag}" if a.tag else ""
+    if not (GEO / f"faces_{a.variant}.csv").is_file():
+        sys.exit(f"no cad/step/cfd/faces_{a.variant}.csv: build the geometry first (cad/generate/cfd_variants.py --only {a.variant})")
     if a.action in ("mesh", "all"):
-        run_mesh(a.variant, a.scale, tag, a.cores, a.gui, wing_scale=a.wing_scale)
+        run_mesh(a.variant, a.scale, tag, a.cores, a.gui, wing_scale=a.wing_scale, boi=a.boi, win_size=a.win_size)
     if a.action in ("solve", "all"):
         run_solve(a.variant, a.speed, a.iters, tag, a.cores, a.gui)
+    if a.action == "post":
+        run_post(a.variant, tag, a.cores, a.gui)
+    if a.action == "cont":
+        run_continue(a.variant, tag, a.iters, a.cores, a.gui, a.solver)
     return 0
 
 

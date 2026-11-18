@@ -11,8 +11,9 @@ function out = suspension_optimise(opts, varargin)
 %
 %   The rim is a hard limit. Every outer joint (lower and upper ball joint,
 %   tie-rod or toe-link end, pushrod end) that sits inside the rim along the
-%   spindle must keep its centre + JOINT_R (12 mm housing, as in
-%   tools/sw_harness/BuildSuspension.cs) within the barrel's inner radius
+%   spindle must keep its centre + JOINT_R (params joint_housing_radius,
+%   12.5 mm: Aurora COM-5T spherical bearing, 19.05 mm OD, in a 3 mm wall
+%   cup) at least joint_rim_margin_min (3 mm) inside the barrel's inner radius
 %   rim_d/2 - 11 (build_parts.build_rim: barrel 7 mm below the bead seat,
 %   4 mm wall). The joints are fixed to the upright, so their radius does
 %   not change with travel or steering; the links do move relative to the
@@ -35,7 +36,8 @@ function out = suspension_optimise(opts, varargin)
 %   pushrod's outer end height, and the inner pivots of each wishbone by a
 %   common z and y shift (they are frame nodes in matlab/cad/frame_layout.m,
 %   which follow them), limited to +/-30 mm in z and +/-15 mm in y (rear:
-%   upper pivots no lower than -14 mm, over the diff; +/-30 mm in y).
+%   +/-30 mm in y, and the cross tubes at the inner pivots at least 10 mm
+%   from the diff envelope, checked in absolute terms).
 %   Method: Nelder-Mead (fminsearch, no toolbox needed) on a penalty
 %   function, from several starts; hardpoints rounded to 0.5 mm and checked
 %   again after rounding.
@@ -137,6 +139,7 @@ res.x = xb;
 res.target = tgt;
 res.feasible = m.pkg.ok && m.bump_steer <= 0.1 && m.scrub <= 30 && abs(m.camber_gain - tgt.camber_gain) <= 0.005 && ...
     abs(m.rc - tgt.rc) <= 10 && abs(m.mr - tgt.mr) <= 0.03;
+if isfield(m, 'diff_clear'), res.feasible = res.feasible && m.diff_clear >= 10; end
 end
 
 function h = apply(x, h0)
@@ -159,9 +162,9 @@ function [f, m] = cost(x, h0, cn, tgt, p)
 lim = [60 40 60, 60 40 60, 60 40 60, 30, 30 15 30 15, 40].';
 lo = -lim; hi = lim;
 if strcmp(cn, 'rear')
-    % the rear upper pivots carry the RS1_U cross tube over the diff: frame_layout's
-    % clearance check (tube to diff >= 10 mm) fails below about -15 mm (2026-11-17)
-    lo(11) = -14;
+    % the rear inner pivots carry the RS1/RS2 cross tubes past the diff: their
+    % clearance is a penalty below (diff_clearance), in absolute terms. A move
+    % limit relative to the current hardpoints drifted on each re-run (2026-11-18).
     % with the upper pivots held up, the camber gain comes from the arm
     % lengths: the inner pivots may move up to 30 mm across (frame_layout
     % checks the tubes against the batteries and the diff afterwards)
@@ -192,6 +195,8 @@ if strcmp(cn, 'front')
     f = f + ((m.caster - tgt.caster) / 1)^2 + ((m.kpi - tgt.kpi) / 2)^2 + band(m.caster, 3, 7, 0.5);
 else
     f = f + band(m.caster, 0, 7, 0.5) + band(m.kpi, 3, 10, 0.5) + band(m.trail, -10, 25, 2);
+    m.diff_clear = diff_clearance(h, p);
+    f = f + 1e2 * max(0, 11 - m.diff_clear)^2;       % frame_layout wants 10 mm; 1 mm extra
 end
 m.pkg = package_report(h, cn, p, r, 7);       % full lock found to about 0.3 mm of rack
 f = f + 1e2 * sum(max(0, m.pkg.viol + 1).^2);     % 1 mm extra margin while optimising
@@ -203,6 +208,15 @@ if strcmp(cn, 'front') && isfield(tgt, 'lock_rack') && isfield(m.pkg, 'lock_rack
 end
 end
 
+function d = diff_clearance(h, p)
+% Surface distance from the rear frame cross tubes at the four inner pivots
+% (straight across in y, so they pass the diff over its full width) to the
+% diff envelope of frame_layout: a cylinder along y at (wheelbase,
+% tyre_rolling_radius), radius 80. Tube OD tube_secondary_od.
+pts = [h.uwb_in_fwd; h.uwb_in_aft; h.lwb_in_fwd; h.lwb_in_aft];
+d = min(hypot(pts(:, 1) - p.wheelbase, pts(:, 3) - p.tyre_rolling_radius)) - 80 - p.tube_secondary_od / 2;
+end
+
 function v = band(x, lo, hi, s)
 v = (max(0, lo - x) / s)^2 + (max(0, x - hi) / s)^2;
 end
@@ -212,7 +226,10 @@ function pk = package_report(h, cn, p, r, steer)
 % Joint and link clearance against the wheel, in the upright's frame.
 % steer: 0 no steering, otherwise the number of bisection steps used to find
 % the rack position at full lock (20 for the final check, fewer in the loop).
-JOINT_R = 12; LINK_R = 15.9 / 2;
+JOINT_R = 12; JOINT_GAP = 0;          % fallbacks; params: joint_housing_radius, joint_rim_margin_min
+if isfield(p, 'joint_housing_radius'), JOINT_R = p.joint_housing_radius; end
+if isfield(p, 'joint_rim_margin_min'), JOINT_GAP = p.joint_rim_margin_min; end
+LINK_R = 15.9 / 2;
 RIM_GAP = 3;                          % hard: link surface to the rim (rigid, both metal)
 TYRE_MIN = 3;                         % hard: link surface to the tyre, no contact
 TYRE_GOAL = 10;                       % goal: room for the sidewall's deflection in cornering
@@ -239,7 +256,7 @@ for k = 1:4
     pk.joint_r(k) = rad; pk.joint_ax(k) = ax;
     if ax >= -halfW - JOINT_R && ax <= halfW
         pk.joint_margin(k) = rIn - (rad + JOINT_R);
-        viol(end + 1) = -pk.joint_margin(k); %#ok<AGROW>
+        viol(end + 1) = JOINT_GAP - pk.joint_margin(k); %#ok<AGROW>
     end
 end
 pk.joint_names = names;
@@ -315,6 +332,9 @@ pk.tyre_gap = TYRE_GOAL - pk.tyre_short;  % closest link surface to the tyre, mm
 if worst > -inf, viol(end + 1) = worst; end
 pk.viol = viol;
 pk.ok = all(viol <= 0);
+jm = pk.joint_margin(~isnan(pk.joint_margin));
+pk.joint_viol_max = max([-inf, JOINT_GAP - jm]);       % > 0: a joint closer to the barrel than joint_rim_margin_min
+pk.joint_gap = JOINT_GAP;
 pk.rIn = rIn; pk.JOINT_R = JOINT_R;
 end
 
@@ -405,7 +425,7 @@ end
 % =============================================================================
 function ok = selftest()
 % Hand-checkable: a joint 100 mm above the wheel centre on a level axle has
-% radius 100, so with the 12 mm housing it fits a 254 mm rim (barrel 116) with
+% radius 100, so with a 12 mm housing (no margin) it fits a 254 mm rim (barrel 116) with
 % 4 mm to spare and fails a 230 mm rim (barrel 104) by 8 mm. And the rear
 % upper joint of the 2026-11-16 design (radius 140 > 104, the violation that
 % started this) must be flagged in the real corner, so the check is not vacuous.
@@ -418,12 +438,23 @@ h.uwb_out = [wc(1), wc(2) - 40, wc(3) + 100];
 P = repmat(wc, 8, 1); P(7, :) = wc + [0 100 0]; P(8, :) = wc + [-100 0 0];
 r = struct('travel', 0, 'P', P);
 ok = true;
+p0 = p; p.joint_housing_radius = 12; p.joint_rim_margin_min = 0;    % the hand cases below use a 12 mm housing, no margin
 pk = package_report(h, 'rear', p, r);
 ok = ok && check(abs(pk.joint_r(2) - 100) < 1e-9 && abs(pk.joint_margin(2) - 4) < 1e-9, ...
     sprintf('joint 100 mm above the axle: radius %.3f (100), margin %.3f (4) in a 254 rim', pk.joint_r(2), pk.joint_margin(2)));
 p2 = p; p2.rim_diameter = 230;
 pk2 = package_report(h, 'rear', p2, r);
 ok = ok && check(abs(pk2.joint_margin(2) + 8) < 1e-9, sprintf('same joint in a 230 rim: margin %.3f (-8)', pk2.joint_margin(2)));
+% the housing rule: 12.5 mm housing and 3 mm wanted. Radius 100 leaves 116 - 112.5 = 3.5 (passes),
+% radius 101 leaves 2.5 (flagged although the housing still fits)
+p5 = p; p5.joint_housing_radius = 12.5; p5.joint_rim_margin_min = 3;
+pk5 = package_report(h, 'rear', p5, r);
+h6 = h; h6.uwb_out = [wc(1), wc(2) - 40, wc(3) + 101];
+pk6 = package_report(h6, 'rear', p5, r);
+ok = ok && check(abs(pk5.joint_margin(2) - 3.5) < 1e-9 && pk5.joint_gap - pk5.joint_margin(2) <= 0 && ...
+    abs(pk6.joint_margin(2) - 2.5) < 1e-9 && pk6.joint_gap - pk6.joint_margin(2) > 0, ...
+    sprintf('housing 12.5 mm, 3 mm wanted: radius 100 margin %.2f (3.5, ok), radius 101 margin %.2f (2.5, flagged)', pk5.joint_margin(2), pk6.joint_margin(2)));
+p = p0;
 h3 = o.hardpoints.rear;
 h3.uwb_out = [1565, 522, 360];                % 2026-11-16 rear upper ball joint
 pk3 = package_report(h3, 'rear', p);

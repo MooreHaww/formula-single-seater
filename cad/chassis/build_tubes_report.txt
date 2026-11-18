@@ -1,16 +1,16 @@
-ALL PASS   (2026-11-17 23:11, harness swh.exe)  BuildTubes, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+ALL PASS   (2026-11-18 10:08, harness swh.exe)  BuildTubes, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
 
 PASS  SM_hoop: 12 of 12 segments built (12 tubes in CSV), 25.4x2.4, one group per segment
 PASS  SM_hoop_brace: 10 of 10 segments built (10 tubes in CSV), 25.4x2.4, one group per segment
 PASS  SM_sis: 7 of 7 segments built (7 tubes in CSV), 25.4x1.6, one group per segment
-PASS  SM_bulkhead: 4 of 4 segments built (4 tubes in CSV), 25.4x1.6, one group per segment
-PASS  SM_sidepod: 18 of 18 segments built (18 tubes in CSV), 25.4x1.6, one group per segment
-PASS  SM_front: 32 of 32 segments built (32 tubes in CSV), 25.4x1.6, one group per segment
-PASS  SM_rear: 31 of 31 segments built (31 tubes in CSV), 25.4x1.6, one group per segment
+PASS  SM_bulkhead: 5 of 5 segments built (5 tubes in CSV), 25.4x1.6, one group per segment
+PASS  SM_sidepod: 20 of 20 segments built (20 tubes in CSV), 25.4x1.6, one group per segment
+PASS  SM_front: 37 of 37 segments built (37 tubes in CSV), 25.4x1.6, one group per segment
+PASS  SM_rear: 33 of 33 segments built (33 tubes in CSV), 25.4x1.6, one group per segment
 PASS  material: AISI 1020 (SOLIDWORKS Materials)
-PASS  cut-list bodies: 114 (114 tubes in CSV, 82 cut-list items)
-PASS  cut length: 42.78 m vs 41.64 m in CSV (+2.7 %, limit 5 %)
-PASS  mass: 41.8 kg (expected 38 to 46)
+PASS  cut-list bodies: 124 (124 tubes in CSV, 95 cut-list items)
+PASS  cut length: 49.18 m vs 48.17 m in CSV (+2.1 %, limit 5 %)
+PASS  mass: 47.5 kg (CSV 49.3 kg; expected 41.9 to 51.8)
 PASS  saved: C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
 
 No failures.

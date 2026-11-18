@@ -1,15 +1,15 @@
-ALL PASS (1 warning)   (2026-11-17 23:16, harness swh.exe)  CheckChassis, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+ALL PASS (1 warning)   (2026-11-18 10:15, harness swh.exe)  CheckChassis, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
 
-PASS  bodies: 114 (114 tubes in frame_tubes.csv)
-PASS  one body per tube: 114 of 114 matched
-PASS  cut-list bodies: 114 in 103 items
-PASS  cut length: 41.24 m vs 41.64 m centreline sum in CSV (limit 5 %)
-PASS  mass: 39.96 kg (38 to 46)
-PASS  trim rows done: 141 with a Trim_<node> feature without error, 35 none needed (already cut by the structural members), 176 rows in frame_trims.csv
+PASS  bodies: 124 (124 tubes in frame_tubes.csv)
+PASS  one body per tube: 124 of 124 matched
+PASS  cut-list bodies: 124 in 117 items
+PASS  cut length: 47.64 m vs 48.17 m centreline sum in CSV (limit 5 %)
+PASS  mass: 45.30 kg (CSV 49.29 kg; expected 41.9 to 51.8)
+PASS  trim rows done: 161 with a Trim_<node> feature without error, 35 none needed (already cut by the structural members), 196 rows in frame_trims.csv
 PASS  features with rebuild errors (all features, FeatureManager.GetFeatures): 0
-WARN  tube pairs at a shared node: 444 checked, largest overlap 328 mm3, 0 not measurable, 2 above 200 mm3: MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 328 mm3; MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 328 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
+WARN  tube pairs at a shared node: 543 checked, largest overlap 333 mm3, 0 not measurable, 3 above 200 mm3: MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 333 mm3; MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 333 mm3; FH_L-MH_L_L / MH_L-RS1_L_L at MH_L_L 210 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
 
 No failures.
 Warnings (do not fail the step):
-- tube pairs at a shared node: 444 checked, largest overlap 328 mm3, 0 not measurable, 2 above 200 mm3: MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 328 mm3; MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 328 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
+- tube pairs at a shared node: 543 checked, largest overlap 333 mm3, 0 not measurable, 3 above 200 mm3: MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 333 mm3; MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 333 mm3; FH_L-MH_L_L / MH_L-RS1_L_L at MH_L_L 210 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
 

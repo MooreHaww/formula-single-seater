@@ -8,8 +8,9 @@ function summary = run_all(mode)
 %   call  run('matlab/run_all.m')  or add matlab/ to the path and type run_all.
 %   Outputs go to media/ (figures, lap_times.csv, results_table.md),
 %   sim/stress/load_cases.csv and cfd/results/.
-%   Self-tests: 24 plus the Simulink one (aero_estimate and read_aero_variants added with the pre-CFD aero model,
-%   suspension_optimise with the rim-limited hardpoints, frame_fe the frame beam model).
+%   Self-tests: 26 plus the Simulink one (aero_estimate and read_aero_variants added with the pre-CFD aero model,
+%   suspension_optimise with the rim-limited hardpoints, frame_fe the frame beam model, frame_diagonal_search
+%   and make_media on 2026-11-18). make_media itself is run separately (README figures and tables).
 %   Scripts that depend on data not yet produced (motion study CSVs, CFD
 %   forces and wake planes) run on synthetic data or estimates and say so.
 
@@ -25,7 +26,7 @@ tests = {'read_car_params', 'car_from_params', 'long_forces', 'accel_test', 'mak
     'load_track', 'lapsim', 'cornering_speed_vs_downforce', 'lap_experiments', ...
     'suspension_plots', 'load_cases', 'aero_plots', 'wake_postprocess', ...
     'suspension_geometry', 'suspension_optimise', 'frame_layout', 'frame_trims', 'frame_fe', 'mass_budget', 'cornering_balance', 'cornering_balance_study', ...
-    'aero_estimate', 'read_aero_variants'};
+    'aero_estimate', 'read_aero_variants', 'frame_diagonal_search', 'make_media'};
 hasSimulink = license('test', 'Simulink') && ~isempty(ver('simulink'));
 if hasSimulink, tests{end+1} = 'run_accel_simulink'; end
 results = struct('name', tests, 'pass', num2cell(false(size(tests))), 'msg', '');

@@ -1,4 +1,4 @@
-ALL PASS (1 warning)   (2026-11-17 23:26, harness swh.exe)  SuspensionMotion, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
+ALL PASS (1 warning)   (2026-11-18 10:24, harness swh.exe)  SuspensionMotion, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
 
 INFO  motion studies before: 1
 INFO  study types this installation offers (GetSupportedStudyTypes = 7): swMotionStudyTypeAssembly, swMotionStudyTypePhysicalSimulation, swMotionStudyTypeCosmosMotion
@@ -9,7 +9,7 @@ INFO  motor location / direction SolidWorks took: P_WC point / GROUND plane
 PASS  linear motors on the uprights: 4 of 4, oscillating 30 mm at 0.25 Hz
 INFO  Calculate returned True
 PASS  the study moves every wheel up from full droop (192 mm at 0 s) and back (4 s), one way at a time, left and right alike: start/end miss 0.00 mm, left-right difference at the top 0.00 mm
-WARN  bump reached in the study: front +22.7 mm, rear +14.2 mm of +30 (the linear motor moves its own point 60 mm; the upright turns in camber, so the wheel centre moves less. The full -30..+30 sweep is SuspensionCheck's)
+WARN  bump reached in the study: front +22.7 mm, rear +13.0 mm of +30 (the motor's stroke is 60 mm from droop; the wheel centre falls short by the same amount with the motor on the axis or on the wheel-centre point, cause not found. The full -30..+30 sweep is SuspensionCheck's)
 PASS  front camber gain in the study -0.0386 deg/mm, suspension_geometry.m -0.0391 (agree within 0.002)
 INFO  ActivateMotionStudy("Model") returned True
 PASS  model back at static after the study: wheel centres within 0.000 mm of 222 mm
@@ -17,26 +17,26 @@ PASS  saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_s
 
 No failures.
 Warnings (do not fail the step):
-- bump reached in the study: front +22.7 mm, rear +14.2 mm of +30 (the linear motor moves its own point 60 mm; the upright turns in camber, so the wheel centre moves less. The full -30..+30 sweep is SuspensionCheck's)
+- bump reached in the study: front +22.7 mm, rear +13.0 mm of +30 (the motor's stroke is 60 mm from droop; the wheel centre falls short by the same amount with the motor on the axis or on the wheel-centre point, cause not found. The full -30..+30 sweep is SuspensionCheck's)
 
 
 Timeline (wheel centre height above GROUND, mm; front right camber, deg)
    t s     FR       FL       RR       RL    FR camber
   0.00     192.0    192.0    192.0    192.0    -0.379
-  0.25     193.9    193.9    193.5    193.5    -0.448
-  0.50     199.4    199.4    197.9    197.9    -0.647
-  0.75     207.7    207.7    204.7    204.7    -0.955
-  1.00     217.7    217.7    212.9    212.9    -1.333
-  1.25     227.8    227.8    221.5    221.5    -1.730
-  1.50     236.6    236.6    229.1    229.1    -2.084
-  1.75     242.6    242.6    234.3    234.3    -2.331
-  2.00     244.7    244.7    236.2    236.2    -2.420
-  2.25     242.6    242.6    234.3    234.3    -2.331
-  2.50     236.6    236.6    229.1    229.1    -2.084
-  2.75     227.8    227.8    221.5    221.5    -1.730
-  3.00     217.7    217.7    212.9    212.9    -1.333
-  3.25     207.7    207.7    204.7    204.7    -0.955
-  3.50     199.4    199.4    197.9    197.9    -0.647
-  3.75     193.9    193.9    193.5    193.5    -0.448
+  0.25     193.9    193.9    193.4    193.4    -0.448
+  0.50     199.4    199.4    197.5    197.5    -0.647
+  0.75     207.7    207.7    203.8    203.8    -0.955
+  1.00     217.7    217.7    211.6    211.6    -1.333
+  1.25     227.8    227.8    220.0    220.0    -1.730
+  1.50     236.6    236.6    227.6    227.6    -2.084
+  1.75     242.6    242.6    233.0    233.0    -2.331
+  2.00     244.7    244.7    235.0    235.0    -2.420
+  2.25     242.6    242.6    233.0    233.0    -2.331
+  2.50     236.6    236.6    227.6    227.6    -2.084
+  2.75     227.8    227.8    220.0    220.0    -1.730
+  3.00     217.7    217.7    211.6    211.6    -1.333
+  3.25     207.7    207.7    203.8    203.8    -0.955
+  3.50     199.4    199.4    197.5    197.5    -0.647
+  3.75     193.9    193.9    193.4    193.4    -0.448
   4.00     192.0    192.0    192.0    192.0    -0.379
 

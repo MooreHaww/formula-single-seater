@@ -512,8 +512,11 @@ namespace SwHarness
             // joint package: every outer joint (with its housing) inside the rim must clear the barrel
             double rBarrelIn = par["rim_diameter"] / 2 - 11;     // build_parts.build_rim: barrel 7 mm below the bead seat, 4 mm wall
             double halfW = par["rim_width"] / 2;
+            double jR = par.ContainsKey("joint_housing_radius") ? par["joint_housing_radius"] : JOINT_R;     // COM-5T in a 3 mm cup: 12.5
+            double jGap = par.ContainsKey("joint_rim_margin_min") ? par["joint_rim_margin_min"] : 0;
             sb.Append("\nOuter joints against the rim (barrel inside radius " + F(rBarrelIn, "0") + " mm, rim " + F(-halfW, "0") + " to +" + F(halfW, "0") +
-                      " mm along the spindle from the wheel centre; joint housing radius " + F(JOINT_R, "0") + " mm)\n");
+                      " mm along the spindle from the wheel centre, housing counted from " + F(-halfW - jR, "0") + "; joint housing radius " + F(jR, "0.0") +
+                      " mm, margin wanted " + F(jGap, "0.0") + " mm)\n");
             var pkgBad = new List<string>();
             foreach (var cn in new[] { "FR", "RR" })
             {
@@ -524,16 +527,16 @@ namespace SwHarness
                     var d = Sub(c.P[jn], c.P["wc"]);
                     double ax = d[0] * axU[0] + d[1] * axU[1] + d[2] * axU[2];
                     double rad = Math.Sqrt(Math.Max(0, d[0] * d[0] + d[1] * d[1] + d[2] * d[2] - ax * ax));
-                    bool inRim = ax >= -halfW && ax <= halfW;
-                    double margin = rBarrelIn - (rad + JOINT_R);
-                    bool ok = !inRim || margin >= 0;
+                    bool inRim = ax >= -halfW - jR && ax <= halfW;          // as suspension_optimise.m: a housing overhanging the rim's inner edge counts
+                    double margin = rBarrelIn - (rad + jR);
+                    bool ok = !inRim || margin >= jGap - 1e-6;
                     string nm = jn == "tie_out" ? c.TieName + "_out" : jn;
                     sb.Append("  " + cn + " " + nm.PadRight(12) + " radius " + F(rad, "0.0").PadLeft(6) + " mm, along the spindle " + F(ax, "0.0").PadLeft(6) + " mm" +
                               (inRim ? ", inside the rim, margin to the barrel " + F(margin, "0.0") + " mm" + (ok ? "" : "  <- does not fit") : ", outside the rim") + "\n");
-                    if (!ok) pkgBad.Add(cn + " " + nm + " (radius " + F(rad, "0") + " + " + F(JOINT_R, "0") + " > " + F(rBarrelIn, "0") + " mm)");
+                    if (!ok) pkgBad.Add(cn + " " + nm + " (margin " + F(margin, "0.0") + " < " + F(jGap, "0.0") + " mm)");
                 }
             }
-            rep.Warn(pkgBad.Count == 0, "outer ball joints fit inside the rim barrel" + (pkgBad.Count > 0 ? ": NOT " + string.Join("; ", pkgBad) +
+            rep.Warn(pkgBad.Count == 0, "outer joint housings (radius " + F(jR, "0.0") + ") at least " + F(jGap, "0.0") + " mm inside the rim barrel" + (pkgBad.Count > 0 ? ": NOT " + string.Join("; ", pkgBad) +
                      " (hardpoints from suspension_geometry.m; moving them changes the kinematics, so they are reported, not changed)" : ""));
 
             // clashes: interference at full droop, static and full bump

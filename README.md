@@ -1,90 +1,147 @@
 # Formula Single-Seater
 
-Formula-style single-seater designed in SolidWorks and tested virtually: suspension motion, stress, CFD downforce and drag, and a MATLAB lap-time simulation.
+A Formula-Student-sized electric single-seater, designed from one parameter file to a lap time. The CAD (SolidWorks 2026, built by scripts), the frame and suspension analysis (MATLAB), the aerodynamics (Ansys Fluent, Student licence) and a lap-time simulation (MATLAB, with a Simulink cross-check) all read the same `params/car_params.txt`.
 
-> Template. Fields in angle brackets are filled at Ring 7 with the real numbers from `run_all.m` and the study reports. The hero render goes at the top.
+The proportions follow Formula Student, but the rules do not: the wings are larger than the FS rules allow, because the aero brief was maximum downforce first.
 
-<!-- ![Hero render](media/hero.png) -->
+![Assembly, iso view](media/views/formula_single_seater_Default_iso.png)
 
-## Why it exists
+## Rebuild in one command
 
-To design one complete race car from a blank parameter file to a lap time, with every number traceable to a simulation I ran, and to learn SolidWorks, Fluent and MATLAB/Simulink on something I care about. The aero brief was maximum downforce first and an honestly measured wake second. The wings are deliberately bigger than Formula Student rules allow; the proportions are FS, the rules are not.
+With SolidWorks 2026 (Student is enough) and Python 3 installed:
 
-## What it does
+```
+python tools/sw_run.py rebuild
+```
 
-- A parametric CAD assembly driven by one text file (`params/car_params.txt`): change the wheelbase, press Rebuild, the whole car follows.
-- SolidWorks Motion bump and steering sweeps that give camber gain, bump steer and motion ratio.
-- SolidWorks Simulation: front upright stress with a mesh check, and chassis torsional stiffness.
-- Fluent CFD on a half car for four aero variants, with a measured wake on planes 0.5 to 3 car lengths behind.
-- A MATLAB lap simulator on four tracks, a Simulink acceleration model that agrees with it, and plots that show what the downforce is worth and what it costs.
+The command:
+- closes SolidWorks without saving and starts it fresh;
+- builds the chassis weldment from `cad/frame/*.csv` (124 tubes), trims every tube end and checks the result;
+- builds the master layout, bodywork and wings, the assembly, and the 24 suspension parts;
+- checks suspension clearance over ±30 mm travel and full steering lock, and runs the motion study and the frame beam studies;
+- saves the standard views to `media/views/`.
+
+Each step writes a report beside its output and stops at the first failure. The step list and the reports are described in `tools/README.md`.
+
+The frame CSVs and the suspension hardpoints come from MATLAB. After changing the parameters, run these first (MATLAB R2026a, from `matlab/`):
+
+```matlab
+addpath('common'); setup_paths();
+frame_layout(struct('plot', false, 'write', true));   % cad/frame/frame_nodes.csv, frame_tubes.csv
+frame_trims();                                         % cad/frame/frame_trims.csv
+load_cases();                                          % sim/stress/load_cases.csv
+make_media();                                          % GIF, stress plots, mass and lap tables in media/
+run_all('test')                                        % 24 self-tests
+```
+
+`run_all` without arguments also re-runs the aero post-processing, which writes into `cfd/results/`.
 
 ## Results
 
-| Headline | Value |
+All numbers come from the scripts named in the table, as of 2026-11-18. None of them is a measurement on a real car.
+
+| Quantity | Value | Source |
+|---|---|---|
+| Mass, car without / with driver | 235.6 / 305.6 kg, 41.8 % front, CG height 312 mm | `matlab/mass_budget.m`, `media/mass_table.md` |
+| Frame | 124 tubes of 25.4 mm 4130, 49.3 kg (centre-line lengths, no welds) | `matlab/cad/frame_layout.m` |
+| Frame torsional stiffness | 1503 Nm/deg (834 before the 10 torsion diagonals added on 2026-11-18) | `matlab/stress/frame_fe.m`, beam model |
+| Frame, lowest factor of safety on yield | 2.67, bump case (3 g total wheel load), nominal beam stress | `matlab/stress/frame_fe.m`, `docs/stress_frame.md` |
+| Camber gain, front / rear | −0.039 / −0.043 deg/mm | `matlab/suspension_geometry.m` |
+| Bump steer over ±30 mm, front / rear | 0.010 / 0.021 deg | same |
+| Static roll centre, front / rear | 60 / 79 mm | same |
+| Motion ratio, front / rear | 0.71 / 0.77 | same |
+| Outer ball joint housing to rim barrel, smallest | 4.0 mm (rear upper joint), with a 12.5 mm housing radius assumed | `matlab/suspension_optimise.m` |
+| Aero, variant C (maximum wings), half-car CFD | ClA 3.98 m², CdA 1.63 m², L/D 2.44, 45 % on the front axle | `media/cfd/cfd_results.md` |
+| Lap time, FS-style autocross, variant C | 61.09 s point-mass, 62.21 s with four-wheel load transfer | `media/lap_time_table.md` |
+| Lap time, fast circuit, variant C | 82.58 s point-mass, 82.78 s four-wheel | same |
+| Wings worth (A no wings → C), autocross / fast circuit | 5.54 s / 1.59 s | same |
+| Skidpad / 75 m acceleration, variant C | 4.89 s / 4.35 s; 0–100 km/h 3.48 s | `matlab/accel_test.m`, lap sim |
+| Simulink 75 m model vs MATLAB | 4.3518 s vs 4.3518 s | `matlab/simulink/run_accel_simulink.m` |
+| Following one car length behind (variant C) | 64 % of the free-stream dynamic pressure in the follower's window; +2.15 s autocross, +1.23 s fast circuit | CFD wake plane, `matlab/lapsim/lap_experiments.m` |
+
+### Lap times, all four aero variants (point-mass)
+
+| Track | A no wings | B moderate | C maximum | D wake-tuned |
+|---|---|---|---|---|
+| skidpad | 5.13 s | 4.92 s | 4.89 s | 4.88 s |
+| accel 75 m | 4.41 s | 4.34 s | 4.35 s | 4.34 s |
+| autocross | 66.62 s | 61.72 s | 61.09 s | 60.75 s |
+| fast circuit | 84.17 s | 79.84 s | 82.58 s | 84.34 s |
+
+On the fast circuit the drag of C and D costs more than their downforce gains, because the car is power-limited on the straights (80 kW).
+
+### Frame torsion diagonals: before and after
+
+| | Before | After |
+|---|---|---|
+| Torsional stiffness (through the suspension links) | 834 Nm/deg | 1503 Nm/deg |
+| Frame tubes | 43.5 kg | 49.3 kg |
+| Car without driver | 229.1 kg | 235.6 kg |
+| Autocross, variant C, point-mass / four-wheel | 60.84 / 62.03 s | 61.09 / 62.21 s |
+| Fast circuit, variant C, point-mass / four-wheel | 82.45 / 82.68 s | 82.58 / 82.78 s |
+
+The lap sim treats the chassis as rigid. It therefore shows only the cost of the added mass (+0.25 s on the autocross), not any benefit of the stiffer frame.
+
+The diagonals were chosen by `matlab/stress/frame_diagonal_search.m`: the lightest set that reaches 1500 Nm/deg and clears the driver, battery, motor and diff envelopes. Floor diagonals alone reach 1161 Nm/deg, and floor plus top diagonals reach 1368. The sidepod tops and the front bulkhead plane are also needed.
+
+### Media
+
+| File | What |
 |---|---|
-| Lap time, FS autocross, variant C | `<s>` |
-| Lap time, fast circuit, variant C | `<s>` |
-| Wings worth (A to C), autocross / fast circuit | `<s>` / `<s>` |
-| ClA / CdA / L/D, variant C (CFD, 20 m/s) | `<m2>` / `<m2>` / `<>` |
-| Max corner speed, R = 120 m, A vs C | `<km/h>` vs `<km/h>` |
-| Car one length behind keeps | `<%>` of its downforce |
-| Following penalty, fast circuit | `<s>` per lap |
-| Chassis torsional stiffness | `<Nm/deg>` at `<kg>` |
-| Front upright minimum safety factor | `<>` |
-| Camber gain front / rear | `<deg/mm>` / `<deg/mm>` |
-| 0 to 100 km/h / 75 m | `<s>` / `<s>` (Simulink `<s>`) |
+| `media/views/*_iso.png` and the other five views | SolidWorks standard views of the chassis, the assembly, the master layout and the suspension (corners and frame only) |
+| `media/suspension_bump_steer.gif` | front and rear corner through ±30 mm of travel, then the front corner lock to lock (MATLAB kinematics) |
+| `media/frame_stress_cases.png`, `frame_stress_bump.png`, `frame_torsion_diagonals.png`, `frame_fe.png` | frame stress per load case, the bump case on the frame, stiffness by diagonal family, deformed shapes |
+| `media/mass_table.md`, `media/lap_time_table.md`, `media/results_table.md` | mass budget, lap times, aero before/after CFD |
+| `media/cfd/` | CFD forces, convergence, wake planes |
 
-Plots: `media/cornering_speed_vs_downforce.png`, `media/laptime_contour_fast_circuit.png`, `media/aero_drag_vs_downforce.png`, `media/wake/wake_metrics.png`.
+![Suspension bump and steer](media/suspension_bump_steer.gif)
 
-## How it was built
+![Frame stress per load case](media/frame_stress_cases.png)
 
-Eight rings, each ending with a check and a report (`docs/ring_report_template.md`, log in `docs/log.md`):
+## Assumptions and limits
 
-0. Learning ramp: practice parts, first MATLAB script, CFD smoke test (`docs/ring0_practice/`, `cfd/ansys_quickstart.md`).
-1. Concept and parameters: `params/car_params.txt` with the itemised mass and CG budget (`matlab/mass_budget.m`), layout sketch, variant list (`docs/concept.md`).
-2. CAD: master layout, spaceframe, suspension, body and wings, CFD bodies.
-3. Motion: bump and steering sweeps (`sim/motion/`, `matlab/suspension_plots.m`).
-4. Stress: load cases (`matlab/load_cases.m`), upright, chassis torsion (`sim/stress/`).
-5. CFD: four variants, mesh and speed checks, wake planes (`cfd/`).
-6. Lap time: `matlab/lapsim/`, Simulink 6b (`matlab/simulink/`).
-7. Release: renders, this README, v1.0.0.
+These are the things the numbers above depend on that were not measured, or were simplified.
 
-## What I wanted to learn
-
-`<two or three lines at Ring 7>`
-
-## How to open and run
-
-CAD: open `cad/<assembly>.SLDASM` in SolidWorks 2026 (Simulation and Motion add-ins on). The equations link to `params/car_params.txt`; if the link breaks on a fresh clone, Tools > Equations > Link to external file and pick it again.
-
-MATLAB (R2026a, needs Simulink for the 6b comparison only):
-
-```matlab
-run('matlab/run_all.m')      % self-tests, then every analysis; figures in media/
-run_all('test')              % self-tests only
-```
-
-Scripts whose input does not exist yet (motion CSVs, CFD results) run on synthetic data or the parameter-file estimates and say so in their titles.
+- **Tyres.** Friction is assumed: μ 1.40 at 750 N with a load-sensitivity exponent of 0.10. There is no tyre data behind these values. The lap times and the cornering balance move with both. On the autocross, 10 % less grip costs 3.8 s and 10 % more gains 3.2 s.
+- **Aero.**
+  - The CFD is a half car, steady RANS (k-ω SST), one mesh per variant, with no mesh-independence or y+ study and no wind-tunnel or track comparison. Only the ranking of the variants is trustworthy; the absolute ClA and CdA may be off by tens of percent.
+  - Variant A's downforce did not converge.
+  - The front/rear aero split is an estimate. The balance target used for trimming (0.40 front) is a target, not a result.
+- **CFD mesh limit.** The Ansys Student licence stops at 1,048,576 cells (measured: above that, Fluent Meshing exits without writing a mesh). The meshes are 0.27 to 1.04 M cells, so the near-wall resolution and the far wake are coarse.
+- **Roll centres** are static: computed at ride height and held fixed with roll in the cornering model.
+- **No anti-roll bar.** The roll stiffness split (38 % front) comes from the ride frequencies alone; tyre stiffness is ignored.
+- **Frame stiffness and stress** come from a MATLAB beam model:
+  - rigid joints at the node centres;
+  - no weld detail, no stress concentration, no fatigue.
+  - It is self-tested against hand calculations for single tubes, but **no solid model has confirmed it on the full frame**. The SOLIDWORKS solid cross-check runs on the Student licence, but its result is not valid: the trimmed weldment tubes touch only along edges, so bonded contact leaves some tubes unjoined (see `docs/stress_frame.md`).
+  - The real joints will be somewhat softer than the model.
+- **Mass and CG.** 24 % of the mass is a placeholder (flag GUESS in `media/mass_table.md`), including the brackets and welds, the inverter, the wings and the bodywork. The CG height is therefore partly a guess too.
+- **Lap simulation.**
+  - Quasi-steady, perfect driver, no transients.
+  - The point-mass model has no load transfer. The four-wheel model adds steady load transfer at the corner limit only.
+  - The chassis is rigid in both.
+  - Use the lap times to compare set-ups, not to predict a real lap.
+- **Suspension.**
+  - The kinematics have rigid links and bushings with no compliance.
+  - The ball-joint housing size (12.5 mm radius) is an assumption: an Aurora COM-5T spherical bearing (5/16 in bore, 19.05 mm OD) in a 3 mm-wall steel cup.
+  - The SOLIDWORKS motion study reaches only +23 mm (front) and +14 mm (rear) of bump, against the ±30 mm asked for. The cause is not found. The ±30 mm clearance check is done instead by the SuspensionCheck step, which poses the corners directly.
+  - The rear lower wishbone and pushrod tubes overlap by 7–13 mm³ near their shared outer joint at droop and static (SuspensionCheck warning). The links are modelled as plain tubes meeting at the joint centre; real rod ends and a clevis would set their spacing.
+- **Packaging.** The driver is represented by boxes (legs, torso) and a helmet sphere, not a manikin. The pedal box has no envelope of its own; the frame keeps the window between the FS2 cross tubes free for it. The frame clearances are checked against these boxes only.
 
 ## Repository layout
 
 ```
-params/     car_params.txt (single source of truth, including the mass and CG budget) 
-cad/        SolidWorks parts and assemblies (git LFS), airfoils/, macros/, frame/ (node and tube CSVs), practice/
-matlab/     accel_test, mass_budget, suspension_geometry, load_cases, suspension_plots, aero_plots, run_all; common/, lapsim/, simulink/, cfd/, cad/ (airfoils, frame_layout)
-sim/        motion/ and stress/ exports and reports
-cfd/        Ansys quickstart and smoke test, Fluent half-car guide and journal, geometry/, results/
-docs/       work plan, log, concept, ring reports, ring0_practice/ (SolidWorks and MATLAB from zero), cad_playbook/ (one file per part)
-media/      figures, renders, GIFs
+params/     car_params.txt (single source of truth, with the mass and CG budget), suspension_hardpoints.txt, aero tables
+cad/        SolidWorks parts and assemblies, frame/ (node, tube and trim CSVs), generate/ (Python geometry), macros/
+matlab/     run_all, make_media, mass_budget, suspension_geometry, suspension_optimise, load_cases; cad/ (frame_layout, frame_trims),
+            stress/ (frame_fe, frame_diagonal_search), lapsim/, simulink/, aero/, cfd/
+tools/      sw_run.py and the C# SolidWorks harness (sw_harness/), README with every step
+sim/        stress/ and motion/ reports
+cfd/        Fluent set-up, journals, results
+docs/       log.md (newest summary at the top), stress_frame.md, concept and playbook notes
+media/      figures, GIF, tables, SolidWorks views
 ```
-
-## Limits of the simulations
-
-- Lap sim: point mass, no weight transfer or transients, perfect driver. For comparing setups only. Masses and CG are the itemised budget in the parameter file, a quarter of which is still guessed; with the battery in the sidepods it puts 41 % of the weight on the front axle.
-- CFD: steady RANS under 1,000,000 cells. Variant ranking is reasonable; absolute forces are rough; the far wake is the weakest number. Full trust table in `cfd/README.md`.
-- Stress: static linear; no fatigue, welds, bolts or bearings.
-- Motion: rigid links, no compliance.
 
 ## Licence
 
-MIT for the MATLAB scripts and macros (`LICENSE`), CC BY 4.0 for the CAD and renders (`LICENSE-CAD`).
+MIT for the scripts and macros (`LICENSE`), CC BY 4.0 for the CAD and renders (`LICENSE-CAD`).

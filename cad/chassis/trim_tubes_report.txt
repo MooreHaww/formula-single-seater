@@ -1,47 +1,59 @@
-NOTHING CHANGED (2026-11-17 23:15): all 176 plan rows done, no stubs
+NOTHING CHANGED (2026-11-18 10:14): all 196 plan rows done, no stubs
 TrimTubes v4 (harness port), 2026-11-17: match = distance from body centroid to tube centreline segment, radius 12 mm, tie margin 8 mm; done rows recorded as custom properties TrimDone_<node>; body count after every trim; stub cleanup
 Part: C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
-Trim features in the part before this run: 141; plan rows already done (by name or record): 176
+Trim features in the part before this run: 161; plan rows already done (by name or record): 196
 
   (none: one body per tube)
 
 Trim features:
+  Trim_FB_L_R  [WeldCornerFeat]
   Trim_FB_L_R_b2  [WeldCornerFeat]
+  Trim_FB_L_R_b3  [WeldCornerFeat]
+  Trim_FB_L_R_b4  [WeldCornerFeat]
   Trim_FB_L_L_b2  [WeldCornerFeat]
   Trim_FB_U_R_b2  [WeldCornerFeat]
   Trim_FB_U_R_b3  [WeldCornerFeat]
+  Trim_FB_U_R_b4  [WeldCornerFeat]
+  Trim_FB_U_L  [WeldCornerFeat]
   Trim_FB_U_L_b2  [WeldCornerFeat]
   Trim_FB_U_L_b3  [WeldCornerFeat]
+  Trim_FB_U_L_b4  [WeldCornerFeat]
   Trim_FS1_L_R  [WeldCornerFeat]
   Trim_FS1_L_R_b2  [WeldCornerFeat]
   Trim_FS1_L_R_b3  [WeldCornerFeat]
   Trim_FS1_L_R_b4  [WeldCornerFeat]
-  Trim_FS1_L_L  [WeldCornerFeat]
+  Trim_FS1_L_R_b5  [WeldCornerFeat]
   Trim_FS1_L_L_b2  [WeldCornerFeat]
   Trim_FS1_L_L_b3  [WeldCornerFeat]
   Trim_FS1_L_L_b4  [WeldCornerFeat]
+  Trim_FS1_L_L_b5  [WeldCornerFeat]
   Trim_FS2_L_R  [WeldCornerFeat]
   Trim_FS2_L_R_b2  [WeldCornerFeat]
   Trim_FS2_L_R_b4  [WeldCornerFeat]
   Trim_FS2_L_L  [WeldCornerFeat]
   Trim_FS2_L_L_b2  [WeldCornerFeat]
   Trim_FS2_L_L_b4  [WeldCornerFeat]
+  Trim_FS2_L_L_b5  [WeldCornerFeat]
   Trim_FS1_U_R  [WeldCornerFeat]
   Trim_FS1_U_R_b2  [WeldCornerFeat]
   Trim_FS1_U_R_b3  [WeldCornerFeat]
+  Trim_FS1_U_R_b4  [WeldCornerFeat]
   Trim_FS1_U_R_b5  [WeldCornerFeat]
-  Trim_FS1_U_L  [WeldCornerFeat]
+  Trim_FS1_U_R_b6  [WeldCornerFeat]
   Trim_FS1_U_L_b2  [WeldCornerFeat]
   Trim_FS1_U_L_b3  [WeldCornerFeat]
+  Trim_FS1_U_L_b4  [WeldCornerFeat]
   Trim_FS1_U_L_b5  [WeldCornerFeat]
+  Trim_FS1_U_L_b6  [WeldCornerFeat]
   Trim_FS2_U_R  [WeldCornerFeat]
   Trim_FS2_U_R_b2  [WeldCornerFeat]
   Trim_FS2_U_R_b4  [WeldCornerFeat]
   Trim_FS2_U_R_b6  [WeldCornerFeat]
   Trim_FS2_U_L  [WeldCornerFeat]
   Trim_FS2_U_L_b2  [WeldCornerFeat]
-  Trim_FS2_U_L_b4  [WeldCornerFeat]
+  Trim_FS2_U_L_b5  [WeldCornerFeat]
   Trim_FS2_U_L_b6  [WeldCornerFeat]
+  Trim_FS2_U_L_b7  [WeldCornerFeat]
   Trim_FBT_R  [WeldCornerFeat]
   Trim_FBT_R_b2  [WeldCornerFeat]
   Trim_FBT_L  [WeldCornerFeat]
@@ -52,6 +64,7 @@ Trim features:
   Trim_FH_L_R_b4  [WeldCornerFeat]
   Trim_FH_L_R_b5  [WeldCornerFeat]
   Trim_FH_L_R_b6  [WeldCornerFeat]
+  Trim_FH_L_R_b7  [WeldCornerFeat]
   Trim_FH_L_L  [WeldCornerFeat]
   Trim_FH_L_L_b2  [WeldCornerFeat]
   Trim_FH_L_L_b3  [WeldCornerFeat]
@@ -62,10 +75,12 @@ Trim features:
   Trim_FH_M_R_b2  [WeldCornerFeat]
   Trim_FH_M_R_b3  [WeldCornerFeat]
   Trim_FH_M_R_b4  [WeldCornerFeat]
+  Trim_FH_M_R_b5  [WeldCornerFeat]
   Trim_FH_M_L  [WeldCornerFeat]
   Trim_FH_M_L_b2  [WeldCornerFeat]
   Trim_FH_M_L_b3  [WeldCornerFeat]
   Trim_FH_M_L_b4  [WeldCornerFeat]
+  Trim_FH_M_L_b5  [WeldCornerFeat]
   Trim_FH_T_R  [WeldCornerFeat]
   Trim_FH_T_R_b2  [WeldCornerFeat]
   Trim_FH_T_R_b3  [WeldCornerFeat]
@@ -77,11 +92,13 @@ Trim features:
   Trim_MH_L_R_b3  [WeldCornerFeat]
   Trim_MH_L_R_b4  [WeldCornerFeat]
   Trim_MH_L_R_b5  [WeldCornerFeat]
+  Trim_MH_L_R_b6  [WeldCornerFeat]
   Trim_MH_L_L  [WeldCornerFeat]
   Trim_MH_L_L_b2  [WeldCornerFeat]
   Trim_MH_L_L_b3  [WeldCornerFeat]
   Trim_MH_L_L_b4  [WeldCornerFeat]
   Trim_MH_L_L_b5  [WeldCornerFeat]
+  Trim_MH_L_L_b6  [WeldCornerFeat]
   Trim_MH_M_R  [WeldCornerFeat]
   Trim_MH_M_R_b2  [WeldCornerFeat]
   Trim_MH_M_R_b3  [WeldCornerFeat]
@@ -102,8 +119,10 @@ Trim features:
   Trim_MH_T_L_b3  [WeldCornerFeat]
   Trim_RS1_L_R_b3  [WeldCornerFeat]
   Trim_RS1_L_R_b4  [WeldCornerFeat]
+  Trim_RS1_L_L_b2  [WeldCornerFeat]
   Trim_RS1_L_L_b3  [WeldCornerFeat]
   Trim_RS1_L_L_b4  [WeldCornerFeat]
+  Trim_RS1_L_L_b5  [WeldCornerFeat]
   Trim_RS2_L_R  [WeldCornerFeat]
   Trim_RS2_L_R_b2  [WeldCornerFeat]
   Trim_RS2_L_L  [WeldCornerFeat]
@@ -113,17 +132,17 @@ Trim features:
   Trim_RS1_U_R_b5  [WeldCornerFeat]
   Trim_RS1_U_L_b4  [WeldCornerFeat]
   Trim_RS1_U_L_b5  [WeldCornerFeat]
-  Trim_RS2_U_R  [WeldCornerFeat]
   Trim_RS2_U_R_b2  [WeldCornerFeat]
   Trim_RS2_U_R_b3  [WeldCornerFeat]
   Trim_RS2_U_R_b4  [WeldCornerFeat]
-  Trim_RS2_U_L  [WeldCornerFeat]
   Trim_RS2_U_L_b2  [WeldCornerFeat]
   Trim_RS2_U_L_b3  [WeldCornerFeat]
   Trim_RS2_U_L_b4  [WeldCornerFeat]
   Trim_RT1_R  [WeldCornerFeat]
   Trim_RT1_R_b2  [WeldCornerFeat]
   Trim_RT1_R_b3  [WeldCornerFeat]
+  Trim_RT1_R_b4  [WeldCornerFeat]
+  Trim_RT1_R_b5  [WeldCornerFeat]
   Trim_RT1_L  [WeldCornerFeat]
   Trim_RT1_L_b2  [WeldCornerFeat]
   Trim_RT1_L_b3  [WeldCornerFeat]
@@ -134,135 +153,146 @@ Trim features:
   Trim_RT2_L_b2  [WeldCornerFeat]
   Trim_RT2_L_b3  [WeldCornerFeat]
   Trim_RRK_R_b2  [WeldCornerFeat]
-  Trim_RRK_L_b2  [WeldCornerFeat]
+  Trim_RRK_L  [WeldCornerFeat]
+  Trim_RRK_L_b3  [WeldCornerFeat]
   Trim_SP1_L_R  [WeldCornerFeat]
   Trim_SP1_L_R_b2  [WeldCornerFeat]
   Trim_SP1_L_R_b3  [WeldCornerFeat]
   Trim_SP1_L_L  [WeldCornerFeat]
   Trim_SP1_L_L_b2  [WeldCornerFeat]
   Trim_SP1_L_L_b3  [WeldCornerFeat]
-  Trim_SP2_U_R  [WeldCornerFeat]
   Trim_SP2_U_R_b2  [WeldCornerFeat]
   Trim_SP2_U_R_b3  [WeldCornerFeat]
-  Trim_SP2_U_L  [WeldCornerFeat]
+  Trim_SP2_U_R_b4  [WeldCornerFeat]
   Trim_SP2_U_L_b2  [WeldCornerFeat]
   Trim_SP2_U_L_b3  [WeldCornerFeat]
+  Trim_SP2_U_L_b4  [WeldCornerFeat]
 
 Tube table (mm). tube | centreline A -> B | nearest body: index, name, centroid, distance to segment | next body: index, distance | OK if nearest <= 12 and next >= nearest + 8
-  FB_L_cross | (-300,200,80) -> (-300,-200,80) | body 44 SM_bulkhead[1] (-300.0,0.0,80.0) 0.0 | body 98 82.7 | OK
-  FB_U_cross | (-300,200,380) -> (-300,-200,380) | body 28 SM_bulkhead[2] (-300.0,0.0,380.0) 0.0 | body 97 109.4 | OK
-  FB_L-FB_U_R | (-300,200,80) -> (-300,200,380) | body 82 SM_bulkhead[3] (-300.0,200.0,230.0) 0.0 | body 98 75.0 | OK
-  FB_L-FB_U_L | (-300,-200,80) -> (-300,-200,380) | body 70 SM_bulkhead[4] (-300.0,-200.0,230.0) 0.0 | body 42 75.0 | OK
-  FB_L-FS1_L_R | (-300,200,80) -> (-160,255,152) | body 98 Trim_FS1_L_R_b3 (-230.4,227.7,115.0) 0.7 | body 66 68.2 | OK
-  FB_L-FS1_L_L | (-300,-200,80) -> (-160,-255,152) | body 42 Trim_FS1_L_L_b3 (-230.4,-227.7,115.0) 0.6 | body 2 68.2 | OK
-  FB_U-FS1_U_R | (-300,200,380) -> (-130,272,278) | body 97 Trim_FS1_U_R_b3 (-211.5,237.7,327.8) 1.0 | body 66 62.8 | OK
-  FB_U-FS1_U_L | (-300,-200,380) -> (-130,-272,278) | body 30 Trim_FS1_U_L_b3 (-211.5,-237.7,327.8) 1.0 | body 2 62.8 | OK
-  FB_U-FS1_L_R | (-300,200,380) -> (-160,255,152) | body 73 Trim_FS1_L_R_b2 (-225.1,229.5,257.6) 0.1 | body 66 51.0 | OK
-  FB_U-FS1_L_L | (-300,-200,380) -> (-160,-255,152) | body 20 Trim_FS1_L_L_b2 (-225.1,-229.5,257.6) 0.1 | body 2 51.0 | OK
-  FS1_L-FS2_L_R | (-160,255,152) -> (160,255,148) | body 76 Trim_FS2_L_R (10.7,254.8,149.2) 0.2 | body 38 62.1 | OK
-  FS1_L-FS2_L_L | (-160,-255,152) -> (160,-255,148) | body 62 Trim_FS2_L_L (10.7,-254.8,149.2) 0.2 | body 100 62.1 | OK
-  FS1_U-FS2_U_R | (-130,272,278) -> (140,272,273) | body 111 Trim_FS2_U_R_b2 (16.2,271.5,275.9) 0.6 | body 66 62.8 | OK
-  FS1_U-FS2_U_L | (-130,-272,278) -> (140,-272,273) | body 12 Trim_FS2_U_L_b2 (16.2,-271.5,275.9) 0.6 | body 2 62.8 | OK
-  FS1_L-FS1_U_R | (-160,255,152) -> (-130,272,278) | body 66 Trim_FS1_U_R_b5 (-144.4,263.7,217.3) 0.2 | body 98 83.8 | OK
-  FS1_L-FS1_U_L | (-160,-255,152) -> (-130,-272,278) | body 2 Trim_FS1_U_L_b5 (-144.4,-263.7,217.3) 0.2 | body 42 83.8 | OK
-  FS2_L-FS2_U_R | (160,255,148) -> (140,272,273) | body 45 Trim_FS2_U_R_b6 (150.1,263.4,210.1) 0.2 | body 109 112.0 | OK
-  FS2_L-FS2_U_L | (160,-255,148) -> (140,-272,273) | body 113 Trim_FS2_U_L_b6 (150.1,-263.4,210.1) 0.2 | body 85 112.0 | OK
-  FS1_U-FS2_L_R | (-130,272,278) -> (160,255,148) | body 38 Trim_FS1_U_R (19.3,262.6,210.9) 0.4 | body 45 53.4 | OK
-  FS1_U-FS2_L_L | (-130,-272,278) -> (160,-255,148) | body 100 Trim_FS1_U_L (19.3,-262.6,210.9) 0.4 | body 113 53.5 | OK
-  FS1_L_cross | (-160,255,152) -> (-160,-255,152) | body 99 SM_front[17] (-159.9,0.0,151.5) 0.1 | body 66 68.2 | OK
-  FS2_L_cross | (160,255,148) -> (160,-255,148) | body 63 SM_front[18] (160.0,0.0,147.5) 0.0 | body 45 64.0 | OK
-  FS1_U_cross | (-130,272,278) -> (-130,-272,278) | body 15 SM_front[19] (-130.0,0.6,278.0) 0.0 | body 2 62.4 | OK
-  FS2_U_cross | (140,272,273) -> (140,-272,273) | body 46 Trim_FS2_U_L_b4 (140.0,0.0,273.0) 0.0 | body 113 63.7 | OK
-  FBT-FS1_U_R | (0,280,430) -> (-130,272,278) | body 96 Trim_FBT_R_b2 (-59.0,276.2,360.6) 0.2 | body 66 62.8 | OK
-  FBT-FS1_U_L | (0,-280,430) -> (-130,-272,278) | body 75 Trim_FBT_L_b2 (-59.0,-276.2,360.6) 0.2 | body 2 62.8 | OK
-  FBT-FS2_U_R | (0,280,430) -> (140,272,273) | body 109 Trim_FBT_R (65.4,276.0,356.4) 0.2 | body 45 64.2 | OK
-  FBT-FS2_U_L | (0,-280,430) -> (140,-272,273) | body 85 Trim_FBT_L (65.4,-276.0,356.4) 0.2 | body 113 64.2 | OK
-  FBT_cross | (0,280,430) -> (0,-280,430) | body 57 SM_front[25] (0.0,0.0,430.0) 0.0 | body 96 91.1 | OK
-  FS2_L-FH_L_R | (160,255,148) -> (650,290,80) | body 21 Trim_FH_L_R_b3 (438.3,275.6,108.5) 1.0 | body 26 62.1 | OK
-  FS2_L-FH_L_L | (160,-255,148) -> (650,-290,80) | body 5 Trim_FH_L_L_b3 (416.1,-273.5,112.6) 0.4 | body 25 62.1 | OK
-  FS2_U-FH_M_R | (140,272,273) -> (650,290,350) | body 102 Trim_FH_M_R_b3 (419.9,281.9,316.0) 0.7 | body 45 64.2 | OK
-  FS2_U-FH_M_L | (140,-272,273) -> (650,-290,350) | body 3 Trim_FH_M_L_b3 (419.9,-281.9,315.9) 0.7 | body 113 64.2 | OK
-  FS2_U-FH_T_R | (140,272,273) -> (650,230,680) | body 87 Trim_FH_T_R_b2 (390.6,251.1,473.2) 0.1 | body 45 64.2 | OK
-  FS2_U-FH_T_L | (140,-272,273) -> (650,-230,680) | body 59 Trim_FH_T_L_b2 (390.6,-251.1,473.1) 0.1 | body 113 64.2 | OK
-  FS2_U-FH_L_R | (140,272,273) -> (650,290,80) | body 26 Trim_FH_L_R_b6 (394.8,280.9,177.1) 0.5 | body 21 48.9 | OK
-  FS2_U-FH_L_L | (140,-272,273) -> (650,-290,80) | body 25 Trim_FH_L_L_b6 (394.8,-280.9,177.1) 0.5 | body 5 53.0 | OK
-  FH_L-FH_M_R | (650,290,80) -> (650,290,350) | body 108 Trim_FH_M_R (650.0,290.0,214.8) 0.0 | body 19 116.6 | OK
-  FH_L-FH_M_L | (650,-290,80) -> (650,-290,350) | body 6 Trim_FH_M_L (650.0,-290.0,214.8) 0.0 | body 41 116.6 | OK
-  FH_M-FH_T_R | (650,290,350) -> (650,230,680) | body 13 Trim_FH_T_R (650.0,255.1,536.1) 1.1 | body 104 118.3 | OK
-  FH_M-FH_T_L | (650,-290,350) -> (650,-230,680) | body 110 Trim_FH_T_L (650.0,-255.1,536.1) 1.1 | body 4 118.3 | OK
-  FH_T_cross | (650,230,680) -> (650,-230,680) | body 37 SM_hoop[5] (650.0,0.0,679.9) 0.1 | body 110 146.0 | OK
-  FH_L_cross | (650,290,80) -> (650,-290,80) | body 78 Trim_FH_L_L_b2 (650.0,0.0,80.0) 0.0 | body 19 116.6 | OK
-  FH_L-MH_L_R | (650,290,80) -> (1250,310,80) | body 11 Trim_MH_L_R_b2 (951.1,300.1,79.8) 0.2 | body 18 106.5 | OK
-  FH_L-MH_L_L | (650,-290,80) -> (1250,-310,80) | body 84 Trim_MH_L_L_b2 (951.0,-300.1,79.8) 0.2 | body 92 106.5 | OK
-  FH_M-MH_M_R | (650,290,350) -> (1250,310,350) | body 1 Trim_MH_M_R (949.9,300.0,350.0) 0.0 | body 74 108.6 | OK
-  FH_M-MH_M_L | (650,-290,350) -> (1250,-310,350) | body 7 Trim_MH_M_L (949.9,-300.0,350.0) 0.0 | body 90 108.6 | OK
-  FH_L-MH_M_R | (650,290,80) -> (1250,310,350) | body 67 Trim_MH_M_R_b3 (950.4,300.0,215.2) 0.0 | body 74 108.6 | OK
-  FH_L-MH_M_L | (650,-290,80) -> (1250,-310,350) | body 72 Trim_MH_M_L_b3 (950.4,-300.0,215.2) 0.0 | body 90 108.6 | OK
-  MH_L-MH_M_R | (1250,310,80) -> (1250,310,350) | body 89 SM_hoop[6] (1250.0,310.0,215.0) 0.0 | body 18 106.5 | OK
-  MH_L-MH_M_L | (1250,-310,80) -> (1250,-310,350) | body 47 SM_hoop[7] (1250.0,-310.0,215.0) 0.0 | body 92 106.5 | OK
-  MH_M-MH_B_R | (1250,310,350) -> (1250,310,620) | body 112 Trim_MH_B_R (1250.0,310.0,484.9) 0.0 | body 74 108.6 | OK
-  MH_M-MH_B_L | (1250,-310,350) -> (1250,-310,620) | body 10 Trim_MH_B_L (1250.0,-310.0,484.9) 0.0 | body 90 108.6 | OK
-  MH_B-MH_T_R | (1250,310,620) -> (1250,250,980) | body 52 SM_hoop[10] (1250.0,273.7,830.0) 1.3 | body 29 127.0 | OK
-  MH_B-MH_T_L | (1250,-310,620) -> (1250,-250,980) | body 53 SM_hoop[11] (1250.0,-273.7,830.0) 1.3 | body 24 127.0 | OK
-  MH_T_cross | (1250,250,980) -> (1250,-250,980) | body 40 SM_hoop[12] (1250.0,0.0,980.0) 0.0 | body 53 151.9 | OK
-  MH_L_cross | (1250,310,80) -> (1250,-310,80) | body 68 Trim_MH_L_L (1250.0,0.0,80.0) 0.0 | body 92 106.5 | OK
-  FH_T-MH_B_R | (650,230,680) -> (1250,310,620) | body 0 Trim_MH_B_R_b2 (953.1,270.4,649.6) 0.1 | body 112 135.1 | OK
-  FH_T-MH_B_L | (650,-230,680) -> (1250,-310,620) | body 17 Trim_MH_B_L_b2 (953.1,-270.5,649.6) 0.1 | body 10 135.1 | OK
-  MH_L-RS1_L_R | (1250,310,80) -> (1485,287,135) | body 88 Trim_MH_L_R_b3 (1371.5,298.2,108.0) 0.2 | body 23 86.9 | OK
-  MH_L-RS1_L_L | (1250,-310,80) -> (1485,-287,135) | body 34 Trim_MH_L_L_b3 (1371.5,-298.2,108.0) 0.2 | body 107 86.9 | OK
-  MH_M-RS1_U_R | (1250,310,350) -> (1490,320,306) | body 51 Trim_MH_M_R_b2 (1374.5,315.2,327.2) 0.1 | body 81 87.4 | OK
-  MH_M-RS1_U_L | (1250,-310,350) -> (1490,-320,306) | body 61 Trim_MH_M_L_b2 (1374.5,-315.2,327.2) 0.1 | body 50 87.7 | OK
-  MH_L-RS1_U_R | (1250,310,80) -> (1490,320,306) | body 23 Trim_RS1_U_R_b5 (1372.3,315.2,195.4) 0.3 | body 81 62.6 | OK
-  MH_L-RS1_U_L | (1250,-310,80) -> (1490,-320,306) | body 107 Trim_RS1_U_L_b5 (1372.3,-315.2,195.4) 0.3 | body 50 62.7 | OK
-  RS1_L-RS2_L_R | (1485,287,135) -> (1700,287,131) | body 106 Trim_RS2_L_R (1604.4,287.8,130.9) 1.6 | body 33 85.5 | OK
-  RS1_L-RS2_L_L | (1485,-287,135) -> (1700,-287,131) | body 77 Trim_RS2_L_L (1604.4,-287.8,130.9) 1.6 | body 95 85.7 | OK
-  RS1_U-RS2_U_R | (1490,320,306) -> (1690,320,298) | body 36 Trim_RS2_U_R_b4 (1602.8,319.1,305.4) 4.0 | body 86 85.1 | OK
-  RS1_U-RS2_U_L | (1490,-320,306) -> (1690,-320,298) | body 80 Trim_RS2_U_L_b4 (1602.8,-319.1,305.4) 4.0 | body 95 85.1 | OK
-  RS1_L-RS1_U_R | (1485,287,135) -> (1490,320,306) | body 81 Trim_RS1_U_R_b2 (1487.5,303.5,220.2) 0.1 | body 65 96.2 | OK
-  RS1_L-RS1_U_L | (1485,-287,135) -> (1490,-320,306) | body 50 Trim_RS1_L_L_b4 (1487.5,-303.4,219.9) 0.0 | body 56 96.2 | OK
-  RS2_L-RS2_U_R | (1700,287,131) -> (1690,320,298) | body 86 Trim_RS2_U_R (1695.0,303.6,214.7) 0.1 | body 36 87.5 | OK
-  RS2_L-RS2_U_L | (1700,-287,131) -> (1690,-320,298) | body 95 Trim_RS2_U_L (1695.0,-303.6,214.7) 0.1 | body 80 87.5 | OK
-  RS1_L-RS2_U_R | (1485,287,135) -> (1690,320,298) | body 33 Trim_RS2_U_R_b3 (1587.9,303.6,216.5) 0.1 | body 36 60.6 | OK
-  RS1_L-RS2_U_L | (1485,-287,135) -> (1690,-320,298) | body 48 Trim_RS2_U_L_b3 (1589.5,-304.1,218.0) 0.3 | body 80 60.6 | OK
-  RS1_L_cross | (1485,287,135) -> (1485,-287,135) | body 71 SM_rear[17] (1485.0,0.0,134.5) 0.0 | body 50 87.0 | OK
-  RS2_L_cross | (1700,287,131) -> (1700,-287,131) | body 43 SM_rear[18] (1700.0,0.0,130.5) 0.0 | body 86 85.9 | OK
-  RS1_U_cross | (1490,320,306) -> (1490,-320,306) | body 103 Trim_RS1_U_L_b4 (1490.0,0.0,306.0) 0.0 | body 81 85.9 | OK
-  RS2_U_cross | (1690,320,298) -> (1690,-320,298) | body 27 Trim_RS2_U_L_b2 (1690.0,0.0,298.0) 0.0 | body 95 83.5 | OK
-  RS1_U-RT1_R | (1490,320,306) -> (1490,320,470) | body 65 Trim_RT1_R_b3 (1489.5,317.2,402.2) 2.8 | body 58 37.3 | OK
-  RS1_U-RT1_L | (1490,-320,306) -> (1490,-320,470) | body 56 Trim_RT1_L_b3 (1489.6,-317.2,402.2) 2.8 | body 60 37.3 | OK
-  RS2_U-RT2_R | (1690,320,298) -> (1690,320,470) | body 91 Trim_RT2_R_b2 (1689.8,320.2,388.8) 0.3 | body 55 72.7 | OK
-  RS2_U-RT2_L | (1690,-320,298) -> (1690,-320,470) | body 39 Trim_RT2_L_b2 (1690.7,-317.7,399.0) 2.4 | body 16 72.7 | OK
-  RT1_cross | (1490,320,470) -> (1490,-320,470) | body 8 Trim_RT1_L_b2 (1490.0,0.0,470.0) 0.0 | body 58 33.7 | OK
-  RT2_cross | (1690,320,470) -> (1690,-320,470) | body 54 Trim_RT2_L (1690.0,0.0,470.0) 0.0 | body 39 71.0 | OK
-  RRK-RT1_R | (1550,290,470) -> (1490,320,470) | body 58 Trim_RRK_R_b2 (1523.7,304.0,470.0) 0.8 | body 65 67.9 | OK
-  RRK-RT1_L | (1550,-290,470) -> (1490,-320,470) | body 60 Trim_RRK_L_b2 (1523.7,-304.0,470.0) 0.8 | body 56 67.9 | OK
-  RRK-RT2_R | (1550,290,470) -> (1690,320,470) | body 55 Trim_RT2_R_b3 (1618.7,305.6,469.6) 0.9 | body 58 29.8 | OK
-  RRK-RT2_L | (1550,-290,470) -> (1690,-320,470) | body 16 Trim_RT2_L_b3 (1618.7,-305.6,469.6) 0.9 | body 60 29.8 | OK
-  RRK_cross | (1550,290,470) -> (1550,-290,470) | body 105 SM_rear[31] (1550.0,0.0,470.0) 0.0 | body 58 29.8 | OK
-  MH_T-RT2_R | (1250,250,980) -> (1690,320,470) | body 101 Trim_MH_T_R_b2 (1473.8,285.6,720.8) 0.1 | body 55 55.0 | OK
-  MH_T-RT2_L | (1250,-250,980) -> (1690,-320,470) | body 93 Trim_MH_T_L_b2 (1473.9,-285.6,720.7) 0.1 | body 16 55.0 | OK
-  MH_B-RT1_R | (1250,310,620) -> (1490,320,470) | body 22 Trim_RT1_R (1374.6,315.2,541.1) 0.9 | body 58 37.3 | OK
-  MH_B-RT1_L | (1250,-310,620) -> (1490,-320,470) | body 94 Trim_RT1_L (1374.6,-315.2,541.1) 0.9 | body 60 37.3 | OK
-  MH_T-RT1_R | (1250,250,980) -> (1490,320,470) | body 29 Trim_MH_T_R_b3 (1376.7,286.9,710.7) 0.0 | body 58 37.3 | OK
-  MH_T-RT1_L | (1250,-250,980) -> (1490,-320,470) | body 24 Trim_MH_T_L_b3 (1376.8,-286.9,710.6) 0.0 | body 60 37.3 | OK
-  SP1_L-SP2_L_R | (650,525,80) -> (1250,525,80) | body 14 Trim_SP1_L_R (960.9,525.0,79.7) 0.3 | body 18 108.5 | OK
-  SP1_L-SP2_L_L | (650,-525,80) -> (1250,-525,80) | body 35 Trim_SP1_L_L (960.9,-525.0,79.7) 0.3 | body 92 108.5 | OK
-  SP1_U-SP2_U_R | (650,525,320) -> (1250,525,320) | body 69 Trim_SP2_U_R (939.0,525.0,320.3) 0.3 | body 74 108.5 | OK
-  SP1_U-SP2_U_L | (650,-525,320) -> (1250,-525,320) | body 83 Trim_SP2_U_L (939.0,-525.0,320.3) 0.3 | body 90 108.5 | OK
-  SP1_L-SP1_U_R | (650,525,80) -> (650,525,320) | body 9 Trim_SP1_L_R_b2 (649.9,525.0,200.9) 0.1 | body 19 118.4 | OK
-  SP1_L-SP1_U_L | (650,-525,80) -> (650,-525,320) | body 32 Trim_SP1_L_L_b2 (649.9,-525.0,200.9) 0.1 | body 41 118.4 | OK
-  SP2_L-SP2_U_R | (1250,525,80) -> (1250,525,320) | body 64 Trim_SP2_U_R_b2 (1250.1,525.0,199.1) 0.1 | body 74 108.5 | OK
-  SP2_L-SP2_U_L | (1250,-525,80) -> (1250,-525,320) | body 79 Trim_SP2_U_L_b2 (1250.1,-525.0,199.1) 0.1 | body 90 108.5 | OK
-  FH_L-SP1_L_R | (650,290,80) -> (650,525,80) | body 19 Trim_SP1_L_R_b3 (650.0,406.6,79.9) 0.1 | body 9 120.9 | OK
-  FH_L-SP1_L_L | (650,-290,80) -> (650,-525,80) | body 41 Trim_SP1_L_L_b3 (650.0,-406.6,79.9) 0.1 | body 32 120.9 | OK
-  FH_M-SP1_U_R | (650,290,350) -> (650,525,320) | body 104 Trim_FH_M_R_b4 (650.0,407.3,335.0) 0.0 | body 9 119.1 | OK
-  FH_M-SP1_U_L | (650,-290,350) -> (650,-525,320) | body 4 Trim_FH_M_L_b4 (650.0,-407.3,335.0) 0.0 | body 32 119.1 | OK
-  MH_L-SP2_L_R | (1250,310,80) -> (1250,525,80) | body 18 Trim_MH_L_R_b4 (1250.0,416.5,79.9) 0.1 | body 64 119.1 | OK
-  MH_L-SP2_L_L | (1250,-310,80) -> (1250,-525,80) | body 92 Trim_MH_L_L_b4 (1250.0,-416.5,79.9) 0.1 | body 79 119.1 | OK
-  MH_M-SP2_U_R | (1250,310,350) -> (1250,525,320) | body 74 Trim_SP2_U_R_b3 (1250.0,417.6,335.0) 0.0 | body 64 120.9 | OK
-  MH_M-SP2_U_L | (1250,-310,350) -> (1250,-525,320) | body 90 Trim_SP2_U_L_b3 (1250.0,-417.6,335.0) 0.0 | body 79 120.9 | OK
-  SP1_L-SP2_U_R | (650,525,80) -> (1250,525,320) | body 31 SM_sidepod[17] (950.0,525.0,200.0) 0.0 | body 74 108.5 | OK
-  SP1_L-SP2_U_L | (650,-525,80) -> (1250,-525,320) | body 49 SM_sidepod[18] (950.0,-525.0,200.0) 0.0 | body 90 108.5 | OK
+  FB_L_cross | (-300,200,80) -> (-300,-200,80) | body 17 Trim_FB_L_R (-300.0,-12.6,79.7) 0.3 | body 99 79.4 | OK
+  FB_U_cross | (-300,200,380) -> (-300,-200,380) | body 95 Trim_FB_U_L (-300.0,12.6,380.3) 0.3 | body 31 98.4 | OK
+  FB_L-FB_U_R | (-300,200,80) -> (-300,200,380) | body 29 Trim_FB_L_R_b2 (-300.0,200.1,231.9) 0.1 | body 98 72.2 | OK
+  FB_L-FB_U_L | (-300,-200,80) -> (-300,-200,380) | body 41 Trim_FB_U_L_b2 (-300.0,-200.1,228.1) 0.1 | body 84 74.0 | OK
+  FB_L-FS1_L_R | (-300,200,80) -> (-160,255,152) | body 98 Trim_FS1_L_R_b4 (-233.0,227.0,113.6) 0.9 | body 58 68.3 | OK
+  FB_L-FS1_L_L | (-300,-200,80) -> (-160,-255,152) | body 84 Trim_FS1_L_L_b4 (-231.3,-227.5,114.5) 0.8 | body 54 68.2 | OK
+  FB_U-FS1_U_R | (-300,200,380) -> (-130,272,278) | body 51 Trim_FS1_U_R_b4 (-210.3,238.1,327.0) 0.9 | body 58 62.8 | OK
+  FB_U-FS1_U_L | (-300,-200,380) -> (-130,-272,278) | body 75 Trim_FS1_U_L_b4 (-212.9,-237.3,328.6) 1.1 | body 54 62.8 | OK
+  FB_U-FS1_L_R | (-300,200,380) -> (-160,255,152) | body 62 Trim_FS1_L_R_b3 (-225.0,229.5,257.5) 0.1 | body 58 51.1 | OK
+  FB_U-FS1_L_L | (-300,-200,380) -> (-160,-255,152) | body 45 Trim_FS1_L_L_b3 (-225.0,-229.5,257.5) 0.1 | body 75 50.9 | OK
+  FS1_L-FS2_L_R | (-160,255,152) -> (160,255,148) | body 114 Trim_FS2_L_R (11.9,254.9,149.2) 0.2 | body 83 61.9 | OK
+  FS1_L-FS2_L_L | (-160,-255,152) -> (160,-255,148) | body 56 Trim_FS2_L_L (10.7,-254.8,149.2) 0.2 | body 110 62.1 | OK
+  FS1_U-FS2_U_R | (-130,272,278) -> (140,272,273) | body 70 Trim_FS2_U_R_b2 (16.9,271.6,275.8) 0.6 | body 58 62.8 | OK
+  FS1_U-FS2_U_L | (-130,-272,278) -> (140,-272,273) | body 121 Trim_FS2_U_L_b2 (16.2,-271.5,275.9) 0.6 | body 54 62.8 | OK
+  FS1_L-FS1_U_R | (-160,255,152) -> (-130,272,278) | body 58 Trim_FS1_U_R_b6 (-144.4,263.8,217.4) 0.2 | body 98 86.9 | OK
+  FS1_L-FS1_U_L | (-160,-255,152) -> (-130,-272,278) | body 54 Trim_FS1_U_L_b6 (-144.4,-263.7,217.3) 0.2 | body 84 84.9 | OK
+  FS2_L-FS2_U_R | (160,255,148) -> (140,272,273) | body 40 Trim_FS2_U_R_b6 (150.1,263.4,210.1) 0.2 | body 1 112.0 | OK
+  FS2_L-FS2_U_L | (160,-255,148) -> (140,-272,273) | body 12 Trim_FS2_U_L_b7 (150.1,-263.5,210.1) 0.2 | body 5 112.2 | OK
+  FS1_U-FS2_L_R | (-130,272,278) -> (160,255,148) | body 83 Trim_FS1_U_R_b2 (19.8,262.6,210.7) 0.4 | body 40 53.4 | OK
+  FS1_U-FS2_L_L | (-130,-272,278) -> (160,-255,148) | body 110 Trim_FS1_U_L_b2 (19.3,-262.6,210.9) 0.4 | body 12 53.4 | OK
+  FS1_L_cross | (-160,255,152) -> (-160,-255,152) | body 63 Trim_FS1_L_R (-160.1,-4.3,151.5) 0.1 | body 54 68.2 | OK
+  FS2_L_cross | (160,255,148) -> (160,-255,148) | body 30 Trim_FS2_L_L_b4 (160.2,4.3,147.5) 0.2 | body 12 63.9 | OK
+  FS1_U_cross | (-130,272,278) -> (-130,-272,278) | body 33 Trim_FS1_U_R (-130.2,-5.1,278.0) 0.2 | body 58 62.3 | OK
+  FS2_U_cross | (140,272,273) -> (140,-272,273) | body 109 Trim_FS2_U_L_b5 (140.2,5.8,273.0) 0.2 | body 40 63.7 | OK
+  FBT-FS1_U_R | (0,280,430) -> (-130,272,278) | body 27 Trim_FBT_R_b2 (-58.9,276.2,360.8) 0.2 | body 58 62.8 | OK
+  FBT-FS1_U_L | (0,-280,430) -> (-130,-272,278) | body 9 Trim_FBT_L_b2 (-59.0,-276.2,360.6) 0.2 | body 54 62.8 | OK
+  FBT-FS2_U_R | (0,280,430) -> (140,272,273) | body 1 Trim_FBT_R (65.4,276.0,356.4) 0.2 | body 40 64.2 | OK
+  FBT-FS2_U_L | (0,-280,430) -> (140,-272,273) | body 5 Trim_FBT_L (65.3,-276.1,356.6) 0.2 | body 12 64.2 | OK
+  FBT_cross | (0,280,430) -> (0,-280,430) | body 44 25.4x1.6 (4)[25] (0.0,0.0,430.0) 0.0 | body 27 90.9 | OK
+  FS2_L-FH_L_R | (160,255,148) -> (650,290,80) | body 115 Trim_FH_L_R_b3 (438.3,275.6,108.5) 1.0 | body 77 62.1 | OK
+  FS2_L-FH_L_L | (160,-255,148) -> (650,-290,80) | body 53 Trim_FH_L_L_b3 (416.1,-273.5,112.6) 0.4 | body 10 62.1 | OK
+  FS2_U-FH_M_R | (140,272,273) -> (650,290,350) | body 19 Trim_FH_M_R_b3 (419.9,281.9,316.0) 0.7 | body 40 64.2 | OK
+  FS2_U-FH_M_L | (140,-272,273) -> (650,-290,350) | body 87 Trim_FH_M_L_b3 (419.9,-281.9,316.0) 0.7 | body 12 64.2 | OK
+  FS2_U-FH_T_R | (140,272,273) -> (650,230,680) | body 85 Trim_FH_T_R_b2 (390.6,251.1,473.2) 0.1 | body 40 64.2 | OK
+  FS2_U-FH_T_L | (140,-272,273) -> (650,-230,680) | body 65 Trim_FH_T_L_b2 (390.6,-251.1,473.1) 0.1 | body 12 64.2 | OK
+  FS2_U-FH_L_R | (140,272,273) -> (650,290,80) | body 77 Trim_FH_L_R_b7 (394.8,280.9,177.1) 0.5 | body 115 48.9 | OK
+  FS2_U-FH_L_L | (140,-272,273) -> (650,-290,80) | body 10 Trim_FH_L_L_b6 (394.8,-280.9,177.1) 0.5 | body 53 53.0 | OK
+  FH_L-FH_M_R | (650,290,80) -> (650,290,350) | body 20 Trim_FH_M_R (650.0,290.0,214.8) 0.0 | body 28 116.6 | OK
+  FH_L-FH_M_L | (650,-290,80) -> (650,-290,350) | body 90 Trim_FH_M_L (650.0,-290.0,214.8) 0.0 | body 86 116.6 | OK
+  FH_M-FH_T_R | (650,290,350) -> (650,230,680) | body 37 Trim_FH_T_R (650.0,255.1,536.1) 1.1 | body 74 118.9 | OK
+  FH_M-FH_T_L | (650,-290,350) -> (650,-230,680) | body 111 Trim_FH_T_L (650.0,-255.1,536.1) 1.1 | body 21 118.9 | OK
+  FH_T_cross | (650,230,680) -> (650,-230,680) | body 13 25.4x2.4 (1)[5] (650.0,0.0,679.9) 0.1 | body 111 146.0 | OK
+  FH_L_cross | (650,290,80) -> (650,-290,80) | body 68 Trim_FH_L_L_b2 (650.0,0.0,80.0) 0.0 | body 28 116.6 | OK
+  FH_L-MH_L_R | (650,290,80) -> (1250,310,80) | body 117 Trim_MH_L_R_b2 (951.1,300.1,79.8) 0.2 | body 25 106.5 | OK
+  FH_L-MH_L_L | (650,-290,80) -> (1250,-310,80) | body 0 Trim_MH_L_L_b2 (951.0,-300.1,79.8) 0.2 | body 104 106.5 | OK
+  FH_M-MH_M_R | (650,290,350) -> (1250,310,350) | body 73 Trim_MH_M_R (949.9,300.0,350.0) 0.0 | body 34 108.2 | OK
+  FH_M-MH_M_L | (650,-290,350) -> (1250,-310,350) | body 60 Trim_MH_M_L (949.9,-300.0,350.0) 0.0 | body 55 108.2 | OK
+  FH_L-MH_M_R | (650,290,80) -> (1250,310,350) | body 120 Trim_MH_M_R_b3 (950.4,300.0,215.2) 0.0 | body 34 108.1 | OK
+  FH_L-MH_M_L | (650,-290,80) -> (1250,-310,350) | body 32 Trim_MH_M_L_b3 (950.4,-300.0,215.2) 0.0 | body 55 108.1 | OK
+  MH_L-MH_M_R | (1250,310,80) -> (1250,310,350) | body 16 25.4x2.4 (1)[6] (1250.0,310.0,215.0) 0.0 | body 25 106.5 | OK
+  MH_L-MH_M_L | (1250,-310,80) -> (1250,-310,350) | body 91 25.4x2.4 (1)[7] (1250.0,-310.0,215.0) 0.0 | body 104 106.5 | OK
+  MH_M-MH_B_R | (1250,310,350) -> (1250,310,620) | body 18 Trim_MH_B_R (1250.0,310.0,484.9) 0.0 | body 34 108.2 | OK
+  MH_M-MH_B_L | (1250,-310,350) -> (1250,-310,620) | body 52 Trim_MH_B_L (1250.0,-310.0,484.9) 0.0 | body 55 108.2 | OK
+  MH_B-MH_T_R | (1250,310,620) -> (1250,250,980) | body 72 25.4x2.4 (1)[10] (1250.0,273.7,830.0) 1.3 | body 15 126.9 | OK
+  MH_B-MH_T_L | (1250,-310,620) -> (1250,-250,980) | body 6 25.4x2.4 (1)[11] (1250.0,-273.7,830.0) 1.3 | body 35 126.9 | OK
+  MH_T_cross | (1250,250,980) -> (1250,-250,980) | body 38 25.4x2.4 (1)[12] (1250.0,0.0,980.0) 0.0 | body 6 151.9 | OK
+  MH_L_cross | (1250,310,80) -> (1250,-310,80) | body 108 Trim_MH_L_L (1250.0,0.0,80.0) 0.0 | body 104 106.5 | OK
+  FH_T-MH_B_R | (650,230,680) -> (1250,310,620) | body 69 Trim_MH_B_R_b2 (953.1,270.4,649.6) 0.1 | body 18 135.1 | OK
+  FH_T-MH_B_L | (650,-230,680) -> (1250,-310,620) | body 67 Trim_MH_B_L_b2 (953.1,-270.4,649.6) 0.1 | body 52 135.1 | OK
+  MH_L-RS1_L_R | (1250,310,80) -> (1485,300,137) | body 102 Trim_MH_L_R_b3 (1371.6,304.7,109.1) 0.2 | body 112 88.3 | OK
+  MH_L-RS1_L_L | (1250,-310,80) -> (1485,-300,137) | body 107 Trim_MH_L_L_b3 (1371.5,-304.7,109.0) 0.2 | body 94 88.3 | OK
+  MH_M-RS1_U_R | (1250,310,350) -> (1490,350,307) | body 97 Trim_MH_M_R_b2 (1374.4,330.7,327.8) 0.1 | body 43 89.1 | OK
+  MH_M-RS1_U_L | (1250,-310,350) -> (1490,-350,307) | body 82 Trim_MH_M_L_b2 (1374.4,-330.7,327.8) 0.1 | body 116 89.4 | OK
+  MH_L-RS1_U_R | (1250,310,80) -> (1490,350,307) | body 112 Trim_RS1_U_R_b5 (1372.2,330.6,195.9) 0.3 | body 43 63.0 | OK
+  MH_L-RS1_U_L | (1250,-310,80) -> (1490,-350,307) | body 94 Trim_RS1_U_L_b5 (1372.2,-330.6,195.8) 0.3 | body 116 63.1 | OK
+  RS1_L-RS2_L_R | (1485,300,137) -> (1700,300,133) | body 48 Trim_RS2_L_R (1604.6,300.0,132.8) 1.6 | body 103 87.2 | OK
+  RS1_L-RS2_L_L | (1485,-300,137) -> (1700,-300,133) | body 36 Trim_RS2_L_L (1604.6,-300.0,132.8) 1.6 | body 42 87.2 | OK
+  RS1_U-RS2_U_R | (1490,350,307) -> (1690,350,299) | body 11 Trim_RS2_U_R_b4 (1601.0,348.4,304.1) 2.2 | body 103 86.8 | OK
+  RS1_U-RS2_U_L | (1490,-350,307) -> (1690,-350,299) | body 93 Trim_RS2_U_L_b4 (1601.0,-348.4,304.1) 2.2 | body 42 86.8 | OK
+  RS1_L-RS1_U_R | (1485,300,137) -> (1490,350,307) | body 43 Trim_RS1_U_R_b2 (1487.5,324.7,221.6) 0.1 | body 81 94.0 | OK
+  RS1_L-RS1_U_L | (1485,-300,137) -> (1490,-350,307) | body 116 Trim_RS1_L_L_b5 (1487.5,-324.6,221.4) 0.1 | body 96 94.1 | OK
+  RS2_L-RS2_U_R | (1700,300,133) -> (1690,350,299) | body 103 Trim_RS2_L_R_b2 (1695.0,324.9,216.1) 0.1 | body 11 89.2 | OK
+  RS2_L-RS2_U_L | (1700,-300,133) -> (1690,-350,299) | body 42 Trim_RS2_L_L_b2 (1695.0,-324.9,216.1) 0.0 | body 93 89.2 | OK
+  RS1_L-RS2_U_R | (1485,300,137) -> (1690,350,299) | body 57 Trim_RS2_U_R_b3 (1589.5,325.5,219.5) 0.3 | body 11 60.3 | OK
+  RS1_L-RS2_U_L | (1485,-300,137) -> (1690,-350,299) | body 76 Trim_RS2_U_L_b3 (1589.5,-325.5,219.5) 0.3 | body 93 60.3 | OK
+  RS1_L_cross | (1485,300,137) -> (1485,-300,137) | body 59 Trim_RS1_L_L_b3 (1485.3,7.3,136.6) 0.3 | body 116 88.5 | OK
+  RS2_L_cross | (1700,300,133) -> (1700,-300,133) | body 61 25.4x1.6 (5)[18] (1700.0,0.0,132.6) 0.1 | body 103 87.5 | OK
+  RS1_U_cross | (1490,350,307) -> (1490,-350,307) | body 113 Trim_RS1_U_L_b4 (1490.0,0.0,307.0) 0.0 | body 43 85.5 | OK
+  RS2_U_cross | (1690,350,299) -> (1690,-350,299) | body 106 Trim_RS2_U_L_b2 (1690.0,0.0,299.0) 0.0 | body 42 83.1 | OK
+  RS1_U-RT1_R | (1490,350,307) -> (1490,350,470) | body 81 Trim_RT1_R_b4 (1489.8,348.6,401.0) 1.4 | body 2 47.3 | OK
+  RS1_U-RT1_L | (1490,-350,307) -> (1490,-350,470) | body 96 Trim_RT1_L_b3 (1489.8,-348.6,401.1) 1.4 | body 46 46.8 | OK
+  RS2_U-RT2_R | (1690,350,299) -> (1690,350,470) | body 14 Trim_RT2_R_b2 (1689.8,350.2,389.3) 0.2 | body 47 79.4 | OK
+  RS2_U-RT2_L | (1690,-350,299) -> (1690,-350,470) | body 80 Trim_RT2_L_b2 (1690.2,-348.8,397.0) 1.3 | body 66 79.4 | OK
+  RT1_cross | (1490,350,470) -> (1490,-350,470) | body 101 Trim_RT1_L_b2 (1490.1,0.0,470.0) 0.1 | body 71 30.2 | OK
+  RT2_cross | (1690,350,470) -> (1690,-350,470) | body 39 Trim_RT2_L (1690.0,0.0,470.0) 0.0 | body 80 73.0 | OK
+  RRK-RT1_R | (1550,290,470) -> (1490,350,470) | body 2 Trim_RRK_R_b2 (1524.2,317.3,470.0) 1.1 | body 81 69.0 | OK
+  RRK-RT1_L | (1550,-290,470) -> (1490,-350,470) | body 46 Trim_RRK_L_b3 (1523.7,-317.5,470.0) 0.9 | body 96 68.9 | OK
+  RRK-RT2_R | (1550,290,470) -> (1690,350,470) | body 47 Trim_RT2_R_b3 (1616.9,319.0,469.7) 0.5 | body 2 37.6 | OK
+  RRK-RT2_L | (1550,-290,470) -> (1690,-350,470) | body 66 Trim_RT2_L_b3 (1616.9,-319.0,469.7) 0.5 | body 46 38.1 | OK
+  RRK_cross | (1550,290,470) -> (1550,-290,470) | body 119 Trim_RRK_L (1551.5,33.6,470.0) 1.5 | body 71 29.8 | OK
+  MH_T-RT2_R | (1250,250,980) -> (1690,350,470) | body 122 Trim_MH_T_R_b2 (1473.8,300.9,720.8) 0.1 | body 47 60.4 | OK
+  MH_T-RT2_L | (1250,-250,980) -> (1690,-350,470) | body 49 Trim_MH_T_L_b2 (1473.8,-300.9,720.8) 0.1 | body 66 60.4 | OK
+  MH_B-RT1_R | (1250,310,620) -> (1490,350,470) | body 100 Trim_RT1_R (1373.3,330.7,542.0) 0.8 | body 2 47.3 | OK
+  MH_B-RT1_L | (1250,-310,620) -> (1490,-350,470) | body 105 Trim_RT1_L (1373.3,-330.7,542.0) 0.8 | body 46 46.8 | OK
+  MH_T-RT1_R | (1250,250,980) -> (1490,350,470) | body 15 Trim_MH_T_R_b3 (1376.7,302.8,710.8) 0.0 | body 2 47.3 | OK
+  MH_T-RT1_L | (1250,-250,980) -> (1490,-350,470) | body 35 Trim_MH_T_L_b3 (1376.7,-302.8,710.8) 0.0 | body 46 46.8 | OK
+  FB_L-FS1_L_diag | (-300,200,80) -> (-160,-255,152) | body 99 Trim_FB_L_R_b3 (-229.2,-30.1,116.0) 0.1 | body 84 66.9 | OK
+  FS1_L-FS2_L_diag | (-160,255,152) -> (160,-255,148) | body 26 25.4x1.6 (4)[34] (-1.2,2.0,149.5) 0.1 | body 12 63.9 | OK
+  FB_U-FS1_U_diag | (-300,200,380) -> (-130,-272,278) | body 31 Trim_FB_U_R_b2 (-215.6,-33.8,329.4) 0.1 | body 54 62.8 | OK
+  FS1_U-FS2_U_diag | (-130,272,278) -> (140,-272,273) | body 24 25.4x1.6 (4)[36] (5.0,0.0,275.5) 0.0 | body 58 62.7 | OK
+  FB_L-FB_U_diag | (-300,200,80) -> (-300,-200,380) | body 8 25.4x1.6 (2)[5] (-300.0,0.0,230.0) 0.0 | body 98 79.7 | OK
+  FH_L-MH_L_diag | (650,290,80) -> (1250,-310,80) | body 4 Trim_MH_L_L_b5 (950.4,-10.4,80.0) 0.0 | body 104 106.5 | OK
+  MH_L-RS1_L_diag | (1250,310,80) -> (1485,-300,137) | body 78 Trim_RS1_L_L_b2 (1367.4,5.5,108.2) 0.0 | body 116 88.5 | OK
+  RT1-RRK_diag | (1490,350,470) -> (1550,-290,470) | body 71 Trim_RT1_R_b3 (1520.2,27.6,470.0) 0.1 | body 2 31.0 | OK
+  SP1_L-SP2_L_R | (650,525,80) -> (1250,525,80) | body 118 Trim_SP1_L_R (960.9,525.0,79.7) 0.3 | body 25 108.5 | OK
+  SP1_L-SP2_L_L | (650,-525,80) -> (1250,-525,80) | body 88 Trim_SP1_L_L (960.9,-525.0,79.7) 0.3 | body 104 108.5 | OK
+  SP1_U-SP2_U_R | (650,525,320) -> (1250,525,320) | body 23 Trim_SP2_U_R_b2 (931.3,525.2,320.2) 0.3 | body 34 108.9 | OK
+  SP1_U-SP2_U_L | (650,-525,320) -> (1250,-525,320) | body 79 Trim_SP2_U_L_b2 (931.4,-525.2,320.2) 0.3 | body 55 108.9 | OK
+  SP1_L-SP1_U_R | (650,525,80) -> (650,525,320) | body 89 Trim_SP1_L_R_b2 (649.9,525.0,200.9) 0.1 | body 74 118.0 | OK
+  SP1_L-SP1_U_L | (650,-525,80) -> (650,-525,320) | body 50 Trim_SP1_L_L_b2 (649.9,-525.0,200.9) 0.1 | body 21 118.0 | OK
+  SP2_L-SP2_U_R | (1250,525,80) -> (1250,525,320) | body 7 Trim_SP2_U_R_b3 (1250.1,525.0,199.0) 0.1 | body 25 108.5 | OK
+  SP2_L-SP2_U_L | (1250,-525,80) -> (1250,-525,320) | body 64 Trim_SP2_U_L_b3 (1250.1,-525.0,199.0) 0.1 | body 104 108.5 | OK
+  FH_L-SP1_L_R | (650,290,80) -> (650,525,80) | body 28 Trim_SP1_L_R_b3 (650.0,406.6,79.9) 0.1 | body 89 120.9 | OK
+  FH_L-SP1_L_L | (650,-290,80) -> (650,-525,80) | body 86 Trim_SP1_L_L_b3 (650.0,-406.6,79.9) 0.1 | body 50 120.9 | OK
+  FH_M-SP1_U_R | (650,290,350) -> (650,525,320) | body 74 Trim_FH_M_R_b5 (649.9,408.0,335.0) 0.1 | body 89 119.1 | OK
+  FH_M-SP1_U_L | (650,-290,350) -> (650,-525,320) | body 21 Trim_FH_M_L_b5 (649.9,-408.0,335.0) 0.1 | body 50 119.1 | OK
+  MH_L-SP2_L_R | (1250,310,80) -> (1250,525,80) | body 25 Trim_MH_L_R_b4 (1250.0,416.5,79.9) 0.1 | body 7 119.0 | OK
+  MH_L-SP2_L_L | (1250,-310,80) -> (1250,-525,80) | body 104 Trim_MH_L_L_b4 (1250.0,-416.5,79.9) 0.1 | body 64 119.0 | OK
+  MH_M-SP2_U_R | (1250,310,350) -> (1250,525,320) | body 34 Trim_SP2_U_R_b4 (1250.1,417.1,335.1) 0.1 | body 7 121.0 | OK
+  MH_M-SP2_U_L | (1250,-310,350) -> (1250,-525,320) | body 55 Trim_SP2_U_L_b4 (1250.1,-417.1,335.1) 0.1 | body 64 121.0 | OK
+  SP1_L-SP2_U_R | (650,525,80) -> (1250,525,320) | body 123 25.4x1.6 (3)[17] (950.0,525.0,200.0) 0.0 | body 34 108.9 | OK
+  SP1_L-SP2_U_L | (650,-525,80) -> (1250,-525,320) | body 3 25.4x1.6 (3)[18] (950.0,-525.0,200.0) 0.0 | body 55 108.9 | OK
+  FH_M-SP2_U_R | (650,290,350) -> (1250,525,320) | body 22 Trim_FH_M_R_b4 (950.0,407.5,335.0) 0.1 | body 73 100.9 | OK
+  FH_M-SP2_U_L | (650,-290,350) -> (1250,-525,320) | body 92 Trim_FH_M_L_b4 (950.0,-407.6,335.0) 0.1 | body 60 100.9 | OK
 
 Bodies matched to no tube (mm): index, name, centroid | nearest tube, distance | next tube, distance
   (none: every body matches one tube)

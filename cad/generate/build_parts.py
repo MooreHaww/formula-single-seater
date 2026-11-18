@@ -489,7 +489,14 @@ def build_sidepod(p, side: int):
     # hoop tubes (|y| 310), so only tubes outboard of that size the pod.
     m = TUBE_CLEAR + t
     y_in = 310.0 + 12.7 + TUBE_CLEAR
-    pts = [q for q in frame_samples() if q[1] >= y_in and 600.0 <= q[0] <= 1300.0]
+    # behind the main hoop, the rear-box top rail MH_M-RS1_U runs outboard towards the rear
+    # upper pivots (|y| 350 since 2026-11-18): the open inboard edge of the pod's rear end and
+    # tail keeps TUBE_CLEAR from it (it was 6.7 mm with the fixed y_in)
+    x_tail = p["main_hoop_x"] + 12.7 + TUBE_CLEAR + 3.0 + 25.0
+    behind = [q for q in frame_samples() if p["main_hoop_x"] + 13.0 < q[0] <= x_tail + 5.0 and 0.0 < q[1] < 360.0]
+    if behind:
+        y_in = max(y_in, max(y + r for (x, y, z, r) in behind) + TUBE_CLEAR)
+    pts =[q for q in frame_samples() if q[1] >= y_in and 600.0 <= q[0] <= 1300.0]
     y_out = max(562.0, max(y + r for (x, y, z, r) in pts) + m)
     z0, z1 = p["ride_height_front"], p.get("ride_height_rear", p["ride_height_front"])
     x_le = p["floor_start_from_front_axle"]

@@ -43,12 +43,17 @@ for k = 1:numel(names)
     end
 end
 % expand tube list: a tube named between right-side nodes gets a left twin;
-% a tube marked 'X' is a cross member between a node and its mirror
+% a tube marked 'X' is a cross member between a node and its mirror; 'D:b'
+% is a single diagonal from a_R to b_L (no twin)
 tubes = {};
 for k = 1:size(T, 1)
     a = T{k, 1}; b = T{k, 2}; grp = T{k, 3};
     if strcmp(b, 'X')
         tubes(end+1, :) = {[a '_R'], [a '_L'], grp, [a '_cross']}; %#ok<AGROW>
+    elseif startsWith(b, 'D:')
+        % one diagonal across a bay face, from the right node a to the left node b
+        b = b(3:end);
+        tubes(end+1, :) = {[a '_R'], [b '_L'], grp, [a '-' b '_diag']}; %#ok<AGROW>
     else
         tubes(end+1, :) = {sfx(NL, a, '_R'), sfx(NL, b, '_R'), grp, [a '-' b '_R']}; %#ok<AGROW>
         if isfield(NL, [a '_L']) || isfield(NL, [b '_L'])
@@ -213,6 +218,18 @@ T = {
     'RRK', 'RT1', 'rear';      'RRK', 'RT2', 'rear';      'RRK', 'X', 'rear'
     % main hoop braces (rearward)
     'MH_T', 'RT2', 'hoop_brace'; 'MH_B', 'RT1', 'hoop_brace'; 'MH_T', 'RT1', 'hoop_brace'
+    % torsion diagonals (2026-11-18): the lightest set that takes the beam
+    % model (frame_fe, through the links) from 834 to 1500+ Nm/deg, found by
+    % matlab/stress/frame_diagonal_search.m (sim/stress/frame_diagonals.txt).
+    % One tube each, right node to left node, across faces that had none.
+    'FB_L', 'D:FS1_L', 'front'      % nose floor
+    'FS1_L', 'D:FS2_L', 'front'     % front box floor (pedal tray sits on it)
+    'FB_U', 'D:FS1_U', 'front'      % nose top
+    'FS1_U', 'D:FS2_U', 'front'     % front box top
+    'FB_L', 'D:FB_U', 'bulkhead'    % front bulkhead plane, behind the anti-intrusion plate
+    'FH_L', 'D:MH_L', 'front'       % cockpit floor, under the seat
+    'MH_L', 'D:RS1_L', 'rear'       % engine bay floor
+    'RT1', 'D:RRK', 'rear'          % rear top, ahead of the rocker mount
     };
 if sidepods
     T = [T; {
@@ -220,6 +237,7 @@ if sidepods
         'SP1_L', 'SP2_L', 'sidepod'; 'SP1_U', 'SP2_U', 'sidepod'; 'SP1_L', 'SP1_U', 'sidepod'; 'SP2_L', 'SP2_U', 'sidepod'
         'FH_L', 'SP1_L', 'sidepod';  'FH_M', 'SP1_U', 'sidepod';  'MH_L', 'SP2_L', 'sidepod';  'MH_M', 'SP2_U', 'sidepod'
         'SP1_L', 'SP2_U', 'sidepod'
+        'FH_M', 'SP2_U', 'sidepod'      % sidepod top diagonal, both sides (torsion, 2026-11-18)
         }];
 end
 end

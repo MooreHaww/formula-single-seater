@@ -397,7 +397,11 @@ namespace SwHarness
             rep.Note(lenMissing == 0 && Math.Abs(cutLen - csvLen) <= 0.05 * csvLen, "cut length: " + F(cutLen, "0.00") + " m vs " + F(csvLen, "0.00") +
                      " m centreline sum in CSV (limit 5 %)" + (lenMissing > 0 ? ", LENGTH missing on " + lenMissing : ""));
             double mass = Mass(m);
-            rep.Note(mass >= 38 && mass <= 46, "mass: " + F(mass, "0.00") + " kg (38 to 46)");
+            // range from the CSV mass (centre-line lengths, 7850 kg/m3); trimmed AISI 1020 bodies come out a
+            // few % under. A fixed 38 to 46 kg until the torsion diagonals (2026-11-18)
+            double csvMass = fr.TubeRows.Where(r => r.Length >= 8).Sum(r => Val(r[7]));
+            rep.Note(mass >= 0.85 * csvMass && mass <= 1.05 * csvMass, "mass: " + F(mass, "0.00") + " kg (CSV " + F(csvMass, "0.00") +
+                     " kg; expected " + F(0.85 * csvMass, "0.0") + " to " + F(1.05 * csvMass, "0.0") + ")");
             var plan = Csv(P("cad", "frame", "frame_trims.csv")).Where(r => r.Length >= 4).ToList();
             var cpm = m.Extension.CustomPropertyManager[""];
             int nFeat = 0, nNone = 0; var notDone = new List<string>();

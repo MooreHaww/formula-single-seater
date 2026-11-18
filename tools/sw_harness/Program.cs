@@ -100,7 +100,7 @@ namespace SwHarness
                 case "checkchassis": return TrimTubes.Check();
                 case "buildlayout": return BuildLayout.Run();
                 case "buildassembly": return BuildAssembly.Run();
-                case "savestandardviews": return SaveStandardViews.Run(rest.Length > 0 ? rest[0] : "");
+                case "savestandardviews": return SaveStandardViews.Run(rest);
                 default: Log("unknown step " + step); return 2;
             }
         }

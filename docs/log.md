@@ -3,6 +3,69 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-18: torsion diagonals, rear joint housings, media, README, low-GDI handling
+
+**Status: finished, nothing waits on you. No commits.** `python tools/sw_run.py rebuild` passed all 26 steps (10:08 to 10:28) with no GDI warning. MATLAB `run_all('test')`: 26 of 26 PASS. `cfd/`, `cad/step/cfd/` and `cad/generate/cfd_variants.py` were not touched. Details are in the entry at the bottom.
+
+1. **Frame diagonals: 834 → 1503 Nm/deg for +5.8 kg.**
+   - **Search:** `matlab/stress/frame_diagonal_search.m` searched the subsets of 20 candidate diagonals in mass order (pruning sets that cannot reach the target), with `frame_fe.m` as the judge. Every set had to clear the driver, battery, motor and diff envelopes.
+     - Floor only reaches at most 1161 Nm/deg.
+     - Floor plus top reaches at most 1368 Nm/deg.
+     - Reaching 1500 also needs the sidepod tops and the front bulkhead plane.
+   - **Chosen set:** 10 tubes, 25.4×1.6.
+
+   | | Before | After |
+   |---|---|---|
+   | Torsion (through the links) | 834 Nm/deg | **1503 Nm/deg** |
+   | Frame | 43.5 kg | 49.3 kg |
+   | Car without driver / CG height / front | 229.1 kg / 314 mm / 41.4 % | 235.6 kg / 312 mm / 41.8 % |
+   | Autocross C, point-mass / four-wheel | 60.84 / 62.03 s | 61.09 / 62.21 s |
+   | Fast circuit C, point-mass / four-wheel | 82.45 / 82.68 s | 82.58 / 82.78 s |
+
+   - The lap sim has a rigid chassis, so it shows only the mass cost, not any gain from the stiffness.
+   - **Stress cases after the change:** every case is at FoS 2.67 or more on yield. Worst: bump, 163 MPa. That rise comes from the rear pivots moving outboard (item 2), not from the diagonals: the same case without them gives 168 MPa.
+   - **Clearances:** the frame clears the diff (11 mm), the suspension and the rim. No tube crosses another away from a node. Assembly interference: none.
+2. **Rear joints: every margin is now at least 4 mm (was 0.9–1.0).**
+   - **Assumption:** the housing radius is 12.5 mm, for an Aurora COM-5T spherical bearing (5/16 in bore, 19.05 mm OD) in a 3 mm-wall steel cup. Both the housing radius and the 3 mm minimum are now in `params/car_params.txt`.
+   - **Rear margins:** lower 6.3, upper 4.0, pushrod 4.1 mm. The toe-link end is outside the rim window. SuspensionCheck in SolidWorks agrees.
+   - **Rear kinematics:** camber gain −0.0433 deg/mm (was −0.0429), bump steer 0.021°, roll centre 79.4 mm (was 75.3), MR 0.773.
+   - **Front:** unchanged.
+   - **Bug fixed:** the optimiser's diff limit was relative, so it drifted with each re-run. It is now an absolute clearance penalty.
+3. **Media and README, all made by scripts:**
+   - `matlab/make_media.m`: the bump/steer GIF, the stress plots, and the mass and lap tables.
+   - `SaveStandardViews` in the rebuild: six views each of the chassis, layout, assembly and suspension. Sketch points are now hidden in these views.
+   - `README.md`: the project, the one-command rebuild, the results, and the assumptions and limits.
+4. **Low-GDI dialog, now handled by the harness** (`tools/sw_run.py`, `tools/README.md`):
+   - **Detection:** the watcher checks every 0.5 s. It answers the "critically low on GDI objects" warning with **No**, logs it, gives the step 20 s, then stops it. The step reports "STOPPED: SolidWorks low on GDI objects (answered No)", exit 4.
+   - **Retry:** `rebuild` restarts SolidWorks and retries that step once.
+   - **Prevention:**
+     - `close-all` (closes without saving) after every SolidWorks step;
+     - a SolidWorks restart before the layout, suspension, simulation and view groups;
+     - the GDI/USER count and memory of SLDWORKS on each run-log line.
+   - **Trend in rebuild 4:**
+
+   | | GDI | USER |
+   |---|---|---|
+   | Old single session, peak | 9,688 (warning) | 7,789 |
+   | Rebuild 4, BuildAssembly | 5,586 | 4,781 |
+   | Rebuild 4, SuspensionAssembly (peak) | 5,819 | 5,238 |
+   | After close-all | ~1,900 | ~2,200 |
+   | After a restart | 1,100–2,000 | ~1,800 |
+
+   Only the two assembly steps go above about 2,400. Each of them alone stays under 60 % of the 10,000 quota.
+5. **Raising GDIProcessHandleQuota: not needed now, not changed.**
+   - It would only add headroom; the cause was one long session building up objects, and that is fixed.
+   - If you want it anyway, run this as administrator (it needs a reboot):
+     `Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows' -Name GDIProcessHandleQuota -Value 15000 -Type DWord`
+   - The maximum is 65,536, but all processes in a desktop session share one GDI pool, so very high values can make the whole desktop fail instead. Undo it by setting the value back to 10000.
+
+**Warnings left (not failures):**
+- **Rear lower wishbone vs pushrod:** 7–13 mm³ overlap at droop and static. This is the link tubes touching near their shared outer joint, a modelling simplification.
+- **TrimTubes:** node overlaps of up to 333 mm³ at the main hoop top.
+- **Motion study:** reaches only +23 mm (front) and +13 mm (rear) of bump. The ±30 mm check is SuspensionCheck's.
+- **ChassisStatics:** the beam studies are still not loaded through the API ("No load").
+
+
 ## Summary, 2026-11-17 late night: rim-limited hardpoints, frame FE, solid cross-check, motion, CFD mismatch list
 
 **Status: finished, nothing waits on you. No commits.** `python tools/sw_run.py rebuild` passes all 21 steps (23:16 to 23:38). MATLAB self-tests: 24 of 24 PASS. `cfd/`, `cad/step/cfd/` and `cad/generate/cfd_variants.py` were not touched. Details are in the entry at the bottom.
@@ -493,3 +556,73 @@ The summary and the rules are at the top of this file. Not touched: `cfd/`, `cad
 - Decide on frame floor diagonals (about +50 % torsion for 2.7 kg).
 - Then, if wanted, an analysis-only overlapped solid frame for a valid SolidWorks cross-check.
 - Check the real ball-joint housing size against the 1 mm rear margin.
+
+## 2026-11-18, Ring 3/4/7: torsion diagonals, rear joint housings, media, README
+
+**Rear joint margin:**
+- `params/car_params.txt`: added `joint_housing_radius` 12.5 mm and `joint_rim_margin_min` 3 mm.
+  - The housing assumption is an Aurora COM-5T spherical bearing (5/16 in bore, 0.750 in = 19.05 mm OD, motion.com datasheet) in a steel cup with a 3 mm wall.
+  - Tie-rod and toe-link ends are taken the same size.
+- `suspension_optimise.m` (`package_report`) uses both params. Self-test: 12.5 mm housing, 3 mm wanted, gives margin 3.5 at radius 100 (ok) and 2.5 at radius 101 (flagged).
+- **Diff limit bug fixed.** The rear upper-pivot "−14 mm" limit was relative to the current hardpoints, so it drifted on each re-run. The first re-run put RS1_U_cross 6.1 mm from the diff. It is now an absolute penalty, `diff_clearance` (the four rear inner-pivot cross tubes ≥ 11 mm from the diff envelope while optimising), and the result must be ≥ 10 mm to count as feasible.
+- **Result** (rear rewritten; the front moved ≤ 0.5 mm in the optimiser, so it was not applied):
+  - joint margins: lower 6.3, upper 4.0, pushrod 4.1 mm; the toe-link end now sits inboard of the barrel;
+  - camber gain −0.0433 (was −0.0429) deg/mm;
+  - bump steer 0.021°;
+  - RC 79.4 (was 75.3) mm, span 97 mm;
+  - MR 0.773, KPI 10.0°, caster 4.4°, scrub 24 mm, trail 19.6 mm;
+  - diff clearance 11.3 mm.
+- The rear inner pivots moved outboard: upper to |y| 350, lower to 299.5.
+- `BuildSuspension.cs` SuspensionCheck reads the same two params; its rim window counts the housing radius.
+
+**Frame diagonals:**
+- `matlab/stress/frame_diagonal_search.m` (new) writes `sim/stress/frame_diagonals.txt`; the results are in `docs/stress_frame.md`.
+- 834 → **1503 Nm/deg**, 43.5 → 49.3 kg, ten tubes.
+- `frame_layout.m` has a new `'D:'` tube type: one diagonal from a right node to a left node.
+- `frame_fe.m` has new options: `torsion_only` (0.1 s per solve, for searches) and `drop_tubes` (name patterns).
+- The torsion antisymmetry self-test now runs on the frame without the single diagonals, which make the frame asymmetric on purpose.
+- All tube pairs were checked for crossings away from their nodes: none.
+- Mass budget: `m_frame` 49.3 at x 838, z 335; `m_brackets_welds` 6.4 (was 5.5, kept at 13 % of the frame). The car is 235.6 kg, 305.6 kg with the driver, 41.8 % front, CG 312 mm.
+- Regenerated:
+  - `frame_layout`, `frame_trims` (196 trims), `load_cases` (306 kg);
+  - `lap_experiments` (media/lap_times.csv, results_table.md);
+  - `frame_fe` (report and frame_fe.png);
+  - `cornering_balance_study`: R 45 m 112.3 km/h, −8.7 % balance, rear limits.
+
+**Media and README:**
+- `matlab/make_media.m` (new) writes:
+  - `media/suspension_bump_steer.gif` (109 frames);
+  - `frame_stress_cases.png`, `frame_torsion_diagonals.png`, `frame_stress_bump.png`;
+  - `mass_table.md`, `lap_time_table.md`.
+- `SaveStandardViews` has new options `--show <prefixes>` and `--name <label>`. The rebuild has a 22nd step that saves the suspension views (corners and chassis only, the rest hidden for the pictures and shown again).
+- `README.md` was rewritten: project, one-command rebuild, results, assumptions and limits.
+
+**Harness:**
+- BuildTubes and CheckChassis compared the mass with a fixed 38 to 46 kg. They now take 0.85 to 1.05 × the CSV mass, because the frame is heavier now.
+- `build_parts.py`: the sidepod's open inboard edge now keeps 10 mm from MH_M-RS1_U, which moved outboard with the rear pivots. Before, the gap was 6.7 mm and BuildBodies stopped the second rebuild. The edge is now at |y| 342.
+
+**Checked:**
+- `run_all('test')` 26 of 26 PASS, including the two new self-tests.
+- Simulink 75 m: 4.3518 s, the same as MATLAB.
+
+**Low-GDI handling (after SolidWorks showed "running critically low on GDI objects" at about 10:00 in rebuild 3; you answered No):**
+- `tools/sw_run.py`:
+  - **Detection:** the watcher polls every 0.5 s (was 2 s). A dialog whose text contains "low on GDI objects" gets &No clicked (BM_CLICK), is logged with the GDI count, and the step is stopped after 20 s with exit 4.
+  - **Retry:** `rebuild` restarts SolidWorks and retries the step once.
+  - **Prevention:** `close-all` after each SolidWorks step; `restart-sw` before the layout, suspension, simulation and view groups (6 restarts per rebuild).
+  - **Logging:** GetGuiResources (GDI, USER, peak) and the memory of SLDWORKS go on each log line.
+- **SaveStandardViews:**
+  - Sketches and points are hidden for the pictures (the document's Hide All Types, restored after). Before this, the frame nodes and hardpoints were drawn and pulled the zoom-to-fit.
+  - `--keep-sketches` keeps them for the master layout.
+- **Rebuild 4, 10:08–10:28:** all 26 steps PASS, no GDI dialog.
+  - Peak GDI 5,819 (SuspensionAssembly), BuildAssembly 5,586; other steps 1,100–2,400.
+  - SuspensionCheck: the housing rule passes, with the rear margins as above.
+  - Assembly: no interference.
+  - WARNs: rear lwb/pushrod overlap 7–13 mm³ (new), TrimTubes node overlaps of up to 333 mm³, motion bump reach +22.7/+13.0 mm, ChassisStatics "No load".
+- `media/views/unsaved_Default_*.png` are left over from a 2026-11-16 test and are not made by the rebuild. They were left in place.
+
+**Next:**
+- A solid-model check of the frame torsion, which needs joints that are bonded properly.
+- An anti-roll bar.
+- Tyre data, to replace the assumed friction.
+

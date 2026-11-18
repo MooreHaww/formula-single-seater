@@ -166,7 +166,13 @@ namespace SwHarness
             else
                 rep.Note(Math.Abs(cutLen_m - csvLength_m) <= 0.05 * csvLength_m, "cut length: " + F(cutLen_m, "0.00") + " m vs " +
                     F(csvLength_m, "0.00") + " m in CSV (" + F(100 * (cutLen_m / csvLength_m - 1), "+0.0;-0.0") + " %, limit 5 %)");
-            rep.Note(mass >= 38 && mass <= 46, "mass: " + F(mass) + " kg (expected 38 to 46)");
+            // expected mass from the CSV (frame_layout.m, steel 7850 kg/m3, centre-line lengths):
+            // the bodies here are cut at the nodes (shorter than centre-line), and the
+            // material is AISI 1020 (7900), so the part is a few % under; the range
+            // was a fixed 38 to 46 kg until the torsion diagonals (2026-11-18)
+            double csvMass = fr.TubeRows.Where(r => r.Length >= 8).Sum(r => Val(r[7]));
+            double lo = 0.85 * csvMass, hi = 1.05 * csvMass;
+            rep.Note(mass >= lo && mass <= hi, "mass: " + F(mass) + " kg (CSV " + F(csvMass) + " kg; expected " + F(lo) + " to " + F(hi) + ")");
             if (save)
             {
                 bool saved = Save(m, out int errs);

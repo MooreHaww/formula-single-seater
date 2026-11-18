@@ -55,6 +55,7 @@ if ~isfield(opts, 'p'), opts.p = read_car_params(); end
 p = opts.p;
 root = repo_root();
 fr = read_frame(root);
+if isfield(opts, 'drop_tubes'), fr = drop_tubes(fr, opts.drop_tubes); end     % what-if: tube names (or patterns) taken out
 if isfield(opts, 'extra_tubes'), fr = add_tubes(fr, opts.extra_tubes); end   % what-if: extra 25.4 x 1.6 tubes, node pairs
 mat = material();
 mdl = build_model(fr, mat);
@@ -72,6 +73,7 @@ out.pickups = pick; out.lumped = lump;
 % headline: wheel forces through the real links, free-free (what the car sees in warp)
 out.torsion = torsion_wheel_case(mdl, fr, corners, pick, lump, 1000);
 out.torsion.mass_efficiency = out.torsion.k_Nm_deg / out.frame_mass;
+if isfield(opts, 'torsion_only') && opts.torsion_only, return, end   % for searches (frame_diagonal_search)
 % the SolidWorks studies' set-up: couples at the wishbone nodes, free-free
 out.torsion_nodes = torsion_free_case(mdl, fr, pick, lump, 1000);
 % upper bound: the rear pickups held rigidly (stiffens the rear bay)
@@ -107,6 +109,13 @@ fr.tube = T.tube;
 if any(a == 0) || any(b == 0), error('frame_fe:nodes', 'A tube names a node that is not in frame_nodes.csv'); end
 fr.ends = [a, b];
 fr.od = T.od_mm; fr.wall = T.wall_mm; fr.group = T.group;
+end
+
+function fr = drop_tubes(fr, pats)
+% pats: string array of patterns; a tube whose name contains any is removed
+% (a what-if, e.g. the frame before the torsion diagonals)
+k = ~contains(fr.tube, string(pats));
+fr.tube = fr.tube(k); fr.ends = fr.ends(k, :); fr.od = fr.od(k); fr.wall = fr.wall(k); fr.group = fr.group(k);
 end
 
 function fr = add_tubes(fr, pairs)
@@ -601,9 +610,14 @@ a = (Pt.' * (lump.Mv .* Pt)) \ (Pt.' * F);
 ok = ok & chk(a(1), 10 / sum(lump.m), 'inertia relief acceleration P / m');
 % the real frame
 o = frame_fe(struct('write', false, 'plot', false));
-t = o.torsion_held; uz = t.u(3:6:end);
-iR = find(o.frame.node == "FS1_L_R"); iL = find(o.frame.node == "FS1_L_L");
-ok = ok & chk(uz(iL), -uz(iR), 'torsion: left pickup moves opposite to the right');
+% antisymmetry needs a mirror-symmetric frame: the torsion diagonals (*_diag,
+% one tube each from a right node to a left node, 2026-11-18) are not, so the
+% check runs on the frame without them
+os = frame_fe(struct('write', false, 'plot', false, 'torsion_only', true, 'drop_tubes', "_diag"));
+os.torsion_held = torsion_case(build_model(os.frame, material()), os.frame, os.pickups, 1000);
+t = os.torsion_held; uz = t.u(3:6:end);
+iR = find(os.frame.node == "FS1_L_R"); iL = find(os.frame.node == "FS1_L_L");
+ok = ok & chk(uz(iL), -uz(iR), 'torsion (frame without the single diagonals): left pickup moves opposite to the right');
 for k = 1:numel(o.cases)
     c = o.cases(k);
     err = norm(c.accel(1:3).' - c.accel_expected) / max(9.81, norm(c.accel_expected));

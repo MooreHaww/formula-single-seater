@@ -8,7 +8,7 @@ Cross-check: the torsion case on the frame as solids in SOLIDWORKS Simulation, `
 
 | Item | Choice |
 |---|---|
-| Geometry | `cad/frame/frame_nodes.csv` and `frame_tubes.csv`, the same files the SOLIDWORKS chassis is built from: 50 nodes, 114 tubes, 43.1 kg |
+| Geometry | `cad/frame/frame_nodes.csv` and `frame_tubes.csv`, the same files the SOLIDWORKS chassis is built from: 50 nodes, 124 tubes, 49.3 kg (since 2026-11-18, with the torsion diagonals; 114 tubes and 43.1–43.5 kg before) |
 | Elements | one 3D Euler-Bernoulli beam per tube, 12 degrees of freedom, rigid joints at the node centres. No joint flexibility, no weld or bracket detail. |
 | Sections | the real tube OD and wall from `frame_tubes.csv`: A, I = π(D⁴−d⁴)/64, J = 2I, Z = I/(D/2) |
 | Material | 4130 normalised: E 205 GPa, G 80 GPa, ρ 7850 kg/m³, yield 435 MPa. Factor of safety wanted: 1.5 on yield. |
@@ -63,7 +63,93 @@ For each driving case:
 
 Twist is measured as the rotation about x of each axle's wishbone pickups, from their vertical displacements: atan(Δuz/Δy), averaged over the four pairs. Twist = front − rear. Stiffness = front torque / twist.
 
-## Results (frame of 2026-11-17, 43.1 kg)
+## Torsion diagonals (2026-11-18): the frame as it now is
+
+Target: at least 1500 Nm/deg in the headline case (wheel loads through the links, free-free), judged by this beam model.
+
+**Search:** `matlab/stress/frame_diagonal_search.m`, written to `sim/stress/frame_diagonals.txt`.
+- **Candidates:** one 25.4 × 1.6 tube across each bay face that had no diagonal: floor, top, transverse planes, and the sidepod floor and top.
+- **Clearance:** each candidate is checked against frame_layout's envelopes (driver, battery, motor, diff; 10 mm, helmet 50 mm).
+- **Dropped, too close:**
+
+  | Diagonal | Short by | Envelope |
+  |---|---|---|
+  | footwell floor FS2_L–FH_L | 12 mm | heel rest |
+  | rear box floor | 16 mm | diff |
+  | footwell top | 23 mm | legs |
+  | engine bay top | 73 mm | motor |
+  | rear box top | 20 mm | diff |
+  | main hoop plane | 39 mm | motor |
+  | RS1 plane | 40 mm | diff |
+
+- **Excluded on purpose:**
+  - the cockpit top, which is the cockpit opening;
+  - the FS2 plane, which crosses the window between the FS2 cross tubes that the pedals and feet pass through.
+- **Method:**
+  - floor only and floor plus top: every subset;
+  - all candidates: subsets in order of added mass. The first one that reaches the target is the lightest.
+  - Two diagonals are needed in every set (front box floor and front box top), so they are fixed. 1507 subsets were solved.
+
+**What each family can reach** (new rear hardpoints; 834 Nm/deg and 43.5 kg as built):
+
+| Diagonals | Best Nm/deg | Frame kg | Reaches 1500? |
+|---|---|---|---|
+| floor only (4 that fit) | 1161 | 45.95 | no |
+| floor + top (8 that fit) | 1368 | 48.22 | no |
+| every candidate that fits (13) | 1588 | — | yes |
+| **lightest set reaching 1500 (chosen)** | **1503** | **49.28 (+5.76)** | yes |
+| same set but with the footwell floor diagonal instead of the sidepod tops (needs the heel rest 12 mm higher) | 1523 | 48.16 | yes, 1.1 kg lighter |
+
+**Chosen set:** 10 tubes, in `matlab/cad/frame_layout.m`:
+- Floor:
+  - nose floor FB_L_R–FS1_L_L;
+  - front box floor FS1_L_R–FS2_L_L;
+  - cockpit floor FH_L_R–MH_L_L, under the seat, 17 mm beyond the 10 mm torso rule;
+  - engine bay floor MH_L_R–RS1_L_L.
+- Top:
+  - nose top FB_U_R–FS1_U_L;
+  - front box top FS1_U_R–FS2_U_L;
+  - rear top RT1_R–RRK_L.
+- Front bulkhead plane FB_L_R–FB_U_L, behind the anti-intrusion plate.
+- Sidepod top diagonal FH_M–SP2_U on both sides, 5 mm beyond the battery rule.
+
+The SOLIDWORKS group sizes are unchanged (all 25.4 × 1.6). No new diagonal comes within one tube diameter of another tube except at its own nodes (checked for every tube pair).
+
+**Before and after** (same loads, same rear hardpoints; "before" = the frame files with these 10 tubes dropped, `frame_fe(struct('drop_tubes', ["_diag", "FH_M-SP2_U"]))`):
+
+| | Before | After |
+|---|---|---|
+| Torsion, through the links | 834 Nm/deg | **1503 Nm/deg** |
+| Torsion, couples at the nodes | 758 | 1386 |
+| Torsion, rear held (upper bound) | 1798 | 2589 |
+| Frame tubes | 43.5 kg | 49.3 kg (+5.8) |
+| Stiffness per kg | 19.2 | 30.5 Nm/deg/kg |
+| Peak at the test torque | 203 MPa, FH_T_cross | 197 MPa, FH_T_cross |
+| Car without driver (mass budget, brackets and welds scaled to 13 % of the frame) | 228.4 kg | 235.6 kg |
+| CG x, z | 908, 314 mm | 902, 312 mm |
+
+Twist at the test torque fell from 1.43° to 0.79°.
+
+### Driving cases with the diagonals
+
+These use `load_cases.csv` regenerated at 306 kg with driver.
+
+| Case | Peak von Mises, MPa | Where | FoS on yield | Max elastic deflection |
+|---|---|---|---|---|
+| Cornering 1.6 g | 109 | RRK-RT1_R (rear rocker mount) | 3.98 | 1.18 mm at FBT_R |
+| Braking 1.5 g | 86 | RRK-RT1_R | 5.08 | 0.49 mm |
+| Bump 3 g total | 163 | RRK-RT1_R | 2.67 | 0.35 mm |
+| Corner + brake | 108 | FS2_L-FH_L_R | 4.02 | 1.43 mm at FS2_L_R |
+
+**Bump stress rose, but not because of the diagonals.** It went from 123 MPa (2026-11-17) to 163 MPa. Without the diagonals, on the same loads, it is 168 MPa.
+
+The rise comes from the rear suspension re-optimisation for the joint margin. The rear upper inner pivots moved 30 mm outboard, to y 350. RT1/RT2 sit on them, so the rocker-mount tube RRK–RT1 now runs at an angle across 60 mm, where it used to run straight.
+
+Every case is still above the 1.5 FoS wanted on yield. This beam model has no stress concentration, so a factor of 1.5 to 3 at the welds applies on top.
+
+The largest cornering deflection fell from 2.14 mm (FB_U, front bulkhead top) to 1.18 mm. In corner + brake, the deflection at the front pickup FS2_L fell from 1.81 to 1.43 mm.
+
+## Earlier results (frame of 2026-11-17, 43.1 kg, before the diagonals)
 
 ### Torsion
 
@@ -106,7 +192,7 @@ Twist is measured as the rotation about x of each axle's wishbone pickups, from 
 - The cockpit floor diagonal runs under the seat and must be checked against the driver package.
 - Peak torsion stress at the test torque rises from 199 to about 245 MPa with the diagonals: the stiffer frame takes more load in the hoop-top cross tube.
 
-None of this is applied to the frame files: changing the frame is a design decision.
+This was a what-if when it was written. The design decision was taken on 2026-11-18 (see the section above).
 
 ### Driving cases
 

@@ -15,8 +15,8 @@ Python 3.8+ with the standard library only, plus the .NET SDK (any version under
 
 | Step | Does | Report |
 |---|---|---|
-| `close-all` | closes every open document **without saving** (the files on disk are what counts) | |
-| `restart-sw` | closes every document without saving, quits SolidWorks and starts a fresh one (first step of `rebuild`: after several rebuilds in one session OpenDoc6 failed silently) | |
+| `close-all` | closes every open document **without saving** (the files on disk are what counts); `rebuild` runs it after every SolidWorks step | |
+| `restart-sw` | closes every document without saving, quits SolidWorks and starts a fresh one (first step of `rebuild` and again before the layout, suspension, simulation and view groups: after several rebuilds in one session OpenDoc6 failed silently, and one long session ran out of GDI objects) | |
 | `new-chassis` | closes `cad/chassis/chassis.SLDPRT`, moves it to `cad/chassis/old/chassis_<time>.SLDPRT`, saves a new empty MMGS part in its place | |
 | `ImportFrameNodes` | 114 3D-sketch lines in 7 `FRAME_<group>` sketches from `cad/frame/*.csv` | `cad/chassis/import_frame_nodes_report.txt` |
 | `BuildTubes` | 7 groups of structural members, AISI 1020, cut list, checks | `cad/chassis/build_tubes_report.txt` |
@@ -34,7 +34,7 @@ Python 3.8+ with the standard library only, plus the .NET SDK (any version under
 | `SuspensionMotion` | Motion study "Bump sweep": one oscillating linear motor per upright, located at the wheel-centre point P_WC (the A_SPIN axis is the fallback), Drive mates suppressed in the study. Animation study first, then Basic Motion and Motion Analysis if motors are refused. Motors are refused in an assembly that has had a motion study deleted, so a fresh `rebuild` is needed. If no motor takes, the step WARNs and deletes the undriven study. The full kinematic sweep is SuspensionCheck's | `cad/suspension/suspension_motion_report.txt` |
 | `ChassisStatics` | Simulation add-in, beam studies "Torsion" (free-free, balanced couples), "Braking", "Cornering" on the chassis (loads from `sim/stress/load_cases.csv` through the six-link upright statics), meshed and run; solver files in `sim/stress/results/`. On 2026 SP2.1 Student the forces cannot be put on beam joints through the API, so the solver reports no load: WARN with the reasons in the report. `ChassisStatics probe` lists which entities AddForce2/AddRestraint take | `sim/stress/chassis_statics_report.txt` |
 | `FrameSolid [size_mm] [--fuse] [--combine] [--check-only]` | Torsion of the frame as **solids**, to cross-check `matlab/stress/frame_fe.m`. Copies `chassis.SLDPRT` to `cad/chassis/chassis_solid.SLDPRT` (the chassis is not touched). Static study with a solid mesh, AISI 4130, free-free with inertia relief. Loads: the couples at the 16 wishbone pickup nodes, each force on the tube edge nearest its node. Twist is taken from the mesh nodes around the pickups and compared with frame_fe's same case. It also checks tube connectivity and whether each joint moves as one. **On 2026 SP2.1 Student it meshes (1.46 M nodes) and solves in about a minute, but the stiffness is NOT VALID.** The coped tube ends touch their neighbours only along lines, so bonded contact leaves some tubes unjoined; Combine and Boolean union fail for the same reason. Not in the rebuild | `sim/stress/frame_solid_report.txt` |
-| `SaveStandardViews <file>` | six PNGs in car axes (Z up, nose to the left): iso, front, side, top, rear, bottom | `media/views/<doc>_views_report.txt` |
+| `SaveStandardViews <file> [--show p1,p2 --name label]` | six PNGs in car axes (Z up, nose to the left): iso, front, side, top, rear, bottom. `--show`: only the assembly components whose names start with the prefixes are visible for the pictures (shown again after, not saved); `--name`: label for the file names. Sketches and points are hidden for the pictures (View > Hide All Types, restored after) unless `--keep-sketches` is given, as for the master layout. The rebuild uses it for the suspension views (`--show FL_,FR_,RL_,RR_,chassis --name suspension`) | `media/views/<doc or label>_views_report.txt` |
 
 `rebuild` runs them in that order and stops at the first step that does not pass. TrimTubes runs twice, and the second run must change nothing. Exit codes: 0 pass (warnings allowed), 1 a check failed, 2 stopped or error, 3 needs a person. Every run gets one line in `cad/harness_runs.log`.
 
@@ -43,6 +43,20 @@ Diagnostics (read-only or on copies): `tree`, `tubeends`, `trimdefs`, `findfeat`
 ## Dialogs and people
 
 `sw_run.py` watches SolidWorks' dialog windows while a step runs and logs their text (progress boxes such as "Calculating interferences" are normal). If a dialog stays open for 90 s (a licence prompt, sign-in or crash report), or a step gets no answer for 30 min, the step is killed. It is reported as NEEDS A PERSON with the dialog text, and `rebuild` stops there. Files are only ever saved by the step that owns them. Old files are moved to `old/`, never deleted.
+
+### SolidWorks' low-GDI warning
+
+Windows allows each process 10,000 GDI objects by default. One SolidWorks session that ran the whole rebuild reached 9,678 (2026-11-18). SolidWorks then asked "SOLIDWORKS is running critically low on GDI objects … Do you want to continue?", first during the assembly views and then during the suspension views.
+
+**What the harness does:**
+- **Answers the warning.** The watcher checks every 0.5 s. When the warning appears, it answers **No** at once, because Yes risks a crash in the middle of a save. It logs the dialog with SolidWorks' GDI count at that moment.
+- **Stops the step.** The step gets 20 s to end by itself, then it is ended. It is reported as `STOPPED: SolidWorks low on GDI objects (answered No)`, exit 4, with the message in the console and in `cad/harness_runs.log`.
+- **Retries once.** `rebuild` restarts SolidWorks and runs the same step a second time. Every step opens its files from disk, so the retry starts from what the earlier steps saved.
+
+**How it keeps GDI use down:**
+- **Restarts SolidWorks between the long groups:** chassis, then layout/bodies/assembly, then suspension, then simulation, then views.
+- **Closes documents after every step.** `close-all` runs after every SolidWorks step and closes every document without saving. Every step saves its own file, so nothing is lost, and only one step's windows are open at a time.
+- **Logs the GDI count.** After every step, the run log line ends with `[SolidWorks pid …: GDI n (peak n) of 10000, USER n, n MB]`, so the trend is visible.
 
 ## Why C# and not Python or the VBA macros
 

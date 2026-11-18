@@ -1,6 +1,6 @@
-'  Suspension hardpoints written by matlab/suspension_geometry.m on 2026-11-17
+'  Suspension hardpoints written by matlab/suspension_geometry.m on 2026-11-18
 '  Right-hand corners; mirror in Y. Frame: X rearward from the front axle, Y right, Z up from the ground, mm.
-'  Results: camber gain F -0.0391 / R -0.0429 deg/mm, bump steer F 0.010 / R 0.009 deg, RC F 60 / R 75 mm, MR F 0.706 / R 0.772
+'  Results: camber gain F -0.0391 / R -0.0433 deg/mm, bump steer F 0.010 / R 0.021 deg, RC F 60 / R 79 mm, MR F 0.706 / R 0.773
 
 '  ---- front right corner ----
 "f_lwb_in_fwd_x"= -160
@@ -36,32 +36,32 @@
 
 '  ---- rear right corner ----
 "r_lwb_in_fwd_x"= 1485
-"r_lwb_in_fwd_y"= 287
-"r_lwb_in_fwd_z"= 134.5
+"r_lwb_in_fwd_y"= 299.5
+"r_lwb_in_fwd_z"= 136.5
 "r_lwb_in_aft_x"= 1700
-"r_lwb_in_aft_y"= 287
-"r_lwb_in_aft_z"= 130.5
-"r_lwb_out_x"= 1540.5
-"r_lwb_out_y"= 527
-"r_lwb_out_z"= 123
+"r_lwb_in_aft_y"= 299.5
+"r_lwb_in_aft_z"= 132.5
+"r_lwb_out_x"= 1540
+"r_lwb_out_y"= 529
+"r_lwb_out_z"= 124.5
 "r_uwb_in_fwd_x"= 1490
-"r_uwb_in_fwd_y"= 320
-"r_uwb_in_fwd_z"= 306
+"r_uwb_in_fwd_y"= 350
+"r_uwb_in_fwd_z"= 307
 "r_uwb_in_aft_x"= 1690
-"r_uwb_in_aft_y"= 320
-"r_uwb_in_aft_z"= 298
-"r_uwb_out_x"= 1565
-"r_uwb_out_y"= 491
-"r_uwb_out_z"= 322.5
+"r_uwb_in_aft_y"= 350
+"r_uwb_in_aft_z"= 299
+"r_uwb_out_x"= 1555
+"r_uwb_out_y"= 494.5
+"r_uwb_out_z"= 320
 "r_toelink_in_x"= 1660
 "r_toelink_in_y"= 280
-"r_toelink_in_z"= 173.5
-"r_toelink_out_x"= 1641.5
-"r_toelink_out_y"= 485
-"r_toelink_out_z"= 173
+"r_toelink_in_z"= 175.5
+"r_toelink_out_x"= 1625.5
+"r_toelink_out_y"= 460.5
+"r_toelink_out_z"= 175
 "r_pushrod_out_x"= 1550
 "r_pushrod_out_y"= 515
-"r_pushrod_out_z"= 132.5
+"r_pushrod_out_z"= 121.5
 "r_pushrod_in_x"= 1550
 "r_pushrod_in_y"= 300
 "r_pushrod_in_z"= 450

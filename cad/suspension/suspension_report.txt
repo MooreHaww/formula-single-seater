@@ -1,16 +1,19 @@
-ALL PASS   (2026-11-17 23:25, harness swh.exe)  SuspensionCheck, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
+ALL PASS (1 warning)   (2026-11-18 10:24, harness swh.exe)  SuspensionCheck, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
 
 PASS  mates solved at every step (13 steps, -30 to +30 mm; wheel centre at the demanded height and every wishbone leg and tie rod at its drawn length, 0.05 mm)
 PASS  left and right corners agree (mirror): largest camber/toe difference 0.0000 deg
-PASS  camber gain (deg/mm): SolidWorks F -0.0391 / R -0.0429, suspension_geometry.m F -0.0391 / R -0.0429 (agree within 0.0020)
-PASS  bump steer (deg): SolidWorks F 0.010 / R 0.009, suspension_geometry.m F 0.010 / R 0.009 (agree within 0.010)
-PASS  roll centre (mm): SolidWorks F 59.9 / R 75.3, suspension_geometry.m F 60.0 / R 75.0 (agree within 2.0)
-PASS  motion ratio: SolidWorks F 0.706 / R 0.772, suspension_geometry.m F 0.706 / R 0.772 (agree within 0.010)
-PASS  outer ball joints fit inside the rim barrel
-PASS  wheel travel -30 to +30 mm without clashes (not clashes: rim in tyre, hub in rim, the parts of one corner at their joints, a link touching the chassis within 40 mm of its inboard pivot = the bracket)
+PASS  camber gain (deg/mm): SolidWorks F -0.0391 / R -0.0433, suspension_geometry.m F -0.0391 / R -0.0433 (agree within 0.0020)
+PASS  bump steer (deg): SolidWorks F 0.010 / R 0.021, suspension_geometry.m F 0.010 / R 0.021 (agree within 0.010)
+PASS  roll centre (mm): SolidWorks F 59.9 / R 79.4, suspension_geometry.m F 60.0 / R 79.0 (agree within 2.0)
+PASS  motion ratio: SolidWorks F 0.706 / R 0.773, suspension_geometry.m F 0.706 / R 0.773 (agree within 0.010)
+PASS  outer joint housings (radius 12.5) at least 3.0 mm inside the rim barrel
+WARN  wheel travel -30 to +30 mm without clashes (not clashes: rim in tyre, hub in rim, the parts of one corner at their joints, a link touching the chassis within 40 mm of its inboard pivot = the bracket): RR_lwb-1 / RR_push-1 at travel 0 mm: 7 mm3; RL_lwb-1 / RL_push-1 at travel 0 mm: 7 mm3; RL_lwb-1 / RL_push-1 at travel -30 mm: 13 mm3; RR_lwb-1 / RR_push-1 at travel -30 mm: 13 mm3
 PASS  back at static and saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
 
 No failures.
+Warnings (do not fail the step):
+- wheel travel -30 to +30 mm without clashes (not clashes: rim in tyre, hub in rim, the parts of one corner at their joints, a link touching the chassis within 40 mm of its inboard pivot = the bracket): RR_lwb-1 / RR_push-1 at travel 0 mm: 7 mm3; RL_lwb-1 / RL_push-1 at travel 0 mm: 7 mm3; RL_lwb-1 / RL_push-1 at travel -30 mm: 13 mm3; RR_lwb-1 / RR_push-1 at travel -30 mm: 13 mm3
+
 
 Wheel travel sweep (right-hand corners; + = bump; camber negative = top inward; toe + = toe-in)
 
@@ -32,45 +35,45 @@ FR
 
 RR
   travel   camber    toe     half-track  pushrod  roll centre
-    -30    0.125   0.006      -5.47    22.67     130.8
-    -25   -0.041   0.007      -4.35    18.95     121.3
-    -20   -0.216   0.006      -3.32    15.21     111.9
-    -15   -0.399   0.005      -2.37    11.45     102.6
-    -10   -0.591   0.003      -1.50     7.66      93.4
-     -5   -0.791   0.002      -0.71     3.84      84.3
-      0   -1.000   0.000       0.00     0.00      75.3
-     +5   -1.218  -0.001       0.63    -3.87      66.3
-    +10   -1.445  -0.002       1.18    -7.77      57.4
-    +15   -1.682  -0.002       1.66   -11.70      48.6
-    +20   -1.929  -0.001       2.05   -15.66      39.9
-    +25   -2.186   0.002       2.38   -19.65      31.2
-    +30   -2.453   0.006       2.63   -23.67      22.7
+    -30    0.034   0.001      -5.53    22.78     129.8
+    -25   -0.102   0.009      -4.42    19.03     121.2
+    -20   -0.253   0.012      -3.38    15.27     112.7
+    -15   -0.418   0.012      -2.42    11.48     104.2
+    -10   -0.597   0.009      -1.54     7.68      95.9
+     -5   -0.791   0.005      -0.74     3.85      87.6
+      0   -1.000   0.000       0.00     0.00      79.4
+     +5   -1.223  -0.004       0.66    -3.87      71.4
+    +10   -1.462  -0.008       1.26    -7.77      63.4
+    +15   -1.715  -0.008       1.78   -11.70      55.5
+    +20   -1.984  -0.006       2.24   -15.65      47.8
+    +25   -2.270   0.000       2.64   -19.62      40.2
+    +30   -2.572   0.012       2.97   -23.63      32.7
 
 Summary              front       rear      suspension_geometry.m (F / R)
-  camber gain (deg/mm)   -0.0391   -0.0429      -0.0391 / -0.0429
-  bump steer (deg)         0.010     0.009      0.010 / 0.009
-  roll centre (mm)          59.9      75.3      60.0 / 75.0
-  motion ratio             0.706     0.772      0.706 / 0.772
-  half-track max (mm)       4.29      5.47      
-  roll centre over travel: front 10 to 111 mm, rear 23 to 131 mm
+  camber gain (deg/mm)   -0.0391   -0.0433      -0.0391 / -0.0433
+  bump steer (deg)         0.010     0.021      0.010 / 0.021
+  roll centre (mm)          59.9      79.4      60.0 / 79.0
+  motion ratio             0.706     0.773      0.706 / 0.773
+  half-track max (mm)       4.29      5.53      
+  roll centre over travel: front 10 to 111 mm, rear 33 to 130 mm
   static camber / toe: front -1.50 / 0.00 deg, rear -1.00 / 0.00 deg
 
 Camber to the ground in roll (outer / inner wheel, deg; camber to the body from the sweep)
   front:  roll 1 deg (travel +/-10.5 mm): -0.92 / -2.10  roll 2 deg (travel +/-20.9 mm): -0.34 / -2.71
-  rear :  roll 1 deg (travel +/-10.0 mm): -0.45 / -1.59  roll 2 deg (travel +/-20.1 mm): 0.07 / -2.21
+  rear :  roll 1 deg (travel +/-10.0 mm): -0.46 / -1.60  roll 2 deg (travel +/-20.1 mm): 0.01 / -2.25
 
-Outer joints against the rim (barrel inside radius 116 mm, rim -89 to +89 mm along the spindle from the wheel centre; joint housing radius 12 mm)
-  FR lwb_out      radius   71.0 mm, along the spindle  -40.4 mm, inside the rim, margin to the barrel 33.0 mm
-  FR uwb_out      radius   86.6 mm, along the spindle  -52.8 mm, inside the rim, margin to the barrel 17.4 mm
-  FR tierod_out   radius   90.5 mm, along the spindle  -65.8 mm, inside the rim, margin to the barrel 13.5 mm
-  FR pushrod_out  radius   70.4 mm, along the spindle  -61.9 mm, inside the rim, margin to the barrel 33.6 mm
-  RR lwb_out      radius   98.6 mm, along the spindle  -49.7 mm, inside the rim, margin to the barrel 5.4 mm
-  RR uwb_out      radius  103.0 mm, along the spindle  -82.2 mm, inside the rim, margin to the barrel 1.0 mm
-  RR toelink_out  radius  103.1 mm, along the spindle  -90.8 mm, outside the rim
-  RR pushrod_out  radius   88.4 mm, along the spindle  -61.6 mm, inside the rim, margin to the barrel 15.6 mm
+Outer joints against the rim (barrel inside radius 116 mm, rim -89 to +89 mm along the spindle from the wheel centre, housing counted from -102; joint housing radius 12.5 mm, margin wanted 3.0 mm)
+  FR lwb_out      radius   71.0 mm, along the spindle  -40.4 mm, inside the rim, margin to the barrel 32.5 mm
+  FR uwb_out      radius   86.6 mm, along the spindle  -52.8 mm, inside the rim, margin to the barrel 16.9 mm
+  FR tierod_out   radius   90.5 mm, along the spindle  -65.8 mm, inside the rim, margin to the barrel 13.0 mm
+  FR pushrod_out  radius   70.4 mm, along the spindle  -61.9 mm, inside the rim, margin to the barrel 33.1 mm
+  RR lwb_out      radius   97.2 mm, along the spindle  -47.7 mm, inside the rim, margin to the barrel 6.3 mm
+  RR uwb_out      radius   99.5 mm, along the spindle  -78.8 mm, inside the rim, margin to the barrel 4.0 mm
+  RR toelink_out  radius   87.9 mm, along the spindle -115.3 mm, outside the rim
+  RR pushrod_out  radius   99.4 mm, along the spindle  -61.7 mm, inside the rim, margin to the barrel 4.1 mm
 
 Interference (suspension parts, tyres and rims against everything)
-  travel 0 mm: RR_hub-1 / RR_upright-1 1077 mm3; RL_hub-1 / RL_upright-1 1076 mm3; FR_hub-1 / FR_upright-1 682 mm3; FL_hub-1 / FL_upright-1 682 mm3; RL_push-1 / RL_upright-1 32 mm3; RR_push-1 / RR_upright-1 32 mm3; chassis-1 / RR_uwb-1 5 mm3; chassis-1 / RL_uwb-1 5 mm3; FR_lwb-1 / FR_upright-1 4 mm3; FL_lwb-1 / FL_upright-1 4 mm3
-  travel +30 mm: RR_hub-1 / RR_upright-1 1077 mm3; RL_hub-1 / RL_upright-1 1076 mm3; FR_hub-1 / FR_upright-1 682 mm3; FL_hub-1 / FL_upright-1 682 mm3; RL_push-1 / RL_upright-1 28 mm3; RR_push-1 / RR_upright-1 28 mm3; chassis-1 / RR_uwb-1 5 mm3; chassis-1 / RL_uwb-1 5 mm3; FR_lwb-1 / FR_upright-1 3 mm3; FL_lwb-1 / FL_upright-1 3 mm3
-  travel -30 mm: RR_hub-1 / RR_upright-1 1077 mm3; RL_hub-1 / RL_upright-1 1076 mm3; FL_hub-1 / FL_upright-1 682 mm3; FR_hub-1 / FR_upright-1 682 mm3; RL_push-1 / RL_upright-1 39 mm3; RR_push-1 / RR_upright-1 39 mm3; chassis-1 / RR_uwb-1 5 mm3; chassis-1 / RL_uwb-1 5 mm3; FL_lwb-1 / FL_upright-1 6 mm3; FR_lwb-1 / FR_upright-1 6 mm3
+  travel 0 mm: RR_hub-1 / RR_upright-1 1090 mm3; RL_hub-1 / RL_upright-1 1090 mm3; FR_hub-1 / FR_upright-1 682 mm3; FL_hub-1 / FL_upright-1 682 mm3; chassis-1 / RL_uwb-1 22 mm3; chassis-1 / RR_uwb-1 22 mm3; RR_lwb-1 / RR_push-1 7 mm3; RL_lwb-1 / RL_push-1 7 mm3; FR_lwb-1 / FR_upright-1 4 mm3; FL_lwb-1 / FL_upright-1 4 mm3; chassis-1 / RR_lwb-1 2 mm3; chassis-1 / RL_lwb-1 2 mm3
+  travel +30 mm: RR_hub-1 / RR_upright-1 1090 mm3; RL_hub-1 / RL_upright-1 1090 mm3; FR_hub-1 / FR_upright-1 682 mm3; FL_hub-1 / FL_upright-1 682 mm3; chassis-1 / RL_uwb-1 22 mm3; chassis-1 / RR_uwb-1 22 mm3; chassis-1 / RR_lwb-1 2 mm3; chassis-1 / RL_lwb-1 2 mm3; FR_lwb-1 / FR_upright-1 3 mm3; FL_lwb-1 / FL_upright-1 3 mm3
+  travel -30 mm: RR_hub-1 / RR_upright-1 1090 mm3; RL_hub-1 / RL_upright-1 1090 mm3; FL_hub-1 / FL_upright-1 682 mm3; FR_hub-1 / FR_upright-1 682 mm3; chassis-1 / RL_uwb-1 22 mm3; chassis-1 / RR_uwb-1 22 mm3; RL_lwb-1 / RL_push-1 13 mm3; RR_lwb-1 / RR_push-1 13 mm3; FL_lwb-1 / FL_upright-1 6 mm3; FR_lwb-1 / FR_upright-1 6 mm3; chassis-1 / RR_lwb-1 2 mm3; chassis-1 / RL_lwb-1 2 mm3
 

@@ -14,15 +14,43 @@ namespace SwHarness
 {
     static class SaveStandardViews
     {
-        public static int Run(string file)
+        /// SaveStandardViews <file> [--show prefix1,prefix2,...] [--name label]
+        /// --show (assemblies only): hide every top-level component whose name does not start with
+        /// one of the prefixes for the pictures, then show them again (the file is not saved).
+        /// --name: the label used in the PNG and report names instead of the file name.
+        /// --keep-sketches: leave sketches and points visible (otherwise View > Hide All Types is on for the pictures).
+        public static int Run(string[] args)
         {
+            string file = args.Length > 0 ? args[0] : "", show = "", label = "";
+            bool keepSketches = args.Contains("--keep-sketches");     // the master layout is mostly sketches
+            for (int i = 1; i < args.Length - 1; i++)
+            {
+                if (args[i] == "--show") show = args[i + 1];
+                if (args[i] == "--name") label = args[i + 1];
+            }
             if (file == "") throw new StepStoppedException("SaveStandardViews needs a file: a .SLDPRT or .SLDASM path");
             string path = Path.IsPathRooted(file) ? file : Path.Combine(Repo, file);
             if (!File.Exists(path)) throw new StepStoppedException("No such file " + path);
             var m = Open(path);
             string outDir = P("media", "views");
             Directory.CreateDirectory(outDir);
-            string doc = Path.GetFileNameWithoutExtension(path);
+            string doc = label != "" ? label : Path.GetFileNameWithoutExtension(path);
+            var hidden = new System.Collections.Generic.List<Component2>();
+            if (show != "")
+            {
+                if (!(m is AssemblyDoc asm)) throw new StepStoppedException("--show needs an assembly");
+                var pre = show.Split(',').Select(s => s.Trim()).Where(s => s != "").ToArray();
+                foreach (var c in (asm.GetComponents(true) as object[] ?? new object[0]).OfType<Component2>())
+                {
+                    if (pre.Any(p => c.Name2.StartsWith(p, StringComparison.OrdinalIgnoreCase))) continue;
+                    if (c.Visible == (int)swComponentVisibilityState_e.swComponentVisible)
+                    {
+                        c.Visible = (int)swComponentVisibilityState_e.swComponentHidden;
+                        hidden.Add(c);
+                    }
+                }
+                m.GraphicsRedraw2();
+            }
             string cfg = (m.ConfigurationManager.ActiveConfiguration.Name ?? "Default");
             foreach (var c in new[] { '\\', '/', ':', '*', '?', '"', '<', '>', '|', ' ' }) cfg = cfg.Replace(c, '_');
             while (cfg.Contains("__")) cfg = cfg.Replace("__", "_");
@@ -34,6 +62,12 @@ namespace SwHarness
             int pGrad = (int)swUserPreferenceToggle_e.swColorsGradientPartBackground;
             int oldApp = App.GetUserPreferenceIntegerValue(pApp), oldCol = App.GetUserPreferenceIntegerValue(pCol);
             bool oldGrad = App.GetUserPreferenceToggle(pGrad);
+            // sketch points (the layout's hardpoints, the frame nodes) were drawn in the pictures and pulled the
+            // zoom-to-fit off the car (2026-11-18): the document's View > Hide All Types is on for the pictures
+            int pHide = (int)swUserPreferenceToggle_e.swViewDisplayHideAllTypes;
+            bool oldHide = m.GetUserPreferenceToggle(pHide);
+            if (!keepSketches) m.SetUserPreferenceToggle(pHide, true);
+            m.GraphicsRedraw2();
             try
             {
                 App.SetUserPreferenceIntegerValue(pApp, (int)swColorsBackgroundAppearance_e.swColorsBackgroundAppearance_Plain);
@@ -81,7 +115,15 @@ namespace SwHarness
                 App.SetUserPreferenceIntegerValue(pApp, oldApp);
                 App.SetUserPreferenceIntegerValue(pCol, oldCol);
                 App.SetUserPreferenceToggle(pGrad, oldGrad);
+                foreach (var c in hidden) c.Visible = (int)swComponentVisibilityState_e.swComponentVisible;
+                m.SetUserPreferenceToggle(pHide, oldHide);
                 m.GraphicsRedraw2();
+            }
+            if (show != "")
+            {
+                bool allBack = hidden.All(c => c.Visible == (int)swComponentVisibilityState_e.swComponentVisible);
+                rep.Note(allBack, "shown only components starting with " + show + "; " + hidden.Count + " hidden for the pictures" +
+                         (allBack ? " and shown again" : ", NOT all shown again"));
             }
             bool restored = App.GetUserPreferenceIntegerValue(pApp) == oldApp && App.GetUserPreferenceIntegerValue(pCol) == oldCol;
             rep.Note(restored, "background settings restored to the user's own");

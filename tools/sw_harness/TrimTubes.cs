@@ -105,7 +105,8 @@ namespace SwHarness
                 var stubs0 = new List<Body2>();
                 string stubTxt0 = FindStubs(Snap(part), fr, stubs0);
                 bool longEnds0 = Mitre.Overruns(m, fr).Any(e => e.Reach > Mitre.MITRE_MIN_MM);
-                if (pre == "" && stubs0.Count == 0 && !longEnds0)
+                bool openEnds0 = OpenEnds(m, fr, rows, out _, out _).Any(e => e.Gap > GAP_MAX_MM);
+                if (pre == "" && stubs0.Count == 0 && !longEnds0 && !openEnds0)
                 {
                     string txt = "NOTHING CHANGED (" + Now() + "): all " + nKept + " plan rows done, no stubs\n" + header + "\n" + stubTxt0 +
                                  "\nTrim features:\n" + trimList + "\n" + diagTxt;
@@ -119,7 +120,7 @@ namespace SwHarness
                         "\nUnmatched: " + unmatched + "\n\n" + pre + "\n" + header + "\nTrim features:\n" + trimList + "\n" + diagTxt);
                     throw new StepStoppedException("No trim row can be made:\n" + pre + "Report: " + reportFile);
                 }
-                // all rows done but stubs to clean or long ends to mitre: carry on
+                // all rows done but stubs to clean, long ends to mitre or open ends to close: carry on
             }
 
             double mass0 = Mass(m);
@@ -345,6 +346,64 @@ namespace SwHarness
             rep.Note(maxReach <= Mitre.MITRE_MIN_MM + 0.5, "tube ends past their node: largest " + F(maxReach, "0") + " mm (limit " + F(Mitre.MITRE_MIN_MM, "0") +
                      " mm), " + nMitre + " mitre cuts made in this run");
 
+            // 2d. close open ends: a trimmed end that no longer touches any of its boundary tubes (a near-collinear joint
+            //     where the boundary was cut back past the node by the structural member's corner, or the trim cut the end
+            //     back from a boundary that ends flat at the node). One Trim/Extend per end, Close_<tube>_<node>, with
+            //     extension allowed and a coped cut, against the row's boundary tubes. Kept only if the gap closes.
+            int nClose = 0; double dmClose = 0;
+            var openNow = OpenEnds(m, fr, rows, out _, out _).Where(e => e.Gap > GAP_MAX_MM).ToList();
+            foreach (var e in openNow)
+            {
+                string cn = "Close_" + e.Tube + "_" + e.Node;
+                if (AllFeatures(m).Any(f => f.Name == cn)) { rep.Note(false, cn + ": already there but the end is still open (" + F(e.Gap, "0.0") + " mm)"); continue; }
+                var bo = MatchBodies(Snap(part), fr, out _);
+                if (!bo.ContainsKey(e.Tube) || e.Boundary.Any(x => !bo.ContainsKey(x))) { rep.Note(false, cn + ": bodies not found"); continue; }
+                string how = ""; bool closed = false; double g1 = double.NaN;
+                // the nearest boundary tube: at a near-collinear joint it is the one whose end moved
+                string near = e.Boundary.OrderBy(x => { double d = Gap(m, bo[e.Tube], bo[x]); return double.IsNaN(d) ? 1e9 : d; }).First();
+                const int MITRE = (int)swSolidworksWeldmentEndCondOptions_e.swEndConditionMiter;
+                // (end condition, bodies trimmed, boundary bodies, options, label). Trim never lengthens these near-collinear
+                // ends (2026-11-18: no extension, or error 1); the end miter and end butt conditions do.
+                var tries = new List<Tuple<int, string[], string[], int, string>>
+                {
+                    // 2026-11-18: trim with extension, end butt 1 and 2, and the miter of the pair (tube first) never closed one
+                    // of these ends (no extension or error 1); each attempt costs a full joint recalculation (~1-2 min), so
+                    // only the miter variants are tried
+                    Tuple.Create(MITRE, new[] { e.Tube }, new[] { near }, 0, "end miter with " + near),
+                    Tuple.Create(MITRE, new[] { near }, new[] { e.Tube }, 0, "end miter of " + near + " with the tube"),
+                    Tuple.Create(MITRE, new[] { near, e.Tube }, new string[0], 0, "end miter of the pair " + near + " / " + e.Tube),
+                };
+                double massBefore = Mass(m);
+                foreach (var tr in tries)
+                {
+                    bo = MatchBodies(Snap(part), fr, out _);
+                    m.ClearSelection2(true);
+                    Feature f = null;
+                    try
+                    {
+                        f = fm.InsertWeldmentTrimFeature2(tr.Item1, tr.Item4, 0.0, tr.Item2.Select(x => bo[x]).ToArray(),
+                                                          tr.Item3.Length == 0 ? null : tr.Item3.Select(x => bo[x]).ToArray()) as Feature;
+                    }
+                    catch (Exception ex) { how += tr.Item5 + " threw " + ex.GetType().Name + "; "; continue; }
+                    string label = tr.Item5;
+                    if (f == null) { how += label + " refused (" + CreateErrors(fm) + "); "; continue; }
+                    m.ForceRebuild3(false);
+                    bo = MatchBodies(Snap(part), fr, out _);
+                    g1 = bo.ContainsKey(e.Tube) ? e.Boundary.Where(bo.ContainsKey).Select(x => Gap(m, bo[e.Tube], bo[x])).Where(d => !double.IsNaN(d)).DefaultIfEmpty(double.NaN).Min() : double.NaN;
+                    int err = ErrorOf(f);
+                    double dm = Mass(m) - massBefore;
+                    if (err == 0 && Bodies(part).Length == fr.Tubes.Count && g1 <= GAP_MAX_MM && Math.Abs(dm) < 0.1)
+                    {
+                        Rename(f, cn); closed = true; dmClose += dm; how += label + ": gap " + F(e.Gap, "0.0") + " -> " + F(g1, "0.000") + " mm, mass " + F(1000 * dm, "+0;-0") + " g"; break;
+                    }
+                    how += label + ": gap " + F(g1, "0.0") + " mm" + (err != 0 ? ", error " + err : "") + ", mass " + F(1000 * dm, "+0;-0") + " g, bodies " + Bodies(part).Length + ", removed; ";
+                    DeleteFeature(m, f); m.ForceRebuild3(false);
+                }
+                rep.Note(closed, cn + ": " + e.Tube + " against " + string.Join(";", e.Boundary) + ", " + how.Trim());
+                if (closed) nClose++;
+            }
+            if (openNow.Count == 0) rep.Info("open trimmed ends: none");
+
             // 3. totals
             CutList(m, out int nCut, out double cutLen_m, out int lenMissing, out int nFolders);
             int nBodies1 = Bodies(part).Length;
@@ -352,12 +411,16 @@ namespace SwHarness
             rep.Line("");
             rep.Note(nBodies1 == fr.Tubes.Count, "bodies: " + nBodies0 + " before, " + nBodies1 + " after, " + fr.Tubes.Count +
                      " tubes in frame_tubes.csv (must be equal after the run)");
-            rep.Note(mass1 <= mass0 + 1e-3 && mass1 >= 38 && mass1 <= 46, "mass: " + F(mass0, "0.00") + " kg before, " + F(mass1, "0.00") +
-                     " kg after (" + F(mass1 - mass0, "+0.00;-0.00") + " kg; must not rise, 38 to 46)");
+            // range as in BuildTubes and CheckChassis: 0.85 to 1.05 of the CSV mass (a fixed 38 to 46 kg until 2026-11-19,
+            // when the tubes became full length before trimming and the trimmed weldment came out at 46.7 kg)
+            double csvMassT = fr.TubeRows.Where(r => r.Length >= 8).Sum(r => Val(r[7]));
+            rep.Note(mass1 <= mass0 + dmClose + 1e-3 && mass1 >= 0.85 * csvMassT && mass1 <= 1.05 * csvMassT, "mass: " + F(mass0, "0.00") + " kg before, " + F(mass1, "0.00") +
+                     " kg after (" + F(mass1 - mass0, "+0.00;-0.00") + " kg; must not rise except by the closed ends, " + F(1000 * dmClose, "+0;-0") + " g; " +
+                     F(0.85 * csvMassT, "0.0") + " to " + F(1.05 * csvMassT, "0.0") + ")");
             if (lenMissing > 0 || nFolders == 0) rep.Info("cut length: LENGTH missing on " + lenMissing + " of " + nFolders + " cut-list items");
             else rep.Info("cut length after trim: " + F(cutLen_m, "0.00") + " m (" + nCut + " bodies in the cut list)");
-            if (expectNothing) rep.Note(nDone == 0 && nDel == 0 && nMitre == 0, "second run changes nothing: " + nDone + " trims made, " + nDel + " stubs deleted, " + nMitre + " mitre cuts");
-            if (nDone > 0 || nDel > 0 || nMitre > 0)
+            if (expectNothing) rep.Note(nDone == 0 && nDel == 0 && nMitre == 0 && nClose == 0, "second run changes nothing: " + nDone + " trims made, " + nDel + " stubs deleted, " + nMitre + " mitre cuts, " + nClose + " ends closed");
+            if (nDone > 0 || nDel > 0 || nMitre > 0 || nClose > 0)
             {
                 bool saved = Save(m, out int errs);
                 rep.Note(saved, saved ? "saved: " + m.GetPathName() : "NOT saved (error " + errs + ")");
@@ -392,6 +455,20 @@ namespace SwHarness
             rep.Note(snap.Count == fr.Tubes.Count, "bodies: " + snap.Count + " (" + fr.Tubes.Count + " tubes in frame_tubes.csv)");
             rep.Note(bodyOf.Count == fr.Tubes.Count && unmatched == "", "one body per tube: " + bodyOf.Count + " of " + fr.Tubes.Count + " matched" +
                      (unmatched == "" ? "" : "; " + unmatched));
+            // per-tube volume and centroid of the trimmed bodies, for the mass budget cross-check
+            // (matlab/cad/frame_trimmed_mass.m): cad/chassis/chassis_tube_mass.csv
+            {
+                var sb = new StringBuilder("tube,volume_mm3,x_mm,y_mm,z_mm\r\n");
+                foreach (var kv in bodyOf.OrderBy(k => k.Key, StringComparer.Ordinal))
+                {
+                    var s = snap.FirstOrDefault(b => ReferenceEquals(b.Body, kv.Value));
+                    if (s == null) continue;
+                    sb.Append(kv.Key).Append(',').Append(F(s.Vol, "0.0")).Append(',').Append(F(s.X, "0.00")).Append(',')
+                      .Append(F(s.Y, "0.00")).Append(',').Append(F(s.Z, "0.00")).Append("\r\n");
+                }
+                File.WriteAllText(P("cad", "chassis", "chassis_tube_mass.csv"), sb.ToString());
+                rep.Info("per-tube volume and centroid: cad/chassis/chassis_tube_mass.csv (" + bodyOf.Count + " tubes)");
+            }
             CutList(m, out int nCut, out double cutLen, out int lenMissing, out int nFolders);
             rep.Note(nCut == fr.Tubes.Count, "cut-list bodies: " + nCut + " in " + nFolders + " items");
             rep.Note(lenMissing == 0 && Math.Abs(cutLen - csvLen) <= 0.05 * csvLen, "cut length: " + F(cutLen, "0.00") + " m vs " + F(csvLen, "0.00") +
@@ -402,6 +479,25 @@ namespace SwHarness
             double csvMass = fr.TubeRows.Where(r => r.Length >= 8).Sum(r => Val(r[7]));
             rep.Note(mass >= 0.85 * csvMass && mass <= 1.05 * csvMass, "mass: " + F(mass, "0.00") + " kg (CSV " + F(csvMass, "0.00") +
                      " kg; expected " + F(0.85 * csvMass, "0.0") + " to " + F(1.05 * csvMass, "0.0") + ")");
+            // the mass budget's frame line (m_frame, x_frame, z_frame) is this weldment's mass with the
+            // centroid of the trimmed CSV tubes (matlab/cad/frame_trimmed_mass.m); compare it with
+            // SolidWorks' own centre of mass (part coordinates are car coordinates, metres)
+            var mpw = m.Extension.CreateMassProperty() as MassProperty;
+            var par = ReadParams(P("params", "car_params.txt"));
+            if (mpw != null && par.ContainsKey("m_frame") && par.ContainsKey("x_frame") && par.ContainsKey("z_frame"))
+            {
+                var cg = (double[])mpw.CenterOfMass;
+                double cx = cg[0] * 1000, cy = cg[1] * 1000, cz = cg[2] * 1000;
+                // mass: the budget takes BuildTubes' weldment mass before the copes (47.5 kg on 2026-11-18); the
+                // trimmed bodies here come out about 4 % lighter, because the mitre-plane cuts at shallow joints
+                // remove more than the cope does (docs/log.md 2026-11-18 late), so the mass limit is 6 %
+                double dm = 100 * (mass / par["m_frame"] - 1);
+                rep.Note(Math.Abs(dm) <= 6 && Math.Abs(cx - par["x_frame"]) <= 10 && Math.Abs(cz - par["z_frame"]) <= 10,
+                    "budget frame line: weldment " + F(mass, "0.00") + " kg at x " + F(cx, "0.0") + " y " + F(cy, "0.0") + " z " + F(cz, "0.0") +
+                    " mm; car_params m_frame " + F(par["m_frame"], "0.0") + " kg (" + F(dm, "+0.0;-0.0") + " %) at x " + F(par["x_frame"], "0") + " z " + F(par["z_frame"], "0") +
+                    " (limits 6 %, 10 mm)");
+            }
+            else rep.Info("budget frame line: mass properties or m_frame/x_frame/z_frame not available");
             var plan = Csv(P("cad", "frame", "frame_trims.csv")).Where(r => r.Length >= 4).ToList();
             var cpm = m.Extension.CustomPropertyManager[""];
             int nFeat = 0, nNone = 0; var notDone = new List<string>();
@@ -439,10 +535,78 @@ namespace SwHarness
                      ovs.Count(o => double.IsNaN(o.Item1)) + " not measurable, " + big.Count + " above " + F(OVERLAP_MAX_MM3, "0") + " mm3" +
                      (big.Count > 0 ? ": " + string.Join("; ", big.Take(30).Select(o => o.Item2 + " " + F(o.Item1, "0") + " mm3")) +
                      " (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)" : ""));
+            // every trimmed end must still touch its boundary tubes (a cut that went too far leaves the end floating):
+            // smallest distance from the trimmed body to any of its boundary bodies, ModelDoc2.ClosestDistance (metres)
+            var gaps = OpenEnds(m, fr, plan, out int nEnds, out int nUnmeasured).Select(e => Tuple.Create(e.Gap, e.Tube + " at " + e.Node)).ToList();
+            bodyOf = MatchBodies(Snap(part), fr, out _);
+            var open = gaps.Where(x => x.Item1 > GAP_MAX_MM).OrderByDescending(x => x.Item1).ToList();
+            rep.Note(open.Count == 0 && nUnmeasured == 0, "trimmed ends touching their boundary: " + gaps.Count + " of " + nEnds + " measured, largest gap " +
+                     F(gaps.Count == 0 ? double.NaN : gaps.Max(x => x.Item1), "0.000") + " mm (limit " + F(GAP_MAX_MM, "0.00") + ")" +
+                     (nUnmeasured > 0 ? ", " + nUnmeasured + " not measurable" : "") +
+                     (open.Count > 0 ? "; open: " + string.Join("; ", open.Take(30).Select(x => x.Item2 + " " + F(x.Item1, "0.0") + " mm")) : ""));
+            // how much of each tube is left against its centre-line length: shallow joints gouge a tube along its length
+            var fill = fr.TubeOrder.Where(bodyOf.ContainsKey).Select(id =>
+            {
+                var cv = CentroidVol(bodyOf[id]); double full = fr.TubeVol.TryGetValue(id, out double v) ? v : double.NaN;
+                return Tuple.Create(cv[3] / full, id);
+            }).Where(x => !double.IsNaN(x.Item1)).OrderBy(x => x.Item1).ToList();
+            rep.Info("steel left per tube against its centre-line volume: lowest " + string.Join(", ", fill.Take(12).Select(x => x.Item2 + " " + F(100 * x.Item1, "0") + " %")) +
+                     " (tubes meeting a neighbour at a shallow angle lose a trough along their length)");
             string full = rep.Text("CheckChassis, " + m.GetPathName());
             WriteReport(P("cad", "chassis", "check_chassis_report.txt"), full);
             Log(full);
             return rep.AllPass ? 0 : 1;
+        }
+
+        const double GAP_MAX_MM = 0.05;   // CheckChassis: a trimmed end further than this from all its boundary tubes is floating
+
+        internal class OpenEnd { public string Tube, Node; public List<string> Boundary; public double Gap; }
+
+        /// Every trimmed end of the plan with its smallest distance (mm) to the row's boundary tubes.
+        internal static List<OpenEnd> OpenEnds(ModelDoc2 m, FrameData fr, List<string[]> plan, out int nEnds, out int nUnmeasured)
+        {
+            var bodyOf = MatchBodies(Snap((PartDoc)m), fr, out _);
+            var res = new List<OpenEnd>(); nEnds = 0; nUnmeasured = 0;
+            foreach (var r in plan)
+            {
+                var bnd = r[2].Split(';').Where(bodyOf.ContainsKey).ToList();
+                foreach (var t in r[3].Split(';').Where(bodyOf.ContainsKey))
+                {
+                    nEnds++;
+                    double g = double.MaxValue;
+                    foreach (var b in bnd) { double d = Gap(m, bodyOf[t], bodyOf[b]); if (!double.IsNaN(d)) g = Math.Min(g, d); }
+                    if (g == double.MaxValue) { nUnmeasured++; continue; }
+                    res.Add(new OpenEnd { Tube = t, Node = r[1], Boundary = bnd, Gap = g });
+                }
+            }
+            return res;
+        }
+
+        /// Smallest distance (mm) between two bodies, NaN if SolidWorks cannot measure it. Bodies first; faces if refused.
+        static double Gap(ModelDoc2 m, Body2 a, Body2 b)
+        {
+            try
+            {
+                object p1, p2;
+                double d = m.ClosestDistance(a, b, out p1, out p2);
+                if (d >= 0) return d * 1000;
+            }
+            catch (Exception) { }
+            double best = double.NaN;
+            var fa = (a.GetFaces() as object[] ?? new object[0]).OfType<Face2>().ToList();
+            var fb = (b.GetFaces() as object[] ?? new object[0]).OfType<Face2>().ToList();
+            foreach (var x in fa)
+                foreach (var y in fb)
+                {
+                    try
+                    {
+                        object p1, p2;
+                        double d = m.ClosestDistance(x, y, out p1, out p2);
+                        if (d >= 0 && (double.IsNaN(best) || d * 1000 < best)) best = d * 1000;
+                    }
+                    catch (Exception) { }
+                }
+            return best;
         }
 
         const double DROP_MAX_MM3 = 50;   // a tube may be left out of a trim only if it overlaps the boundary by less than this

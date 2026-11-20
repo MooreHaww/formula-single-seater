@@ -17,6 +17,13 @@ namespace SwHarness
     static class BuildTubes
     {
         const string MAT_DB = "SOLIDWORKS Materials";
+        // Groups built one structural member feature per tube (2026-11-19). Inside one feature with a group per
+        // segment, SolidWorks cuts the groups against each other where they meet: run-through tubes lost 4-9 % of
+        // their steel, and at near-collinear joints a member was cut back past its node (FS2_L-FH_L 8.6-10.9 mm,
+        // RS2_U-RT2 9.0 mm), leaving ends no trim could close. Built alone, every tube runs node to node (volume
+        // 1.000 of its centre-line tube) and TrimTubes copes every joint from frame_trims.csv. The hoop and
+        // hoop_brace groups stay one feature: SolidWorks refuses 12 of their 22 segments as features of their own.
+        static readonly HashSet<string> PER_TUBE = new HashSet<string> { "sis", "bulkhead", "sidepod", "front", "rear" };
 
         public static int Run()
         {
@@ -106,9 +113,10 @@ namespace SwHarness
                 }
                 var segs = segsBy[g];
                 m.ClearSelection2(true);
-                var sm = MakeMember(fm, prof[g], segs, true);
+                bool perFeature = PER_TUBE.Contains(g);
+                var sm = perFeature ? null : MakeMember(fm, prof[g], segs, true);
                 string mode = "one group";
-                if (sm == null)
+                if (sm == null && !perFeature)
                 {
                     m.ClearSelection2(true);
                     sm = MakeMember(fm, prof[g], segs, false);
@@ -123,7 +131,7 @@ namespace SwHarness
                 else
                 {
                     string errB = CreateErrors(fm);
-                    mode = "segment by segment (one feature refused: " + errB + ")";
+                    mode = perFeature ? "one feature per tube" : "segment by segment (one feature refused: " + errB + ")";
                     nOk = 0;
                     var bad = new List<string>();
                     foreach (var seg in segs)

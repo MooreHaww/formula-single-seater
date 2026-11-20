@@ -279,9 +279,11 @@ def box_metrics(path: Path, U: float, x_centre: float, offsets) -> dict:
 
 
 # which CFD run feeds each row of params/aero_variants.csv (default: the run named like the variant).
-# 2026-11-18: C uses CP, i.e. C's wings and floor plan with the SolidWorks nose, sidepods and floor
+# 2026-11-18 (evening): C uses CP, i.e. C's wings and floor plan with the SolidWorks nose, sidepods and floor
 # plate (user's choice). A, B and D are still on the older CFD bodywork.
-TABLE_RUN = {"C": "CP"}
+# 2026-11-18 (late): CP has its own row (the as-built reference the lap sim uses by default) and C is
+# back on run C, so A to D compare like for like on the older bodywork. Every row maps to its own run.
+TABLE_RUN = {}
 
 
 def update_variants(final: dict, force: bool):

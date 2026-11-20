@@ -3,6 +3,107 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-19 night: weldment tubes rebuilt full length, every tube end now meets its neighbour
+
+**Status: finished. One decision waits on you (the m_frame value, below). No commits.**
+- **Rebuild:** `python tools/sw_run.py rebuild`: all 26 steps PASS (00:33 to about 00:55).
+- **Tests:** MATLAB `run_all('test')` 27 of 27 PASS before the rebuild. `read_car_params` has a new line-length check (re-run alone, PASS).
+- **Details:** in the entry at the bottom.
+
+**What was wrong.** CheckChassis now measures every trimmed tube end against its boundary tubes (`ClosestDistance`). 4 of the 196 ends did not touch:
+
+| End | Gap |
+|---|---|
+| FS1_L-FS2_L_R at FS2_L_R | 10.9 mm |
+| RS2_U-RT2_R at RS2_U_R | 9.0 mm |
+| RS2_U-RT2_L at RS2_U_L | 9.0 mm |
+| FS1_L-FS2_L_L at FS2_L_L | 8.6 mm |
+
+- **Not the mitre cuts.** Mitre.cs only removes overhang past the node, 3 to 13 cm³ per cut.
+- **The cause was BuildTubes.** SolidWorks refuses a branched sketch as one group, so each frame group was one structural member feature with one group per segment. Inside one such feature, SolidWorks cuts the groups against each other where they meet:
+  - near-collinear neighbours were cut back past the node (FS2_L-FH_L, RS2_U-RT2), leaving the ends above floating;
+  - run-through tubes lost 4 to 9 % of their steel.
+- **Built alone, every tube runs node to node** (volume 1.000 of its centre-line tube).
+
+**What was tried first.** At the open ends, weldment Trim/Extend features were tried in every form: trim with extension, coped and planar, either tube extended, end butt 1 and 2, and end miter. They closed only one end (RS2_U-RT2_R, by end miter). Each attempt costs a full joint recalculation. The connected-segment options of the structural member did not help either: none is refused outright, and coped and simple-without-protrusion cut more.
+
+**The fix.**
+- BuildTubes builds the sis, bulkhead, sidepod, front and rear groups as one feature per tube. TrimTubes then copes every joint from `frame_trims.csv`.
+- Hoop and hoop_brace stay one feature each, because SolidWorks refuses 12 of their 22 segments on their own. Their ends all touch.
+
+**Weldment before → after:**
+
+| | Before | After |
+|---|---|---|
+| Trimmed weldment (CheckChassis) | 45.30 kg at x 840.3 / z 335.5 mm | **46.68 kg at x 837.9 / z 333.4 mm** |
+| Coped CSV estimate (`frame_trimmed_mass`) | 46.9 kg at 840.7 / 335.3 | 46.81 kg at 839.3 / 335.0 (better search range for shallow joints) |
+| Open trimmed ends | 4 | **0 of 196** (largest gap 0.000 mm) |
+| Cut length against the centre-line sum | +2.1 % | −0.1 % |
+| Trims made (TrimTubes) | 161, 35 not needed | 194, 2 not needed |
+| Untrimmed weldment (BuildTubes) | 47.5 kg | 49.8 kg |
+
+- The tubes that still have little steel left are real copes at shallow joints, for example RRK-RT1 (75 %), FS2_L-FS2_U (80 %) and RT1-RRK_diag (85 %, was 73 %).
+
+**Decision for you: m_frame.**
+- `car_params.txt` still says 47.5 kg, as you asked: "the mass SolidWorks reports for the trimmed weldment". It is now 46.68 kg, because 47.5 was the BuildTubes figure from before the copes.
+- CheckChassis passes at −1.7 % and 3 mm, so nothing is broken.
+- Setting 46.7 kg takes 0.8 kg off the car. Expect about −0.03 s on the autocross, going by the 1.8 kg step yesterday.
+- It needs the same regeneration as yesterday: mass budget, laps, load and stress cases, README, and the 30-minute diagonal search.
+
+**Still open (design, your call):** RT1-RRK_diag runs at 5.4° to both cross tubes it joins (RT1_cross at RT1_R, RRK_cross at RRK_L). The two crosses are only 60 mm apart, so the diagonal lies along them for about 270 mm at each end. It is buildable only as a long gouged joint. Without it, the beam model gives 1476 Nm/deg (−1.8 %) and 0.6 kg less.
+
+## Summary, 2026-11-18 late: frame mass 47.5 kg from the weldment, CP is the as-built aero reference, everything downstream regenerated
+
+> **Partly superseded by the summary above (2026-11-19):** the trimmed weldment is now 46.68 kg, not 45.3 kg, and every tube end touches its neighbour.
+
+**Status: finished, nothing waits on you. No commits.**
+- **Tests:** MATLAB `run_all('test')` 27 of 27 PASS (new: `frame_trimmed_mass`).
+- **Rebuild:** `python tools/sw_run.py rebuild`: all 26 steps PASS, about 20 minutes, peak GDI 2,338. CheckChassis passes the new budget-line check (weldment 45.30 kg at x 840.3 / z 335.5 against the budget 47.5 kg at x 841 / z 335: −4.6 %, within 6 % and 10 mm).
+- **Details:** in the entry at the bottom.
+
+**Car mass, CG and lap times, before and after.** Before = frame 49.3 kg (centre-line tubes). After = frame 47.5 kg at x 841 / z 335 mm, brackets and welds still 6.4 kg on their own line.
+
+| | Before | After |
+|---|---|---|
+| Car without / with driver | 235.6 / 305.6 kg | **233.8 / 303.8 kg** |
+| CG x (behind the front axle) / z, with driver | 902.4 / 312.1 mm | **903.3 / 312.0 mm** |
+| Front weight share | 41.78 % | **41.72 %** |
+
+| Lap time (point-mass / four-wheel) | Before, C (the old reference) | Before, CP | **After, CP (as built, the new reference)** | After, C |
+|---|---|---|---|---|
+| Autocross | 61.09 / 62.21 s | 61.22 / 62.22 s | **61.16 / 62.17 s** | 61.03 / 62.16 s |
+| Fast circuit | 82.58 / 82.78 s | 83.03 / 83.15 s | **82.99 / 83.11 s** | 82.54 / 82.74 s |
+| Skidpad | 4.89 / 5.02 s | 4.90 / 5.02 s | **4.90 / 5.02 s** | 4.89 / 5.02 s |
+| 75 m acceleration | 4.35 s | 4.35 s | **4.35 s** | 4.35 s |
+| Cornering at R 45 m (four-wheel) | 112.3 km/h, −8.7 %, rear limits | 112.4 km/h, −6.5 % | **112.6 km/h, −6.7 %, rear limits** | 112.6 km/h, −8.9 % |
+
+- **Effect of the 1.8 kg lighter frame alone:** −0.06 s on the autocross, −0.03 s on the fast circuit, +0.2 km/h at R 45 m.
+- **Effect of the switch from C to CP (the bodywork):** +0.13 s on the autocross, +0.45 s on the fast circuit. This is what moves the README's headline lap times.
+- **All variants, point-mass, after:** A 66.60 / 84.16, B 61.67 / 79.81, C 61.03 / 82.54, D 60.68 / 84.32, CP 61.16 / 82.99 s (autocross / fast circuit). The ranking is unchanged.
+- **Following-car penalty (CP, its own wake, q 0.64):** +2.13 s autocross, +1.21 s fast circuit (C was +2.15 / +1.23).
+
+**One thing to know about the 47.5 kg.** It is the mass BuildTubes reports for the weldment before the copes are trimmed. The trimmed weldment (chassis.SLDPRT after TrimTubes) reads **45.3 kg** in CheckChassis.
+- My summary of the afternoon called 47.5 kg "the weldment" without saying this. That was imprecise.
+- I used 47.5 kg as you asked, because two independent counts of the steel agree with it within 1 %:
+  - the CSV tubes with each coped end cut back to its neighbour's outside: 46.9 kg (`matlab/cad/frame_trimmed_mass.m`);
+  - the fused solid analysis frame: 47.0 kg.
+- **Why the trimmed weldment is lighter:** a tube-by-tube comparison (`cad/chassis/chassis_tube_mass.csv`, new) shows SolidWorks' trimmed tubes are a median 8 mm shorter than the coped ones. A few tubes at shallow joints lose far more, e.g. RT1-RRK_diag: 438 mm of tube left against 602 mm coped. That fits the mitre-plane cut (`Mitre.cs`) removing tube beyond the cope.
+- Whether those tubes now stop short of their neighbours in the CAD was not checked. It is listed under Next.
+- **CG:** the two methods agree. Coped CSV: x 840.7, z 335.3 mm; SolidWorks trimmed weldment: x 840.3, z 335.5 mm. CheckChassis now compares both against `car_params.txt` (limits 6 % and 10 mm).
+
+**What changed:**
+- **Aero table** (`params/aero_variants.csv`):
+  - row C is back on run C (ClA 3.98, CdA 1.63, front 0.45);
+  - CP has its own row (ClA 3.89, CdA 1.66, front 0.43);
+  - `car_from_params` defaults to CP, and load cases, stress cases, cornering balance, sensitivity, following car and media all use it;
+  - A to D stay as the like-for-like comparison;
+  - one line in `cfd/postprocess.py` (`TABLE_RUN`), so `--update-variants` writes C from run C and CP from run CP.
+- **Stress** (frame_fe tube masses scaled to `m_frame`; stiffness unchanged at 1503 Nm/deg, now 31.6 Nm/deg per kg):
+  - bump 162 MPa, FoS 2.68 (was 163 / 2.67);
+  - corner + brake 107 MPa (was 108);
+  - cornering 109 MPa and braking 86 MPa, unchanged.
+- **Regenerated:** README results and lap tables, `docs/stress_frame.md`, `media/` tables and figures, `sim/stress/`.
+
 ## Summary, 2026-11-18 evening: CFD mesh checks, convergence, wake variant E, SolidWorks bodywork (CP)
 
 **Status: finished, nothing waits on you. No commits.** Only `cfd/`, `cad/generate/cfd_variants.py`, `cad/step/cfd/`, `media/cfd/` and the docs named below were changed. `postprocess.py --selftest` PASS; MATLAB `run_all('test')` 26 of 26 PASS. Full entry at the bottom.
@@ -32,7 +133,7 @@ One entry per session. Newest at the bottom. Each entry: date, ring, what was do
    - **Effect against C:** ClA −2.3 %, CdA +1.8 %, front share 0.43 against 0.45. Lap time +0.13 s autocross, +0.44 s fast circuit.
    - **Unmeasured:** the effect of the radius simplification itself. Estimate: under 0.5 %, from the 0.001 m² frontal-area change.
 
-**Lap sim now uses CP for variant C** (your choice, after the first version of this summary):
+**Lap sim now uses CP for variant C** (your choice, after the first version of this summary; superseded later the same night: row C is back on run C and CP has its own row as the as-built reference, see the summary above):
 - **What changed:** `params/aero_variants.csv` row C is CP's numbers, ClA 3.89, CdA 1.66, front 0.43. `postprocess.py` maps row C to run CP (`TABLE_RUN`).
 - **Lap times for C:** autocross 61.22 s (was 61.09), fast circuit 83.03 s (was 82.58). `media/results_table.md` was regenerated. Ranking unchanged: autocross D < C < B, fast circuit B < C < D.
 - **Caveats:**
@@ -784,3 +885,126 @@ The summary and the rules are at the top of this file. Not touched: `cfd/`, `cad
 **Next:**
 - If the parts bodywork is final, rerun B and D on it and replace the variant table.
 - For a low dirty-air wake, keep the rear wing high and add turbulence low and away from it (ideas in `cfd/variant_E.md`).
+
+## 2026-11-18 (late), Ring 2/4/6: frame mass from the weldment, CP as the as-built aero, regenerated
+
+**Asked:**
+- set `m_frame` to the SOLIDWORKS weldment's 47.5 kg, with brackets and welds kept on their own line;
+- recompute the frame CG from the CSV tube geometry with the same correction;
+- make CFD run CP the as-built aero reference in the lap sim, with B, C and D as the like-for-like comparison;
+- regenerate everything downstream, then a full rebuild.
+
+**Frame mass and CG:**
+- **New `matlab/cad/frame_trimmed_mass.m`:**
+  - **What it does:** cuts each trimmed tube end (from `frame_trims.csv`) back to where its wall leaves the boundary tubes. It samples the wall with 72 lines at the mid-wall radius, each boundary a solid cylinder of its outside radius running away from the node, and takes the mean exit distance.
+  - **Self-test:** a square cope on a straight rail against the elliptic-integral hand value, 9.07 mm.
+  - **Real frame:** 196 trimmed ends, mean retreat 12.3 mm, largest 48 mm. 46.93 kg at 7850 kg/m³ (49.29 kg on centre-lines), centroid x 840.7, y −0.4, z 335.3 mm (838.2 / 334.8 before).
+- **`params/car_params.txt`:**
+  - `m_frame` 47.5 (the weldment, 2.4 % above the coped CSV estimate; the weldment uses AISI 1020 at 7900 kg/m³, the CSV 7850);
+  - `x_frame` 841, `z_frame` 335 (the coped centroid);
+  - `m_brackets_welds` stays 6.4 kg, moved with the frame centroid to x 841.
+- **`mass_budget.m` check:** the frame line is now compared with the coped CSV mass and centroid (warns beyond 1.5 kg or 15 mm), not the centre-line sum.
+- **CheckChassis:**
+  - now writes `cad/chassis/chassis_tube_mass.csv` (volume and centroid per tube);
+  - compares the weldment's mass and centre of mass with the budget line (limits 6 % and 10 mm).
+- **Finding:** the trimmed weldment is 45.30 kg at x 840.3, z 335.5 mm.
+  - The 47.5 kg is BuildTubes' figure, before TrimTubes.
+  - Per tube, the trimmed bodies are a median 8 mm shorter than the coped estimate; mean −15 mm, range −163 to +12 mm.
+  - **Shortest against the cope:** RT1-RRK_diag, RRK_cross, FS2_L-FH_L_R, SP1_L-SP2_U_L/R, FH_M-FH_T_L/R and FS2_U-FH_M_L.
+  - **Cause:** these are shallow joints, where `Mitre.cs` cuts the extension by the mitre plane, which can take tube from inside the cope as well.
+  - **Kept at 47.5 kg as asked.** The coped geometry (46.9) and the solid analysis frame (47.0) both agree with it.
+
+**Aero reference:**
+- **`params/aero_variants.csv`:**
+  - row C restored to run C (it held CP's numbers since this evening's CFD session);
+  - new row CP;
+  - notes as `postprocess.py` writes them.
+- **`read_aero_variants`:** accepts CP and requires it in the repo table.
+- **`car_from_params`:**
+  - accepts CP and defaults to it;
+  - CP falls back to C's row or C's parameter guesses where a table has no CP;
+  - the self-test covers all three.
+- **CP is now the default in:** `load_cases`, `frame_fe`, `cornering_balance_study` (the report header now names the variant), and the `make_media` lap table.
+- **`lap_experiments`:**
+  - runs A, B, C, D and CP;
+  - uses CP for the sweep, the following-car penalty (CP's own wake from `wake_cfd.csv`, q 0.637) and the sensitivity;
+  - the results table has a CP column.
+- **`cfd/postprocess.py`:** `TABLE_RUN = {}`, so `--update-variants` maps every row to its own run. This was the only change in `cfd/`; the CFD session had finished.
+
+**Stress:**
+- **`frame_fe`:** scales the beam tube masses to `m_frame` (factor 0.9638; the same factor for what-if frames) and reports both masses.
+- **Inertia relief:** now finds the case accelerations to 0.1 % (cornering 15.70 against 15.59 m/s² before, when the beams carried 1.8 kg more than the budget).
+- **Results:**
+
+  | Case | Peak, MPa | FoS on yield | Before |
+  |---|---|---|---|
+  | Torsion | 1503 Nm/deg, 197 MPa | — | unchanged |
+  | Cornering | 109 | 3.99 | 109 / 3.98 |
+  | Braking | 86 | 5.07 | 86 / 5.08 |
+  | Bump | 162 | 2.68 | 163 / 2.67 |
+  | Corner + brake | 107 | 4.08 | 108 / 4.02 |
+
+- **Diagonal search, rerun (30 min):** same chosen set. Frame 47.50 kg (+5.56).
+
+**Regenerated:**
+- `sim/stress/load_cases.csv`, `frame_fe_report.txt`, `frame_torsion_loads.csv`, `frame_diagonals.txt`;
+- `media/mass_budget.md` and `.png`, `mass_table.md`, `lap_time_table.md`, `results_table.md`, `lap_times.csv`, `lap_aero_before_after.csv`, `cornering_balance.md` and `_table.csv`;
+- the speed, contour and sensitivity figures, and the frame stress figures;
+- `README.md` results, lap and diagonal tables;
+- `docs/stress_frame.md`.
+- **Not regenerated:** the suspension GIF (no mass input) and `cornering_speed_table.csv` (run_all full only, which writes `cfd/results`).
+
+**Before / after numbers:** in the summary at the top.
+
+**Rebuild:** all 26 steps PASS, about 20 minutes, peak GDI 2,338, exit 0. CheckChassis: budget frame line PASS. The warning about three tube pairs overlapping at shared nodes (largest 333 mm³) is as before.
+
+**Next:**
+- **Mitre cuts at shallow joints:** check whether the trimmed weldment's tubes (RT1-RRK_diag and the others above) still reach their neighbours. If not, limit the mitre cut to the extension beyond the cope.
+- **Brackets and welds:** the 6.4 kg allowance is still a guess (13 % of the centre-line frame). Weigh it once the tabs are drawn.
+
+## 2026-11-19 (night), Ring 2: open tube ends at near-collinear joints, BuildTubes one feature per tube
+
+**Asked:** check whether the trimmed weldment's tubes at shallow joints still reach their neighbours, and fix the CAD if ends float.
+
+**Checks added:**
+- **CheckChassis:**
+  - every trimmed end (tube, node) of `frame_trims.csv` must touch at least one of its boundary tubes, measured by `ModelDoc2.ClosestDistance` on the bodies, with a face-pair fallback (limit 0.05 mm);
+  - writes `cad/chassis/chassis_tube_mass.csv` (volume and centroid per tube);
+  - prints the 12 tubes with the least steel left against their centre-line volume;
+  - the budget frame-line check from the evening.
+- **TrimTubes step 2d:** any end still open after the trims and mitres gets an end-miter `Close_<tube>_<node>`. It is kept only if the result has no error, 124 bodies, a gap of 0.05 mm or less and a mass change under 0.1 kg; otherwise it is deleted.
+  - Trim with extension (coped and planar, either tube extended) and end butt 1 and 2 never closed one of these ends, so they are no longer tried.
+  - The mass check allows the closing features' mass. Its range is now 0.85 to 1.05 of the CSV mass, as in BuildTubes and CheckChassis (a fixed 38 to 46 kg before).
+  - It is not needed since the fix below. It stays as a guard.
+- **`sw_run.py`:** TrimTubes gets 3,600 s. One run with seven closing attempts per end hit the 1,800 s limit. Nothing was saved and the chassis was left as it was.
+
+**Finding:** 4 of 196 ends open (table in the summary at the top). Volumes compared on one-feature-per-tube builds:
+- **FS2_L:** FS1_L-FS2_L runs to its node, but the near-collinear FS2_L-FH_L was cut back 11.4 mm past the node by the structural member. No trim row cuts it there.
+- **RS2_U:** the boundary RS2_L-RS2_U ends at the node, but RS2_U-RT2 (17° off line) was cut back 9.2 mm by the member.
+- **Corner treatment was never on.** Every group was built "one group per segment". Inside one structural member feature, SolidWorks still cuts the groups against each other where they meet.
+- **Connected-segment option** (`InsertStructuralWeldment5`): 0 is refused; CopedCut lets SolidWorks cope (worst tube 0.68 of its length); SimpleCut without protrusion cuts more. None leaves the joints to the plan.
+- **One feature per tube:** every tube 1.000 of its centre-line volume. Hoop and hoop_brace refuse 3 of 12 and 9 of 10 segments as features of their own, with no message; all of them end at FH_T, MH_B or MH_T.
+
+**Changed:**
+- `tools/sw_harness/BuildTubes.cs`: `PER_TUBE` groups (sis, bulkhead, sidepod, front, rear) built one feature per tube.
+- `tools/sw_harness/TrimTubes.cs`: step 2d, the mass range, the end-gap helpers and the CheckChassis additions.
+- `tools/sw_run.py`: the TrimTubes timeout.
+- `params/car_params.txt`: comments only, value unchanged. The first m_frame comment was 588 characters, and SolidWorks did not load that line or the six that use it (BuildLayout FAIL, rebuild stopped). Lines of 483 characters load. The comment is now 395 characters, and the `read_car_params` self-test fails on any line over 500.
+- `matlab/cad/frame_trimmed_mass.m`: the wall-line search reaches far enough for the shallowest joints (`2.2 R / sin(angle)`, up to 1,500 mm). Result 46.81 kg; largest retreat 93 mm.
+- `tools/README.md`: BuildTubes, TrimTubes and CheckChassis rows.
+
+**Checked:**
+- **Rebuild:** all 26 steps PASS.
+  - BuildTubes 49.8 kg, cut length 49.27 m.
+  - TrimTubes 194 trims, 2 not needed, 255 s; the second run changes nothing.
+  - CheckChassis ALL PASS, one warning: two tube pairs overlap at MH_T by 333 mm³; the third pair, at MH_L, is gone.
+  - ChassisStatics unchanged in kind: the three beam studies are set up and not solved, as before.
+  - Views saved.
+- **MATLAB:** `run_all('test')` 27 of 27 PASS.
+- **Not affected:** `FrameAnalysis` (1504 Nm/deg) builds its solid from the frame CSVs, not from the weldment.
+- **Backup:** the chassis before this work is in `cad/chassis/old/` (each `new-chassis` moves the previous file there).
+
+**Next:**
+- **m_frame:** 47.5 or the trimmed weldment's 46.7 kg (your call; regeneration as on 2026-11-18).
+- **RT1-RRK_diag:** keep the 5.4° gouged joint, move it, or drop it (1476 Nm/deg without it).
+- **Brackets and welds:** the 6.4 kg allowance is still a guess.

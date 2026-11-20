@@ -1,13 +1,13 @@
 function out = cornering_balance_study(opts)
 %CORNERING_BALANCE_STUDY Weight distribution and aero balance against the
-%   four-wheel cornering limit (cornering_balance.m), variant C.
+%   four-wheel cornering limit (cornering_balance.m), variant CP (as built) by default.
 %   out = cornering_balance_study()      writes media/cornering_balance.png,
 %                                        media/cornering_balance_table.csv and
 %                                        media/cornering_balance.md
 %   out = cornering_balance_study(opts)  opts.plot, opts.write, opts.radii
 %                                        ([45 100]), opts.wd (front weight
 %                                        fractions), opts.aero (front aero
-%                                        fractions), opts.variant ('C'),
+%                                        fractions), opts.variant ('CP', the as-built car),
 %                                        opts.driver_forward_mm (100)
 %   cornering_balance_study('--selftest')
 %
@@ -35,7 +35,7 @@ if ~isfield(opts, 'plot'), opts.plot = true; end
 if ~isfield(opts, 'write'), opts.write = true; end
 if ~isfield(opts, 'radii'), opts.radii = [45 100]; end
 if ~isfield(opts, 'wd'), opts.wd = [0.35 NaN 0.47]; end   % NaN = the file's own value, filled below
-if ~isfield(opts, 'variant'), opts.variant = 'C'; end
+if ~isfield(opts, 'variant'), opts.variant = 'CP'; end
 if ~isfield(opts, 'driver_forward_mm'), opts.driver_forward_mm = 100; end
 if ~isfield(opts, 'laps'), opts.laps = true; end
 p = read_car_params();
@@ -48,7 +48,7 @@ if ~isfield(opts, 'aero')
     opts.aero = unique(round([0.35, aeroTarget, aeroRef, 0.55], 4));
     opts.aero = opts.aero(~isnan(opts.aero));
 end
-out.aero_front_ref = aeroRef; out.aero_front_target = aeroTarget;
+out.variant = opts.variant; out.aero_front_ref = aeroRef; out.aero_front_target = aeroTarget;
 
 % roll-centre heights from the suspension kinematics (static), else defaults
 try
@@ -175,7 +175,7 @@ end
 
 function print_report(out)
 T = out.T;
-fprintf('\ncornering_balance_study (variant C): grip-limited corner speed, four-wheel model\n');
+fprintf('\ncornering_balance_study (variant %s): grip-limited corner speed, four-wheel model\n', out.variant);
 fprintf('roll centres %.0f / %.0f mm (%s), roll stiffness %.0f %% front\n', 1000 * out.h_rc(1), 1000 * out.h_rc(2), out.h_rc_source, 100 * out.roll_stiff_front);
 for R = unique(T.radius_m).'
     fprintf('  R = %3d m:\n', R);
@@ -306,7 +306,7 @@ ok = ok && height(o.driver.T) == 4 && o.driver.wd(2) > o.driver.wd(1);
 %       balance falls as the front share rises, the balance at the target
 %       must have the sign of (neutral - target).
 g = o.target.T; g = g(g.radius_m == 45, :);
-c = car_from_params('C'); c.h_rc_f = o.h_rc(1); c.h_rc_r = o.h_rc(2); c.aero_front = g.aero_front_neutral;
+c = car_from_params('CP'); c.h_rc_f = o.h_rc(1); c.h_rc_r = o.h_rc(2); c.aero_front = g.aero_front_neutral;
 bN = cornering_balance(c, 45).balance_pct;
 ok = ok && abs(bN) < 0.01 && (sign(g.balance_target_pct) == sign(g.aero_front_neutral - g.aero_front_target) || abs(g.balance_target_pct) < 0.01);
 if ok

@@ -42,45 +42,48 @@ All numbers come from the scripts named in the table, as of 2026-11-18. None of 
 
 | Quantity | Value | Source |
 |---|---|---|
-| Mass, car without / with driver | 235.6 / 305.6 kg, 41.8 % front, CG height 312 mm | `matlab/mass_budget.m`, `media/mass_table.md` |
-| Frame | 124 tubes of 25.4 mm 4130, 49.3 kg (centre-line lengths, no welds) | `matlab/cad/frame_layout.m` |
+| Mass, car without / with driver | 233.8 / 303.8 kg, 41.7 % front, CG 903 mm behind the front axle, 312 mm high | `matlab/mass_budget.m`, `media/mass_table.md` |
+| Frame | 124 tubes of 25.4 mm 4130, 47.5 kg as the SOLIDWORKS weldment (49.3 kg on centre-line lengths, which count each coped end twice); no welds or brackets (6.4 kg allowance on its own line) | `params/car_params.txt`, `matlab/cad/frame_trimmed_mass.m` (CG) |
 | Frame torsional stiffness | 1503 Nm/deg (834 before the 10 torsion diagonals added on 2026-11-18); a fused solid model in SOLIDWORKS Simulation gives 1504 (same load case, 2.9 M-node mesh) | `matlab/stress/frame_fe.m` (beam model), `tools/sw_harness/FrameAnalysis.cs` (solid cross-check) |
-| Frame, lowest factor of safety on yield | 2.67, bump case (3 g total wheel load), nominal beam stress | `matlab/stress/frame_fe.m`, `docs/stress_frame.md` |
+| Frame, lowest factor of safety on yield | 2.68, bump case (3 g total wheel load), nominal beam stress | `matlab/stress/frame_fe.m`, `docs/stress_frame.md` |
 | Camber gain, front / rear | −0.039 / −0.043 deg/mm | `matlab/suspension_geometry.m` |
 | Bump steer over ±30 mm, front / rear | 0.010 / 0.021 deg | same |
 | Static roll centre, front / rear | 60 / 79 mm | same |
 | Motion ratio, front / rear | 0.71 / 0.77 | same |
 | Outer ball joint housing to rim barrel, smallest | 4.0 mm (rear upper joint), with a 12.5 mm housing radius assumed | `matlab/suspension_optimise.m` |
-| Aero, variant C (maximum wings), half-car CFD | ClA 3.98 m², CdA 1.63 m², L/D 2.44, 45 % on the front axle | `media/cfd/cfd_results.md` |
-| Lap time, FS-style autocross, variant C | 61.09 s point-mass, 62.21 s with four-wheel load transfer | `media/lap_time_table.md` |
-| Lap time, fast circuit, variant C | 82.58 s point-mass, 82.78 s four-wheel | same |
-| Wings worth (A no wings → C), autocross / fast circuit | 5.54 s / 1.59 s | same |
-| Skidpad / 75 m acceleration, variant C | 4.89 s / 4.35 s; 0–100 km/h 3.48 s | `matlab/accel_test.m`, lap sim |
-| Simulink 75 m model vs MATLAB | 4.3518 s vs 4.3518 s | `matlab/simulink/run_accel_simulink.m` |
-| Following one car length behind (variant C) | 64 % of the free-stream dynamic pressure in the follower's window; +2.15 s autocross, +1.23 s fast circuit | CFD wake plane, `matlab/lapsim/lap_experiments.m` |
+| Aero, as built (CP: variant C's wings on the SOLIDWORKS nose, sidepods and floor plate), half-car CFD | ClA 3.89 m², CdA 1.66 m², L/D 2.34, 43 % on the front axle (unsteady, mean good to about 1 %) | `media/cfd/cfd_results.md`, `params/aero_variants.csv` |
+| Lap time, FS-style autocross, as built (CP) | 61.16 s point-mass, 62.17 s with four-wheel load transfer | `media/lap_time_table.md`, `media/results_table.md` |
+| Lap time, fast circuit, as built (CP) | 82.99 s point-mass, 83.11 s four-wheel | same |
+| Wings worth (A no wings → C, like for like), autocross / fast circuit | 5.57 s / 1.61 s | same |
+| Skidpad / 75 m acceleration, as built (CP) | 4.90 s / 4.35 s; 0–100 km/h 3.47 s | `matlab/accel_test.m`, lap sim |
+| Simulink 75 m model vs MATLAB (CP) | 4.3492 s vs 4.3492 s | `matlab/simulink/run_accel_simulink.m` |
+| Following one car length behind (CP) | 64 % of the free-stream dynamic pressure in the follower's window (CP's own wake); +2.13 s autocross, +1.21 s fast circuit | CFD wake plane, `matlab/lapsim/lap_experiments.m` |
+| Cornering balance at a 45 m radius (CP, four-wheel) | 112.6 km/h, rear axle at its limit first, balance −6.7 % (front use minus rear use); neutral with 39 % of the aero load on the front axle against the 43 % CP has | `matlab/lapsim/cornering_balance_study.m`, `media/cornering_balance.md` |
 
-### Lap times, all four aero variants (point-mass)
+### Lap times, aero variants (point-mass)
 
-| Track | A no wings | B moderate | C maximum | D wake-tuned |
-|---|---|---|---|---|
-| skidpad | 5.13 s | 4.92 s | 4.89 s | 4.88 s |
-| accel 75 m | 4.41 s | 4.34 s | 4.35 s | 4.34 s |
-| autocross | 66.62 s | 61.72 s | 61.09 s | 60.75 s |
-| fast circuit | 84.17 s | 79.84 s | 82.58 s | 84.34 s |
+A to D are the like-for-like comparison: CFD of each wing set on the older CFD bodywork. CP is the car as built: C's wings on the SOLIDWORKS nose, sidepods and 10 mm floor plate. It is the reference everywhere else in the repo (load cases, stress cases, cornering balance, sensitivity).
 
-On the fast circuit the drag of C and D costs more than their downforce gains, because the car is power-limited on the straights (80 kW).
+| Track | A no wings | B moderate | C maximum | D wake-tuned | **CP as built** |
+|---|---|---|---|---|---|
+| skidpad | 5.12 s | 4.92 s | 4.89 s | 4.88 s | **4.90 s** |
+| accel 75 m | 4.41 s | 4.34 s | 4.35 s | 4.34 s | **4.35 s** |
+| autocross | 66.60 s | 61.67 s | 61.03 s | 60.68 s | **61.16 s** |
+| fast circuit | 84.16 s | 79.81 s | 82.54 s | 84.32 s | **82.99 s** |
+
+On the fast circuit the drag of C and D costs more than their downforce gains, because the car is power-limited on the straights (80 kW). The SOLIDWORKS bodywork costs 0.13 s on the autocross and 0.45 s on the fast circuit against C (ClA −2.3 %, CdA +1.6 %).
 
 ### Frame torsion diagonals: before and after
 
 | | Before | After |
 |---|---|---|
 | Torsional stiffness (through the suspension links) | 834 Nm/deg | 1503 Nm/deg |
-| Frame tubes | 43.5 kg | 49.3 kg |
-| Car without driver | 229.1 kg | 235.6 kg |
-| Autocross, variant C, point-mass / four-wheel | 60.84 / 62.03 s | 61.09 / 62.21 s |
-| Fast circuit, variant C, point-mass / four-wheel | 82.45 / 82.68 s | 82.58 / 82.78 s |
+| Frame tubes (weldment mass; centre-line 43.5 / 49.3 kg) | 41.9 kg | 47.5 kg |
+| Car without driver | 227.5 kg | 233.8 kg |
+| Autocross, as built (CP), point-mass / four-wheel | 60.92 / 61.99 s | 61.16 / 62.17 s |
+| Fast circuit, as built (CP), point-mass / four-wheel | 82.88 / 83.00 s | 82.99 / 83.11 s |
 
-The lap sim treats the chassis as rigid. It therefore shows only the cost of the added mass (+0.25 s on the autocross), not any benefit of the stiffer frame.
+The lap sim treats the chassis as rigid. It therefore shows only the cost of the added mass (+0.24 s on the autocross), not any benefit of the stiffer frame.
 
 The diagonals were chosen by `matlab/stress/frame_diagonal_search.m`: the lightest set that reaches 1500 Nm/deg and clears the driver, battery, motor and diff envelopes. Floor diagonals alone reach 1161 Nm/deg, and floor plus top diagonals reach 1368. The sidepod tops and the front bulkhead plane are also needed.
 

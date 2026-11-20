@@ -1,5 +1,5 @@
-Frame beam FE (matlab/stress/frame_fe.m), 2026-11-18 13:44
-Model: 50 nodes, 124 tubes (one beam element each, rigid joints), frame 49.28 kg; 4130 E 205 GPa, yield 435 MPa, FoS wanted 1.5
+Frame beam FE (matlab/stress/frame_fe.m), 2026-11-18 20:29
+Model: 50 nodes, 124 tubes (one beam element each, rigid joints), frame 47.50 kg (centreline beams 49.28 kg scaled by 0.9638 to the budget's m_frame); 4130 E 205 GPa, yield 435 MPa, FoS wanted 1.5
 Load cases and boundary conditions: docs/stress_frame.md
 
 Pickups -> frame nodes
@@ -16,7 +16,7 @@ Pickups -> frame nodes
   RR tie      -> RS2_L_R   61.9 mm
   RR pushrod  -> RRK_R     22.4 mm
 
-Sprung masses on the frame: 261.2 kg (frame tubes 49.3 kg + items), CG x 940 z 261 mm; unsprung 44.4 kg not on the frame
+Sprung masses on the frame: 259.4 kg (frame tubes 47.5 kg + items), CG x 941 z 261 mm; unsprung 44.4 kg not on the frame
   brackets_welds      6.4 kg on FH_M_R FH_M_L FH_L_R FH_L_L
   battery            45.0 kg on SP1_L_R SP1_L_L SP1_U_R SP1_U_L SP2_L_R SP2_L_L SP2_U_R SP2_U_L
   motor              12.3 kg on MH_M_R MH_M_L RS1_L_R RS1_L_L
@@ -36,62 +36,62 @@ Sprung masses on the frame: 261.2 kg (frame tubes 49.3 kg + items), CG x 940 z 2
   driver             70.0 kg on FH_L_R FH_L_L FH_M_R FH_M_L MH_L_R MH_L_L MH_M_R MH_M_L
 
 Torsion, free-free, 1000 N up and down at the front contact patches and the same torque the other way at the rear, through the links (inertia relief)
-  torque -1194.4 Nm, front twist 0.56620 deg, rear twist -0.22854 deg -> 1503 Nm/deg
+  torque -1194.4 Nm, front twist 0.56613 deg, rear twist -0.22860 deg -> 1503 Nm/deg
   peak von Mises 197.3 MPa in FH_T_cross at FH_T_L
-  twist along the car (rotation about x per station, deg):  x -300: 0.66627  x -160: 0.63479  x -130: 0.62962  x 0: 0.57984  x 140: 0.51074  x 160: 0.48963  x 650: 0.17604  x 1250: -0.09784  x 1485: -0.18786  x 1490: -0.19729  x 1550: -0.23346  x 1690: -0.26418  x 1700: -0.26474
+  twist along the car (rotation about x per station, deg):  x -300: 0.66621  x -160: 0.63473  x -130: 0.62955  x 0: 0.57978  x 140: 0.51068  x 160: 0.48956  x 650: 0.17598  x 1250: -0.09790  x 1485: -0.18792  x 1490: -0.19735  x 1550: -0.23353  x 1690: -0.26425  x 1700: -0.26480
 
 Torsion, free-free, equal and opposite couples front and rear (inertia relief)
-  torque -526.5 Nm, front twist 0.25640 deg, rear twist -0.12355 deg -> 1386 Nm/deg
+  torque -526.5 Nm, front twist 0.25638 deg, rear twist -0.12357 deg -> 1386 Nm/deg
   peak von Mises 85.6 MPa in FH_T_cross at FH_T_L
-  twist along the car (rotation about x per station, deg):  x -300: 0.29086  x -160: 0.28066  x -130: 0.27805  x 0: 0.25655  x 140: 0.23591  x 160: 0.23097  x 650: 0.07953  x 1250: -0.05213  x 1485: -0.10917  x 1490: -0.10078  x 1550: -0.11568  x 1690: -0.13514  x 1700: -0.14879
+  twist along the car (rotation about x per station, deg):  x -300: 0.29084  x -160: 0.28064  x -130: 0.27803  x 0: 0.25653  x 140: 0.23589  x 160: 0.23095  x 650: 0.07951  x 1250: -0.05215  x 1485: -0.10919  x 1490: -0.10080  x 1550: -0.11570  x 1690: -0.13516  x 1700: -0.14881
 
 Torsion, rear wishbone pickups held (x, y, z), front couple
   torque -526.5 Nm, front twist 0.20340 deg, rear twist 0.00000 deg -> 2589 Nm/deg
   peak von Mises 43.7 MPa in FH_T_cross at FH_T_L
   twist along the car (rotation about x per station, deg):  x -300: 0.22682  x -160: 0.22022  x -130: 0.21846  x 0: 0.20385  x 140: 0.18893  x 160: 0.18597  x 650: 0.10194  x 1250: 0.02322  x 1485: 0.00000  x 1490: 0.00063  x 1550: -0.00136  x 1690: -0.00041  x 1700: 0.00000
 
-Mass efficiency: 1503 Nm/deg / 49.3 kg = 30.5 Nm/deg per kg of frame
+Mass efficiency: 1503 Nm/deg / 47.5 kg = 31.6 Nm/deg per kg of frame
 
-Case cornering (load_cases.csv, downforce 1494 N)
-  link forces, N (+ tension): lwb_fwd lwb_aft uwb_fwd uwb_aft tie pushrod; statics residual 3.22e-13
-    FL       754      761     -335     -361      -82     -528
-    FR      -814     -821      564      608      152    -1722
-    RL       943      327     -473     -303      239     -670
-    RR     -1181     -407      681      433     -309    -2089
-  inertia relief: acceleration found [0 -15.7 0] m/s2 (case [0 -15.7 0]), rotation [6.836 -1.779 1.638] rad/s2
-  peak von Mises 109.3 MPa in RRK-RT1_R at RT1_R: factor of safety 3.98 on yield
-  next highest: FS2_L-FH_L_L 81, RS1_U-RT1_R 77, FS2_L-FH_L_R 73, FS2_U-FH_M_L 64, FS2_U-FH_M_R 61
-  max elastic deflection 1.179 mm at FBT_R; largest at a suspension pickup 1.179 mm
+Case cornering (load_cases.csv, downforce 1460 N)
+  link forces, N (+ tension): lwb_fwd lwb_aft uwb_fwd uwb_aft tie pushrod; statics residual 2.68e-13
+    FL       731      738     -327     -352      -80     -508
+    FR      -808     -815      558      601      150    -1680
+    RL       936      325     -470     -301      238     -662
+    RR     -1195     -412      686      437     -312    -2085
+  inertia relief: acceleration found [0 -15.7 0] m/s2 (case [0 -15.7 0]), rotation [6.861 -1.668 1.265] rad/s2
+  peak von Mises 109.1 MPa in RRK-RT1_R at RT1_R: factor of safety 3.99 on yield
+  next highest: FS2_L-FH_L_L 80, RS1_U-RT1_R 77, FS2_L-FH_L_R 72, FS2_U-FH_M_L 63, FS2_U-FH_M_R 60
+  max elastic deflection 1.160 mm at FBT_R; largest at a suspension pickup 1.160 mm
 
-Case braking (load_cases.csv, downforce 3452 N)
-  link forces, N (+ tension): lwb_fwd lwb_aft uwb_fwd uwb_aft tie pushrod; statics residual 6.48e-13
-    FL      3910    -1382    -1900     1056      167    -2476
-    FR      3910    -1382    -1900     1056      167    -2476
-    RL      2616    -1536     -853      497       32    -1640
-    RR      2616    -1536     -853      497       32    -1640
-  inertia relief: acceleration found [14.72 0 0] m/s2 (case [14.72 0 0]), rotation [0.007 -1.262 -0.002] rad/s2
-  peak von Mises 85.7 MPa in RRK-RT1_R at RT1_R: factor of safety 5.08 on yield
-  next highest: RRK-RT1_L 80, RS1_U-RT1_R 52, FS2_L-FH_L_R 52, FS2_L-FH_L_L 51, RS1_U-RT1_L 51
-  max elastic deflection 0.494 mm at FB_L_R; largest at a suspension pickup 0.238 mm
+Case braking (load_cases.csv, downforce 3372 N)
+  link forces, N (+ tension): lwb_fwd lwb_aft uwb_fwd uwb_aft tie pushrod; statics residual 5.63e-13
+    FL      3827    -1371    -1865     1044      164    -2407
+    FR      3827    -1371    -1865     1044      164    -2407
+    RL      2634    -1554     -858      503       29    -1640
+    RR      2634    -1554     -858      503       29    -1640
+  inertia relief: acceleration found [14.71 0 0] m/s2 (case [14.72 0 0]), rotation [0.006 -0.944 -0.002] rad/s2
+  peak von Mises 85.9 MPa in RRK-RT1_R at RT1_R: factor of safety 5.07 on yield
+  next highest: RRK-RT1_L 80, RS1_U-RT1_R 52, RS1_U-RT1_L 51, FS2_L-FH_L_R 50, FS2_L-FH_L_L 50
+  max elastic deflection 0.475 mm at FB_L_R; largest at a suspension pickup 0.230 mm
 
 Case bump (load_cases.csv, downforce 0 N)
-  link forces, N (+ tension): lwb_fwd lwb_aft uwb_fwd uwb_aft tie pushrod; statics residual 5.13e-13
-    FL      1198     1211     -314     -339      -62    -2199
-    FR      1198     1211     -314     -339      -62    -2199
-    RL      1639      576     -596     -390      392    -2966
-    RR      1639      576     -596     -390      392    -2966
-  inertia relief: acceleration found [0 0 19.62] m/s2 (case [0 0 19.62]), rotation [0.007 1.775 0] rad/s2
-  peak von Mises 163.2 MPa in RRK-RT1_R at RT1_R: factor of safety 2.67 on yield
-  next highest: RRK-RT1_L 153, RS1_U-RT1_R 122, RS1_U-RT1_L 119, RRK-RT2_L 76, RRK-RT2_R 75
-  max elastic deflection 0.350 mm at RRK_R; largest at a suspension pickup 0.350 mm
+  link forces, N (+ tension): lwb_fwd lwb_aft uwb_fwd uwb_aft tie pushrod; statics residual 4.59e-13
+    FL      1188     1200     -311     -336      -61    -2180
+    FR      1188     1200     -311     -336      -61    -2180
+    RL      1630      573     -592     -388      390    -2950
+    RR      1630      573     -592     -388      390    -2950
+  inertia relief: acceleration found [0 0 19.62] m/s2 (case [0 0 19.62]), rotation [0.007 1.727 0] rad/s2
+  peak von Mises 162.3 MPa in RRK-RT1_R at RT1_R: factor of safety 2.68 on yield
+  next highest: RRK-RT1_L 152, RS1_U-RT1_R 121, RS1_U-RT1_L 118, RRK-RT2_L 76, RRK-RT2_R 74
+  max elastic deflection 0.348 mm at RRK_R; largest at a suspension pickup 0.348 mm
 
-Case corner_brake (load_cases.csv, downforce 1494 N)
-  link forces, N (+ tension): lwb_fwd lwb_aft uwb_fwd uwb_aft tie pushrod; statics residual 5.57e-13
-    FL      2262       80    -1135      141      -30    -1046
-    FR      2204    -2963    -1112     1745      353    -2170
-    RL      1487     -487     -632       67      168     -686
-    RR      1460    -1957     -254      844     -311    -1437
-  inertia relief: acceleration found [10.3 -10.99 0] m/s2 (case [10.3 -10.99 0]), rotation [4.781 0.743 1.145] rad/s2
-  peak von Mises 108.1 MPa in FS2_L-FH_L_R at FS2_L_R: factor of safety 4.02 on yield
-  next highest: FS2_L-FH_L_L 106, FS2_L-FS2_U_R 85, RRK-RT1_R 79, FS2_U_cross 78, FS2_U-FH_M_L 70
-  max elastic deflection 1.429 mm at FS2_L_R; largest at a suspension pickup 1.429 mm
+Case corner_brake (load_cases.csv, downforce 1460 N)
+  link forces, N (+ tension): lwb_fwd lwb_aft uwb_fwd uwb_aft tie pushrod; statics residual 5.15e-13
+    FL      2218       75    -1116      141      -30    -1020
+    FR      2169    -2935    -1097     1728      349    -2128
+    RL      1486     -488     -632       68      167     -682
+    RR      1464    -1970     -253      850     -315    -1435
+  inertia relief: acceleration found [10.3 -10.99 0] m/s2 (case [10.3 -10.99 0]), rotation [4.798 0.883 0.883] rad/s2
+  peak von Mises 106.7 MPa in FS2_L-FH_L_R at FS2_L_R: factor of safety 4.08 on yield
+  next highest: FS2_L-FH_L_L 105, FS2_L-FS2_U_R 84, RRK-RT1_R 79, FS2_U_cross 77, RS1_L-RS2_L_R 71
+  max elastic deflection 1.418 mm at FS2_L_R; largest at a suspension pickup 1.418 mm

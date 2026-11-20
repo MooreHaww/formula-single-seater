@@ -1,15 +1,19 @@
-ALL PASS (1 warning)   (2026-11-18 10:15, harness swh.exe)  CheckChassis, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+ALL PASS (1 warning)   (2026-11-19 00:39, harness swh.exe)  CheckChassis, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
 
 PASS  bodies: 124 (124 tubes in frame_tubes.csv)
 PASS  one body per tube: 124 of 124 matched
-PASS  cut-list bodies: 124 in 117 items
-PASS  cut length: 47.64 m vs 48.17 m centreline sum in CSV (limit 5 %)
-PASS  mass: 45.30 kg (CSV 49.29 kg; expected 41.9 to 51.8)
-PASS  trim rows done: 161 with a Trim_<node> feature without error, 35 none needed (already cut by the structural members), 196 rows in frame_trims.csv
+INFO  per-tube volume and centroid: cad/chassis/chassis_tube_mass.csv (124 tubes)
+PASS  cut-list bodies: 124 in 116 items
+PASS  cut length: 48.14 m vs 48.17 m centreline sum in CSV (limit 5 %)
+PASS  mass: 46.68 kg (CSV 49.29 kg; expected 41.9 to 51.8)
+PASS  budget frame line: weldment 46.68 kg at x 837.9 y -0.4 z 333.4 mm; car_params m_frame 47.5 kg (-1.7 %) at x 841 z 335 (limits 6 %, 10 mm)
+PASS  trim rows done: 194 with a Trim_<node> feature without error, 2 none needed (already cut by the structural members), 196 rows in frame_trims.csv
 PASS  features with rebuild errors (all features, FeatureManager.GetFeatures): 0
-WARN  tube pairs at a shared node: 543 checked, largest overlap 333 mm3, 0 not measurable, 3 above 200 mm3: MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 333 mm3; MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 333 mm3; FH_L-MH_L_L / MH_L-RS1_L_L at MH_L_L 210 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
+WARN  tube pairs at a shared node: 543 checked, largest overlap 333 mm3, 0 not measurable, 2 above 200 mm3: MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 333 mm3; MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 333 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
+PASS  trimmed ends touching their boundary: 196 of 196 measured, largest gap 0.000 mm (limit 0.05)
+INFO  steel left per tube against its centre-line volume: lowest RRK-RT1_R 75 %, RRK-RT1_L 77 %, FS2_L-FS2_U_L 80 %, FS2_L-FS2_U_R 80 %, FS1_L-FS1_U_R 81 %, FS1_L-FS1_U_L 81 %, RRK_cross 83 %, FH_M-FH_T_R 84 %, FH_M-FH_T_L 84 %, RT1-RRK_diag 85 %, MH_B-RT1_R 85 %, MH_B-RT1_L 85 % (tubes meeting a neighbour at a shallow angle lose a trough along their length)
 
 No failures.
 Warnings (do not fail the step):
-- tube pairs at a shared node: 543 checked, largest overlap 333 mm3, 0 not measurable, 3 above 200 mm3: MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 333 mm3; MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 333 mm3; FH_L-MH_L_L / MH_L-RS1_L_L at MH_L_L 210 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
+- tube pairs at a shared node: 543 checked, largest overlap 333 mm3, 0 not measurable, 2 above 200 mm3: MH_B-MH_T_R / MH_T-RT2_R at MH_T_R 333 mm3; MH_B-MH_T_L / MH_T-RT2_L at MH_T_L 333 mm3 (both tubes are 'trimmed' in frame_trims.csv, neither is cut against the other)
 

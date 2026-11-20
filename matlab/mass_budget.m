@@ -82,18 +82,21 @@ if ~out.file_agrees && isempty(opts.moves)
         '(file %.2f kg, items %.2f kg). An item is missing from the mass_car line.'], opts.file, p.mass_car, out.mass_car);
 end
 
-% the frame line must match what frame_layout.m wrote (CALC means exactly that)
+% the frame line must match the frame CSVs: m_frame is the SolidWorks
+% weldment's mass, x_frame / z_frame the centroid of the CSV tubes with the
+% joint overlaps removed (frame_trimmed_mass.m). Warn if the trimmed CSV mass
+% is more than 1.5 kg (3 %) from m_frame or the centroid more than 15 mm off
+% (the frame changed and the line was not updated)
 out.frame_check = '';
 csvT = fullfile(repo_root(), 'cad', 'frame', 'frame_tubes.csv'); csvN = fullfile(repo_root(), 'cad', 'frame', 'frame_nodes.csv');
+csvP = fullfile(repo_root(), 'cad', 'frame', 'frame_trims.csv');
 iF = find(strcmp(names, 'frame'), 1);
-if ~isempty(iF) && isfile(csvT) && isfile(csvN) && isempty(opts.moves)
-    Tt = readtable(csvT, 'CommentStyle', '#'); Nn = readtable(csvN);
-    pos = containers.Map(Nn.node, num2cell([Nn.x_mm Nn.y_mm Nn.z_mm], 2));
-    cF = zeros(height(Tt), 3);
-    for k = 1:height(Tt), cF(k, :) = (pos(Tt.node_a{k}) + pos(Tt.node_b{k})) / 2; end
-    mF = sum(Tt.mass_kg); cgF = sum(Tt.mass_kg .* cF, 1) / mF;
-    if abs(mF - m(iF)) > 0.5 || abs(cgF(1) - x(iF)) > 15 || abs(cgF(3) - z(iF)) > 15
-        out.frame_check = sprintf('frame_tubes.csv gives %.1f kg at x %.0f z %.0f; the budget says %.1f kg at x %.0f z %.0f. Update m_frame / x_frame / z_frame.', mF, cgF(1), cgF(3), m(iF), x(iF), z(iF));
+if ~isempty(iF) && isfile(csvT) && isfile(csvN) && isfile(csvP) && isempty(opts.moves)
+    ft = frame_trimmed_mass();
+    mF = ft.m_trimmed; cgF = ft.cg_trimmed;
+    out.frame_trimmed = ft;
+    if abs(mF - m(iF)) > 1.5 || abs(cgF(1) - x(iF)) > 15 || abs(cgF(3) - z(iF)) > 15
+        out.frame_check = sprintf('the frame CSVs give %.1f kg at x %.0f z %.0f with the joint overlaps removed (%.1f kg on centrelines); the budget says %.1f kg at x %.0f z %.0f. Update m_frame / x_frame / z_frame.', mF, cgF(1), cgF(3), ft.m_csv, m(iF), x(iF), z(iF));
         warning('mass_budget:frame', '%s', out.frame_check);
     end
 end

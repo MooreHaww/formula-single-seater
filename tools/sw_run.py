@@ -46,7 +46,7 @@ DLLS = ["SolidWorks.Interop.sldworks.dll", "SolidWorks.Interop.swconst.dll", "So
 FW = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319"
 RUN_LOG = os.path.join(REPO, "cad", "harness_runs.log")
 STEP_TIMEOUT_S = 1800
-STEP_TIMEOUTS = {"framesolid": 5400, "frameanalysis": 7200}   # the solid frame studies: union, ~1-3M-node meshes, solves
+STEP_TIMEOUTS = {"framesolid": 5400, "frameanalysis": 7200, "trimtubes": 3600}   # the solid frame studies: union, ~1-3M-node meshes, solves; TrimTubes: each end-closing attempt recalculates all joints
 # SolidWorks' progress pop-up during long operations: a task-dialog template whose child windows hold only
 # these placeholder texts (seen in passing steps; it stayed up 90 s during FrameSolid's long Combine/mesh,
 # 2026-11-17). It asks nothing, so it does not stop a step; the step timeout still applies.

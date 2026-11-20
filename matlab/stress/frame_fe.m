@@ -3,7 +3,7 @@ function out = frame_fe(opts)
 %   out = frame_fe()            all load cases, report and figure
 %   out = frame_fe(opts)        opts.write (true): sim/stress/frame_fe_report.txt,
 %                               opts.plot (true): media/frame_fe_*.png,
-%                               opts.p: parameter struct, opts.variant ('C')
+%                               opts.p: parameter struct, opts.variant ('CP', the as-built car)
 %   frame_fe('--selftest')
 %
 %   Model (written out in docs/stress_frame.md):
@@ -50,7 +50,7 @@ end
 if nargin < 1, opts = struct(); end
 if ~isfield(opts, 'write'), opts.write = true; end
 if ~isfield(opts, 'plot'), opts.plot = true; end
-if ~isfield(opts, 'variant'), opts.variant = 'C'; end
+if ~isfield(opts, 'variant'), opts.variant = 'CP'; end
 if ~isfield(opts, 'p'), opts.p = read_car_params(); end
 p = opts.p;
 root = repo_root();
@@ -59,6 +59,16 @@ if isfield(opts, 'drop_tubes'), fr = drop_tubes(fr, opts.drop_tubes); end     % 
 if isfield(opts, 'extra_tubes'), fr = add_tubes(fr, opts.extra_tubes); end   % what-if: extra 25.4 x 1.6 tubes, node pairs
 mat = material();
 mdl = build_model(fr, mat);
+% tube masses: the beams run node to node, so their steel counts each coped
+% end again inside its neighbour. Scale them to the budget's m_frame (the
+% SolidWorks weldment, 2026-11-18), with the same factor for what-if frames.
+% Stiffness is unchanged; only the inertia-relief masses and kg figures move.
+mdl0 = mdl;
+if isfield(opts, 'drop_tubes') || isfield(opts, 'extra_tubes'), mdl0 = build_model(read_frame(root), mat); end
+out.frame_mass_centreline = sum(mdl.el_mass);
+out.frame_scale = 1;
+if isfield(p, 'm_frame'), out.frame_scale = p.m_frame / sum(mdl0.el_mass); end
+mdl.el_mass = mdl.el_mass * out.frame_scale;
 out.frame = fr; out.mat = mat;
 out.frame_mass = sum(mdl.el_mass);
 
@@ -481,7 +491,7 @@ end
 % output
 function print_summary(out)
 t = out.torsion;
-fprintf('frame_fe: %d nodes, %d tubes, frame %.1f kg\n', size(out.frame.xyz, 1), numel(out.frame.tube), out.frame_mass);
+fprintf('frame_fe: %d nodes, %d tubes, frame %.1f kg (centreline beams %.1f kg)\n', size(out.frame.xyz, 1), numel(out.frame.tube), out.frame_mass, out.frame_mass_centreline);
 fprintf('  torsion (through the links, free-free): %.0f Nm/deg (%.0f Nm, twist %.4f deg), %.1f Nm/deg/kg; peak %.0f MPa in %s\n', ...
     t.k_Nm_deg, abs(t.torque_Nm), t.twist_deg, t.mass_efficiency, t.stress.max, out.frame.tube(t.stress.el));
 fprintf('  torsion (couples at the wishbone nodes, free-free, the SolidWorks set-up): %.0f Nm/deg\n', out.torsion_nodes.k_Nm_deg);
@@ -534,8 +544,8 @@ fid = fopen(f, 'w');
 c = onCleanup(@() fclose(fid));
 fr = out.frame; m = out.mat;
 fprintf(fid, 'Frame beam FE (matlab/stress/frame_fe.m), %s\n', datestr(now, 'yyyy-mm-dd HH:MM'));
-fprintf(fid, 'Model: %d nodes, %d tubes (one beam element each, rigid joints), frame %.2f kg; 4130 E %.0f GPa, yield %.0f MPa, FoS wanted %.1f\n', ...
-    size(fr.xyz, 1), numel(fr.tube), out.frame_mass, m.E / 1e3, m.yield, m.fos_target);
+fprintf(fid, 'Model: %d nodes, %d tubes (one beam element each, rigid joints), frame %.2f kg (centreline beams %.2f kg scaled by %.4f to the budget''s m_frame); 4130 E %.0f GPa, yield %.0f MPa, FoS wanted %.1f\n', ...
+    size(fr.xyz, 1), numel(fr.tube), out.frame_mass, out.frame_mass_centreline, out.frame_scale, m.E / 1e3, m.yield, m.fos_target);
 fprintf(fid, 'Load cases and boundary conditions: docs/stress_frame.md\n\n');
 fprintf(fid, 'Pickups -> frame nodes\n');
 cn = ["FL", "FR", "RL", "RR"]; ln = {'lwb_fwd', 'lwb_aft', 'uwb_fwd', 'uwb_aft', 'tie', 'pushrod'};

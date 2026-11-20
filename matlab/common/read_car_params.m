@@ -132,8 +132,17 @@ end
 % And the real file must load with the key names present
 q = read_car_params();
 ok = ok && all(isfield(q, {'wheelbase', 'mass_car', 'ClA_C', 'motor_power_max'}));
+% SolidWorks drops an equation line longer than about 512 characters (2026-11-19:
+% a 588-character m_frame line was not loaded, nor the six lines using it; lines of
+% 483 load), so the file keeps every line to 500
+txt = splitlines(string(fileread(fullfile(repo_root(), 'params', 'car_params.txt'))));
+long = find(strlength(txt) > 500);
+if ~isempty(long)
+    ok = false;
+    fprintf('car_params.txt: lines over 500 characters (SolidWorks will not load them): %s\n', mat2str(long.'));
+end
 if ok
-    fprintf('read_car_params self-test: PASS (a=1550 b=1200 c=1500 d=3600; real file has %d parameters)\n', numel(fieldnames(q)));
+    fprintf('read_car_params self-test: PASS (a=1550 b=1200 c=1500 d=3600; real file has %d parameters, longest line %d characters)\n', numel(fieldnames(q)), max(strlength(txt)));
 else
     error('read_car_params self-test: FAIL');
 end

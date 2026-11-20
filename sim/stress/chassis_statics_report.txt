@@ -1,17 +1,17 @@
-ALL PASS (3 warnings)   (2026-11-18 10:26, harness swh.exe)  ChassisStatics, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
+ALL PASS (3 warnings)   (2026-11-19 00:51, harness swh.exe)  ChassisStatics, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT
 
 PASS  Simulation add-in: C:\Program Files\SOLIDWORKS Corp\Simulation\cosworks.dll NOT FOUND, LoadAddIn returned -99, CosmosWorks object version 891107
 PASS  frame nodes found as sketch points: 50 of 50
-WARN  Torsion: study set up (124 beams, 16 forces at the frame nodes' sketch points, sum 0, 0, 0 N, meshed 1038 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Torsion.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
-WARN  Braking: study set up (124 beams, 20 forces at the frame nodes' sketch points, sum 4497, 0, 6450 N, meshed 1038 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Braking.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
-WARN  Cornering: study set up (124 beams, 20 forces at the frame nodes' sketch points, sum 0, -4797, 4492 N, meshed 1038 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Cornering.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
+WARN  Torsion: study set up (124 beams, 16 forces at the frame nodes' sketch points, sum 0, 0, 0 N, meshed 1009 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Torsion.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
+WARN  Braking: study set up (124 beams, 20 forces at the frame nodes' sketch points, sum 4470, 0, 6352 N, meshed 1009 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Braking.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
+WARN  Cornering: study set up (124 beams, 20 forces at the frame nodes' sketch points, sum 0, -4768, 4440 N, meshed 1009 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Cornering.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
 PASS  saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\chassis\chassis.SLDPRT with the studies
 
 No failures.
 Warnings (do not fail the step):
-- Torsion: study set up (124 beams, 16 forces at the frame nodes' sketch points, sum 0, 0, 0 N, meshed 1038 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Torsion.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
-- Braking: study set up (124 beams, 20 forces at the frame nodes' sketch points, sum 4497, 0, 6450 N, meshed 1038 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Braking.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
-- Cornering: study set up (124 beams, 20 forces at the frame nodes' sketch points, sum 0, -4797, 4492 N, meshed 1038 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Cornering.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
+- Torsion: study set up (124 beams, 16 forces at the frame nodes' sketch points, sum 0, 0, 0 N, meshed 1009 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Torsion.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
+- Braking: study set up (124 beams, 20 forces at the frame nodes' sketch points, sum 4470, 0, 6352 N, meshed 1009 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Braking.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
+- Cornering: study set up (124 beams, 20 forces at the frame nodes' sketch points, sum 0, -4768, 4440 N, meshed 1009 elements) but NOT solved: the solver reports '**** ERROR: No load or prescribed displacement is defined' (chassis-Cornering.OUT): forces on sketch points are accepted by AddForce2 yet not passed to the beam joints, and the API hands out no joint entity
 
 
 Pickup -> frame node (distance)
@@ -29,16 +29,16 @@ Pickup -> frame node (distance)
   RR pushrod_in  -> RRK_R    22.4 mm
 
 Braking (load_cases.csv 'braking'): link forces, N (+ = tension)
-  FL tyre (1290, 0, 1850): lwb_fwd 4063, lwb_aft -1431, uwb_fwd -1848, uwb_aft 936, tie 245, pushrod -2634  (residual 0.000)
-  FR tyre (1290, 0, 1850): lwb_fwd 4063, lwb_aft -1431, uwb_fwd -1848, uwb_aft 936, tie 245, pushrod -2634  (residual 0.000)
-  RL tyre (958, 0, 1374): lwb_fwd 2847, lwb_aft -1552, uwb_fwd -795, uwb_aft 420, tie -98, pushrod -1787  (residual 0.000)
-  RR tyre (958, 0, 1374): lwb_fwd 2847, lwb_aft -1552, uwb_fwd -795, uwb_aft 420, tie -98, pushrod -1787  (residual 0.000)
+  FL tyre (1268, 0, 1802): lwb_fwd 3979, lwb_aft -1419, uwb_fwd -1812, uwb_aft 923, tie 241, pushrod -2564  (residual 0.000)
+  FR tyre (1268, 0, 1802): lwb_fwd 3979, lwb_aft -1419, uwb_fwd -1812, uwb_aft 923, tie 241, pushrod -2564  (residual 0.000)
+  RL tyre (967, 0, 1375): lwb_fwd 2865, lwb_aft -1570, uwb_fwd -799, uwb_aft 426, tie -101, pushrod -1787  (residual 0.000)
+  RR tyre (967, 0, 1375): lwb_fwd 2865, lwb_aft -1570, uwb_fwd -799, uwb_aft 426, tie -101, pushrod -1787  (residual 0.000)
 
 Cornering (load_cases.csv 'cornering'): link forces, N (+ = tension)
-  FL tyre (0, -456, 427): lwb_fwd 880, lwb_aft 888, uwb_fwd -316, uwb_aft -340, tie -72, pushrod -670  (residual 0.000)
-  FR tyre (0, -1595, 1494): lwb_fwd -772, lwb_aft -778, uwb_fwd 500, uwb_aft 539, tie 133, pushrod -1889  (residual 0.000)
-  RL tyre (0, -577, 541): lwb_fwd 1084, lwb_aft 379, uwb_fwd -438, uwb_aft -285, tie 264, pushrod -804  (residual 0.000)
-  RR tyre (0, -2169, 2031): lwb_fwd -1165, lwb_aft -404, uwb_fwd 589, uwb_aft 377, tie -296, pushrod -2237  (residual 0.000)
+  FL tyre (0, -445, 414): lwb_fwd 856, lwb_aft 865, uwb_fwd -308, uwb_aft -331, tie -70, pushrod -650  (residual 0.000)
+  FR tyre (0, -1570, 1461): lwb_fwd -766, lwb_aft -773, uwb_fwd 494, uwb_aft 532, tie 131, pushrod -1847  (residual 0.000)
+  RL tyre (0, -575, 535): lwb_fwd 1077, lwb_aft 377, uwb_fwd -435, uwb_aft -283, tie 262, pushrod -797  (residual 0.000)
+  RR tyre (0, -2179, 2029): lwb_fwd -1179, lwb_aft -409, uwb_fwd 595, uwb_aft 381, tie -300, pushrod -2232  (residual 0.000)
 
 Why the studies are not solved (SolidWorks 2026 SP2.1 Student, Simulation API, 2026-11-17)
   The chassis is a weldment, so Simulation meshes the tubes as beams and joins them at joints. Beam loads and fixtures go on joints.

@@ -1,7 +1,13 @@
 function car = car_from_params(variant, p, aeroSource)
 %CAR_FROM_PARAMS Build the SI car struct used by every MATLAB model.
-%   car = car_from_params()             variant 'C', params from the repo file
-%   car = car_from_params('B')          chosen aero variant (A, B, C or D)
+%   car = car_from_params()             variant 'CP' (the as-built car: C's
+%                                       wings on the SolidWorks bodywork),
+%                                       params from the repo file
+%   car = car_from_params('B')          chosen aero variant (A, B, C, D or CP;
+%                                       A to D are the like-for-like CFD
+%                                       comparison on the older bodywork).
+%                                       CP falls back to C's numbers where a
+%                                       table or the parameter file has no CP
 %   car = car_from_params('A', p)       from an already-read parameter struct
 %   car = car_from_params('A', p, src)  src = 'table' (default): ClA, CdA and
 %                                       aero_front from params/aero_variants.csv
@@ -24,13 +30,15 @@ if nargin >= 1 && strcmp(variant, '--selftest')
     car = selftest();
     return
 end
-if nargin < 1 || isempty(variant), variant = 'C'; end
+if nargin < 1 || isempty(variant), variant = 'CP'; end
 if nargin < 2 || isempty(p), p = read_car_params(); end
 if nargin < 3, aeroSource = 'table'; end
 variant = upper(char(variant));
-if ~ismember(variant, {'A', 'B', 'C', 'D'})
-    error('car_from_params:variant', 'Variant must be A, B, C or D, got %s', variant);
+if ~ismember(variant, {'A', 'B', 'C', 'D', 'CP'})
+    error('car_from_params:variant', 'Variant must be A, B, C, D or CP, got %s', variant);
 end
+pv = variant;                                   % parameter-file guess: CP has C's wings
+if ~isfield(p, ['ClA_' pv]), pv = strrep(pv, 'CP', 'C'); end
 
 car.variant   = variant;
 car.g         = 9.81;
@@ -47,8 +55,8 @@ car.lsens     = p.tyre_load_sensitivity;
 car.crr       = p.rolling_resistance;
 car.rho       = p.air_density;
 car.A_ref     = p.frontal_area;
-car.ClA       = p.(['ClA_' variant]);
-car.CdA       = p.(['CdA_' variant]);
+car.ClA       = p.(['ClA_' pv]);
+car.CdA       = p.(['CdA_' pv]);
 car.aero_front= p.aero_balance_front;
 car.aero_source = 'car_params.txt first guess';
 car.ClA_range = [NaN NaN]; car.CdA_range = [NaN NaN];
@@ -57,8 +65,10 @@ if ~(ischar(aeroSource) && strcmp(aeroSource, 'params'))
     elseif strcmp(aeroSource, 'table'), V = read_aero_variants();
     else, V = read_aero_variants(aeroSource);
     end
-    if ~isempty(V) && any(V.variant == variant)
-        r = V(V.variant == variant, :);
+    tv = variant;
+    if ~isempty(V) && strcmp(tv, 'CP') && ~any(V.variant == "CP"), tv = 'C'; end   % older table: C's row
+    if ~isempty(V) && any(V.variant == tv)
+        r = V(V.variant == tv, :);
         car.ClA = r.ClA; car.CdA = r.CdA; car.aero_front = r.aero_front;
         car.ClA_range = [r.ClA_lo, r.ClA_hi]; car.CdA_range = [r.CdA_lo, r.CdA_hi];
         car.aero_source = char(r.source);
@@ -101,6 +111,13 @@ V = table("C", 4.5, 1.5, 0.42, NaN, NaN, NaN, NaN, "CFD test row", "", ...
 cC = car_from_params('C', p, V); cB = car_from_params('B', p, V);
 ok = ok && cC.ClA == 4.5 && cC.CdA == 1.5 && cC.aero_front == 0.42 && strcmp(cC.aero_source, 'CFD test row') ...
    && cB.ClA == p.ClA_B && cB.CdA == p.CdA_B && cB.aero_front == p.aero_balance_front;
+% CP (the as-built default): a table without a CP row gives C's row; a CP
+% row wins; the parameter-file guess is C's
+cP = car_from_params('CP', p, V); cD = car_from_params([], p, V);
+V2 = [V; table("CP", 3.9, 1.66, 0.43, NaN, NaN, NaN, NaN, "CFD CP row", "", 'VariableNames', V.Properties.VariableNames)];
+cP2 = car_from_params('CP', p, V2); cP3 = car_from_params('CP', p, 'params');
+ok = ok && cP.ClA == 4.5 && strcmp(cP.variant, 'CP') && strcmp(cD.variant, 'CP') && cD.ClA == 4.5 ...
+   && cP2.ClA == 3.9 && cP2.CdA == 1.66 && cP2.aero_front == 0.43 && cP3.ClA == p.ClA_C;
 if ok
     fprintf('car_from_params self-test: PASS (m=%.0f kg, F_torque_max=%.1f N, v_rpm_max=%.2f m/s)\n', ...
         car.m, car.F_torque_max, car.v_rpm_max);

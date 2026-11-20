@@ -5,8 +5,10 @@ function V = read_aero_variants(file)
 %   read_aero_variants('--selftest')
 %
 %   The table is the ONE file to edit when better aero numbers arrive. One
-%   row per variant (A, B, C, D):
-%     variant      letter
+%   row per variant: A, B, C, D (the like-for-like comparison, CFD on the
+%   older bodywork) and CP (C's wings on the SolidWorks bodywork: the
+%   as-built car, the default of car_from_params):
+%     variant      A, B, C, D or CP
 %     ClA          m2, positive = downforce
 %     CdA          m2
 %     aero_front   fraction of the aero load on the front axle, including the
@@ -51,7 +53,7 @@ end
 if ~isnumeric(V.ClA) || ~isnumeric(V.CdA) || ~isnumeric(V.aero_front)
     error('read_aero_variants:numeric', '%s: ClA, CdA and aero_front must be numbers', file);
 end
-bad = ~ismember(V.variant, ["A", "B", "C", "D"]);
+bad = ~ismember(V.variant, ["A", "B", "C", "D", "CP"]);
 if any(bad), error('read_aero_variants:variant', '%s: unknown variant %s', file, strjoin(V.variant(bad), ', ')); end
 if numel(unique(V.variant)) < height(V), error('read_aero_variants:duplicate', '%s: a variant appears twice', file); end
 if any(isnan(V.ClA) | isnan(V.CdA) | isnan(V.aero_front)) || any(V.CdA <= 0)
@@ -78,9 +80,9 @@ ok = ok && refuses(tmp, 'read_aero_variants:duplicate');
 fid = fopen(tmp, 'w'); fprintf(fid, 'variant,ClA,CdA,aero_front\nB,3,0,0.5\n'); fclose(fid);
 ok = ok && refuses(tmp, 'read_aero_variants:values');
 delete(tmp);
-% the repo's own table, if present, must hold all four variants
+% the repo's own table, if present, must hold all four variants and CP
 R = read_aero_variants();
-ok = ok && (isempty(R) || all(ismember(["A", "B", "C", "D"], R.variant)));
+ok = ok && (isempty(R) || all(ismember(["A", "B", "C", "D", "CP"], R.variant)));
 if ok
     fprintf('read_aero_variants self-test: PASS (two-row file read back: C 4.5 / 1.5 / 0.42; missing file -> empty; duplicate and CdA 0 refused; repo table %d rows)\n', height(R));
 else

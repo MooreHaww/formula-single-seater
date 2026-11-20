@@ -8,7 +8,7 @@ Cross-check: both free-free torsion cases on an analysis-only fused solid frame 
 
 | Item | Choice |
 |---|---|
-| Geometry | `cad/frame/frame_nodes.csv` and `frame_tubes.csv`, the same files the SOLIDWORKS chassis is built from: 50 nodes, 124 tubes, 49.3 kg (since 2026-11-18, with the torsion diagonals; 114 tubes and 43.1–43.5 kg before) |
+| Geometry | `cad/frame/frame_nodes.csv` and `frame_tubes.csv`, the same files the SOLIDWORKS chassis is built from: 50 nodes, 124 tubes, 49.3 kg on centre-line lengths (since 2026-11-18, with the torsion diagonals; 114 tubes and 43.1–43.5 kg before). The tube masses are scaled to the budget's `m_frame`, 47.5 kg (factor 0.964): the centre-line lengths count each coped end again inside its neighbour. Stiffness does not depend on this. |
 | Elements | one 3D Euler-Bernoulli beam per tube, 12 degrees of freedom, rigid joints at the node centres. No joint flexibility, no weld or bracket detail. |
 | Sections | the real tube OD and wall from `frame_tubes.csv`: A, I = π(D⁴−d⁴)/64, J = 2I, Z = I/(D/2) |
 | Material | 4130 normalised: E 205 GPa, G 80 GPa, ρ 7850 kg/m³, yield 435 MPa. Factor of safety wanted: 1.5 on yield. |
@@ -25,14 +25,14 @@ The forces are applied to the frame at the pickups. Each pickup is mapped to its
 
 ### Masses (for inertia relief)
 
-- Frame tubes: half of each tube's mass at each end node.
+- Frame tubes: half of each tube's mass at each end node, scaled to the budget's 47.5 kg (since 2026-11-18 evening; 49.3 kg of centre-line tubes before).
 - Items from `matlab/mass_budget.m` go on the nodes that carry them:
   - driver on the cockpit floor and shoulder nodes;
   - battery on the eight sidepod nodes;
   - wings on their mounting nodes;
   - everything else on the nearest four nodes.
 - Unsprung corners (44.4 kg) are not on the frame.
-- Sprung total on the frame: 254 kg, CG x 958, z 262 mm.
+- Sprung total on the frame: 259.4 kg, CG x 941, z 261 mm.
 
 ### Boundary conditions
 
@@ -42,7 +42,7 @@ A real car has no fixed point. Every case is solved free-free with **inertia rel
 3. Hold a statically determinate 3-2-1 support (FB_L_R in x, y, z; RS2_L_R in y, z; FB_L_L in z). The reactions there are about zero, because the loads now balance.
 4. Remove the mass-weighted rigid motion from the displacements.
 
-The driving cases are checked by the acceleration this finds, which must match the case (all within 0.1 %).
+The driving cases are checked by the acceleration this finds, which must match the case (all within 0.1 % since the frame mass follows the budget; within 1 % before, when the beam tubes carried 1.8 kg more than the budget).
 
 ## Load cases
 
@@ -90,15 +90,15 @@ Target: at least 1500 Nm/deg in the headline case (wheel loads through the links
   - all candidates: subsets in order of added mass. The first one that reaches the target is the lightest.
   - Two diagonals are needed in every set (front box floor and front box top), so they are fixed. 1507 subsets were solved.
 
-**What each family can reach** (new rear hardpoints; 834 Nm/deg and 43.5 kg as built):
+**What each family can reach** (new rear hardpoints; 834 Nm/deg and 41.9 kg without them). Frame kg is the weldment-scaled mass (centre-line × 0.964) since the evening of 2026-11-18; the search picks the same sets either way:
 
 | Diagonals | Best Nm/deg | Frame kg | Reaches 1500? |
 |---|---|---|---|
-| floor only (4 that fit) | 1161 | 45.95 | no |
-| floor + top (8 that fit) | 1368 | 48.22 | no |
+| floor only (4 that fit) | 1161 | 44.29 | no |
+| floor + top (8 that fit) | 1368 | 46.47 | no |
 | every candidate that fits (13) | 1588 | — | yes |
-| **lightest set reaching 1500 (chosen)** | **1503** | **49.28 (+5.76)** | yes |
-| same set but with the footwell floor diagonal instead of the sidepod tops (needs the heel rest 12 mm higher) | 1523 | 48.16 | yes, 1.1 kg lighter |
+| **lightest set reaching 1500 (chosen)** | **1503** | **47.50 (+5.56)** | yes |
+| same set but with the footwell floor diagonal instead of the sidepod tops (needs the heel rest 12 mm higher) | 1523 | 46.4 | yes, 1.1 kg lighter |
 
 **Chosen set:** 10 tubes, in `matlab/cad/frame_layout.m`:
 - Floor:
@@ -122,32 +122,32 @@ The SOLIDWORKS group sizes are unchanged (all 25.4 × 1.6). No new diagonal come
 | Torsion, through the links | 834 Nm/deg | **1503 Nm/deg** |
 | Torsion, couples at the nodes | 758 | 1386 |
 | Torsion, rear held (upper bound) | 1798 | 2589 |
-| Frame tubes | 43.5 kg | 49.3 kg (+5.8) |
-| Stiffness per kg | 19.2 | 30.5 Nm/deg/kg |
+| Frame tubes (weldment-scaled; centre-line 43.5 / 49.3 kg) | 41.9 kg | 47.5 kg (+5.6) |
+| Stiffness per kg | 19.9 | 31.6 Nm/deg/kg |
 | Peak at the test torque | 203 MPa, FH_T_cross | 197 MPa, FH_T_cross |
-| Car without driver (mass budget, brackets and welds scaled to 13 % of the frame) | 228.4 kg | 235.6 kg |
-| CG x, z | 908, 314 mm | 902, 312 mm |
+| Car without driver (mass budget, brackets and welds 13 % of the frame) | 227.5 kg | 233.8 kg |
+| CG x, z (with driver) | 910, 313 mm | 903, 312 mm |
 
 Twist at the test torque fell from 1.43° to 0.79°.
 
 ### Driving cases with the diagonals
 
-These use `load_cases.csv` regenerated at 306 kg with driver.
+These use `load_cases.csv` regenerated at 303.8 kg with driver (frame at the weldment's 47.5 kg) and the as-built aero, CP (ClA 3.89, 43 % front), since the evening of 2026-11-18. Before that: 305.6 kg and variant C (ClA 3.98); every peak moved by 1 MPa or less.
 
 | Case | Peak von Mises, MPa | Where | FoS on yield | Max elastic deflection |
 |---|---|---|---|---|
-| Cornering 1.6 g | 109 | RRK-RT1_R (rear rocker mount) | 3.98 | 1.18 mm at FBT_R |
-| Braking 1.5 g | 86 | RRK-RT1_R | 5.08 | 0.49 mm |
-| Bump 3 g total | 163 | RRK-RT1_R | 2.67 | 0.35 mm |
-| Corner + brake | 108 | FS2_L-FH_L_R | 4.02 | 1.43 mm at FS2_L_R |
+| Cornering 1.6 g | 109 | RRK-RT1_R (rear rocker mount) | 3.99 | 1.16 mm at FBT_R |
+| Braking 1.5 g | 86 | RRK-RT1_R | 5.07 | 0.48 mm |
+| Bump 3 g total | 162 | RRK-RT1_R | 2.68 | 0.35 mm |
+| Corner + brake | 107 | FS2_L-FH_L_R | 4.08 | 1.42 mm at FS2_L_R |
 
-**Bump stress rose, but not because of the diagonals.** It went from 123 MPa (2026-11-17) to 163 MPa. Without the diagonals, on the same loads, it is 168 MPa.
+**Bump stress rose, but not because of the diagonals.** It went from 123 MPa (2026-11-17) to 163 MPa (162 MPa at the weldment mass). Without the diagonals, on the same loads, it is 167 MPa.
 
 The rise comes from the rear suspension re-optimisation for the joint margin. The rear upper inner pivots moved 30 mm outboard, to y 350. RT1/RT2 sit on them, so the rocker-mount tube RRK–RT1 now runs at an angle across 60 mm, where it used to run straight.
 
 Every case is still above the 1.5 FoS wanted on yield. This beam model has no stress concentration, so a factor of 1.5 to 3 at the welds applies on top.
 
-The largest cornering deflection fell from 2.14 mm (FB_U, front bulkhead top) to 1.18 mm. In corner + brake, the deflection at the front pickup FS2_L fell from 1.81 to 1.43 mm.
+The largest cornering deflection fell from 2.13 mm (FB_U, front bulkhead top) to 1.16 mm. In corner + brake, the deflection at the front pickup FS2_L fell from 1.79 to 1.42 mm.
 
 ## Earlier results (frame of 2026-11-17, 43.1 kg, before the diagonals)
 
@@ -239,7 +239,7 @@ The largest pickup deflection, about 1.8 mm in cornering, is at the front. That 
 - **Coped ends:** where `frame_trims.csv` trims a tube at a node, the tube runs to the node centre and is coped against each of its boundary tubes by a cylinder of the boundary tube's radius minus 1.0 mm. The end therefore sits 1.0 mm deep in the neighbour's 1.6 mm wall. The two solids share volume, and the neighbour's bore stays closed. This is the weldment's cope, pushed 1 mm into the wall.
 - **Run-through ends:** where a tube is not trimmed (it runs through, or is one of two collinear halves), it runs OD/2 past the node, so it covers the copes of the tubes trimmed against it, at corners too.
 - **Fusing:** all 124 tubes are united into one body in about 15 s. Count: 196 coped ends, 52 run-through ends. A few cope scraps under 6 mm³ were left out.
-- **Mass:** 47.0 kg of steel, against 49.3 kg for centreline-length tubes. The difference is the tube ends inside their neighbours at the joints.
+- **Mass:** 47.0 kg of steel, against 49.3 kg for centreline-length tubes. The difference is the tube ends inside their neighbours at the joints. The mass budget now uses 47.5 kg (see the end of this section).
 - **Load faces:** a 40 mm cube is imprinted on the body around each of the 20 loaded nodes, which splits the tube faces there.
 
 ### The study
@@ -293,7 +293,7 @@ Once a tube end sits inside its neighbour's wall, the union is the same shape fo
   - the suspension links' own stretch.
 
   A measured frame will be softer than both, by an amount neither model can say. A physical torsion test is the remaining check.
-- **Mass:** the solid has 47.0 kg of steel against frame_fe's 49.3 kg. The beam model counts full centreline lengths, which overlap at the joints. The CAD weldment (47.5 kg in BuildTubes) agrees with the solid. The mass budget's 49.3 kg is therefore about 2 kg (4 %) high for the tubes alone, which is inside the 6.4 kg brackets-and-welds allowance's uncertainty. It was not changed.
+- **Mass:** the solid has 47.0 kg of steel against frame_fe's 49.3 kg. The beam model counts full centreline lengths, which overlap at the joints. The CAD weldment (47.5 kg in BuildTubes) agrees with the solid. Since the evening of 2026-11-18 the mass budget's `m_frame` is 47.5 kg, with its CG from the coped CSV tubes (`matlab/cad/frame_trimmed_mass.m`: 46.9 kg, x 840.7, z 335.3 mm), and frame_fe scales its tube masses to it. The trimmed weldment itself reads 45.3 kg in CheckChassis (x 840.3, z 335.5 mm). It is lighter because the mitre-plane cuts at shallow joints remove more steel than a cope does (docs/log.md, 2026-11-18 late).
 
 ### The earlier attempt (2026-11-17): why the weldment itself could not be used
 

@@ -1,20 +1,20 @@
 frame_diagonal_search: target 1500 Nm/deg (frame_fe torsion through the links, free-free)
-as built: 834 Nm/deg, 43.52 kg
+as built: 834 Nm/deg, 41.94 kg
 
 candidates (25.4 x 1.6 tube; envelope margin beyond the 10 mm rule):
-  F0  floor    nose floor                 alone   851 Nm/deg  +0.45 kg  (margin 343 mm to legs)
-  F1  floor    front box floor            alone   932 Nm/deg  +0.57 kg  (margin 46 mm to legs)
-  F3  floor    cockpit floor              alone  1019 Nm/deg  +0.80 kg  (margin 17 mm to torso)
-  F4  floor    engine bay floor           alone   925 Nm/deg  +0.62 kg  (margin 22 mm to torso)
-  T0  top      nose top                   alone   840 Nm/deg  +0.48 kg  (margin 317 mm to legs)
-  T1  top      front box top              alone   843 Nm/deg  +0.57 kg  (margin 67 mm to legs)
-  T5  top      rear top, fwd of rocker    alone   841 Nm/deg  +0.60 kg  (margin 121 mm to motor)
-  T6  top      rear top, aft of rocker    alone   844 Nm/deg  +0.62 kg  (margin 145 mm to diff)
-  B0  plane    front bulkhead plane       alone   861 Nm/deg  +0.47 kg  (margin 477 mm to legs)
-  B1  plane    FS1 plane                  alone   842 Nm/deg  +0.51 kg  (margin 311 mm to legs)
-  B5  plane    RS2 plane (rear end)       alone   847 Nm/deg  +0.63 kg  (margin 42 mm to diff)
-  P0  sidepod  sidepod floor (both)       alone   885 Nm/deg  +1.21 kg  (margin 2 mm to battery_R)
-  P1  sidepod  sidepod top (both)         alone   852 Nm/deg  +1.21 kg  (margin 5 mm to battery_R)
+  F0  floor    nose floor                 alone   851 Nm/deg  +0.44 kg  (margin 343 mm to legs)
+  F1  floor    front box floor            alone   932 Nm/deg  +0.54 kg  (margin 46 mm to legs)
+  F3  floor    cockpit floor              alone  1019 Nm/deg  +0.77 kg  (margin 17 mm to torso)
+  F4  floor    engine bay floor           alone   925 Nm/deg  +0.59 kg  (margin 22 mm to torso)
+  T0  top      nose top                   alone   840 Nm/deg  +0.46 kg  (margin 317 mm to legs)
+  T1  top      front box top              alone   843 Nm/deg  +0.55 kg  (margin 67 mm to legs)
+  T5  top      rear top, fwd of rocker    alone   841 Nm/deg  +0.58 kg  (margin 121 mm to motor)
+  T6  top      rear top, aft of rocker    alone   844 Nm/deg  +0.59 kg  (margin 145 mm to diff)
+  B0  plane    front bulkhead plane       alone   861 Nm/deg  +0.45 kg  (margin 477 mm to legs)
+  B1  plane    FS1 plane                  alone   842 Nm/deg  +0.49 kg  (margin 311 mm to legs)
+  B5  plane    RS2 plane (rear end)       alone   847 Nm/deg  +0.61 kg  (margin 42 mm to diff)
+  P0  sidepod  sidepod floor (both)       alone   885 Nm/deg  +1.17 kg  (margin 2 mm to battery_R)
+  P1  sidepod  sidepod top (both)         alone   852 Nm/deg  +1.17 kg  (margin 5 mm to battery_R)
 dropped (would hit an envelope):
   F2: 12 mm short of the clearance to legs
   F5: 16 mm short of the clearance to diff
@@ -26,8 +26,8 @@ dropped (would hit an envelope):
   cockpit top (front hoop to main hoop): not a candidate, it is the cockpit opening
   FS2 plane FS2_L_R-FS2_U_L: not a candidate, it crosses the pedal and feet window between the FS2 cross tubes
 
-floor only  : target not reached; best 1161 Nm/deg with all of F0 F1 F3 F4 (45.95 kg), 15 subsets solved
-floor + top : target not reached; best 1368 Nm/deg with all of F0 F1 F3 F4 T0 T1 T5 T6 (48.22 kg), 255 subsets solved
+floor only  : target not reached; best 1161 Nm/deg with all of F0 F1 F3 F4 (44.29 kg), 15 subsets solved
+floor + top : target not reached; best 1368 Nm/deg with all of F0 F1 F3 F4 T0 T1 T5 T6 (46.47 kg), 255 subsets solved
 all candidates together: 1588 Nm/deg
 all candidates less one (a candidate is needed in every set when this is under 97 % of the target):
   without F0   1542 Nm/deg
@@ -44,4 +44,4 @@ all candidates less one (a candidate is needed in every set when this is under 9
   without P0   1517 Nm/deg
   without P1   1499 Nm/deg
 needed in every set: F1 T1
-all candidates: lightest set reaching the target: F1 T1 F0 F3 F4 T0 T5 B0 P1, 1503 Nm/deg, 49.28 kg (+5.76), after 1507 subsets in order of mass
+all candidates: lightest set reaching the target: F1 T1 F0 F3 F4 T0 T5 B0 P1, 1503 Nm/deg, 47.50 kg (+5.56), after 1507 subsets in order of mass

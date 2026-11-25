@@ -6,7 +6,7 @@ One entry per session. Newest at the bottom. Each entry: date, ring, what was do
 ## Summary, 2026-11-25 (CFD session): the aerodynamics made visible: pictures, films, smoke tunnel, explore command
 
 **Status: finished. No new solves, no commits.**
-- **One decision at commit:** whether the 111 MB of pictures and films in `media/cfd/vis/` go into git (they are not ignored).
+- **Films git-ignored** (your choice): `media/cfd/vis/*.mp4` and `*.gif` (about 92 MB), remade by `visualise.py all`. The 21 PNGs (15 MB) stay in git.
 - **Files changed:**
   - new: `cfd/visualise.py`, `vis_common.py`, `vis_render.py`, `vis_smoke.py`, `explore.py`;
   - edited: `cfd/requirements.txt`, `cfd/README.md`, this log;
@@ -1300,5 +1300,5 @@ Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-u
   - In the window, open the other graphics objects from the tree.
 
 **Not done / next:**
-- **Media files are not git-ignored.** `media/cfd/vis/` is 111 MB. Decide at commit whether the films go into git.
+- **Films git-ignored** (user's choice after this entry): `.gitignore` now has `media/cfd/vis/*.mp4` and `*.gif`. Only the 21 PNGs (15 MB) go into git.
 - **The explore windows** have not been opened on screen by me (see above).

@@ -51,6 +51,9 @@ fluent-*.out.bak
 # ---- Generated large media we re-make (keep the PNGs that go in the README) ----
 media/wake/*_u.png
 media/views/
+# CFD films, remade by: .venv/Scripts/python cfd/visualise.py all (the PNGs stay in git)
+media/cfd/vis/*.mp4
+media/cfd/vis/*.gif
 
 # ---- OS / editor ----
 Thumbs.db

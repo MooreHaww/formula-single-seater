@@ -283,7 +283,13 @@ def box_metrics(path: Path, U: float, x_centre: float, offsets) -> dict:
 # plate (user's choice). A, B and D are still on the older CFD bodywork.
 # 2026-11-18 (late): CP has its own row (the as-built reference the lap sim uses by default) and C is
 # back on run C, so A to D compare like for like on the older bodywork. Every row maps to its own run.
-TABLE_RUN = {}
+# 2026-11-25: rows B and D come from B_AB and D_AB (B's and D's aero packages on CP's as-built bodywork),
+# so B, D and CP compare like for like; the old rows are kept in params/aero_variants_simplified_BD.csv.
+TABLE_RUN = {"B": "B_AB", "D": "D_AB"}
+AS_BUILT_RUNS = {"CP", "B_AB", "D_AB"}
+# extra words for the note column (2026-11-25): D's 14 deg diffuser would not mesh on CP's bodywork
+RUN_NOTE = {"D_AB": "; D's DIFFUSER IS 12 deg HERE, NOT 14 deg (14 deg did not mesh on this bodywork); "
+                    "1 prism layer instead of 2 (cell limit; on the old bodywork 1 layer moved ClA -0.2 %, CdA -1.0 %)"}
 
 
 def update_variants(final: dict, force: bool):
@@ -303,7 +309,9 @@ def update_variants(final: dict, force: bool):
                     "note": "range is an ASSUMPTION (+-20 % ClA, +-15 % CdA): mesh checks move ClA < 0.3 % and CdA < 2.4 % but model error is unmeasured; only the ranking of variants is trustworthy"
                             + ("" if not math.isnan(r["aero_front"]) else "; total near zero so aero_front kept from the estimate")
                             + ("; SolidWorks bodywork (nose, sidepods, 10 mm floor plate); unsteady, mean good to about 1 %" if r["run"] == "CP"
-                               else "; older CFD bodywork (not the SolidWorks nose and sidepods)")})
+                               else f"; as-built bodywork of CP (SolidWorks nose, sidepods, 10 mm floor plate), run {r['run']}" if r["run"] in AS_BUILT_RUNS
+                               else "; older CFD bodywork (not the SolidWorks nose and sidepods)")
+                            + RUN_NOTE.get(r["run"], "")})
         changed.append(row["variant"])
     with VARIANTS.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
@@ -315,7 +323,7 @@ def plots(runs, hist, wakes, est, final):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     MEDIA.mkdir(parents=True, exist_ok=True)
-    col = {"A": "#7f7f7f", "B": "#1f77b4", "C": "#d62728", "D": "#2ca02c", "E": "#9467bd", "CP": "#ff7f0e"}
+    col = {"A": "#7f7f7f", "B": "#1f77b4", "C": "#d62728", "D": "#2ca02c", "E": "#9467bd", "CP": "#ff7f0e", "B_AB": "#17becf", "D_AB": "#bcbd22"}
     # ClA vs CdA: CFD (final runs) and the estimates with their ranges
     fig, ax = plt.subplots(figsize=(7, 5.5))
     for v, e in sorted(est.items()):
@@ -386,6 +394,11 @@ def write_md(runs, final, wakes, est, changed, boxes=(), yrows=(), comp=()):
          "test. The absolute ClA, CdA and balance can be off by tens of percent; **only the ranking of the variants "
          "(same meshing settings, same solver settings) is the trustworthy output.** Runs marked *not converged* have "
          "forces still moving by more than 1 % between the last two averaging windows or oscillating more than 2 %.", "",
+         "**Bodywork.** CP, B_AB and D_AB share the as-built bodywork (SOLIDWORKS nose, sidepods, 10 mm floor plate) "
+         "and are the like-for-like comparison; rows B and D of `params/aero_variants.csv` come from B_AB and D_AB "
+         "since 2026-11-25. A, B, C, D, E and the checks are on the older CFD bodywork. **D_AB's diffuser is 12 "
+         "degrees, not D's 14** (14 did not mesh on the as-built bodywork), and D_AB has 1 prism layer instead of 2 "
+         "(cell limit); CP_bl1 is CP with the same 1 layer, for comparison.", "",
          "## All runs", "",
          "| run | cells | iter | ClA (m2) | CdA (m2) | L/D | front axle share | DF drift / band % | drag drift / band % | force-converged |",
          "|---|---|---|---|---|---|---|---|---|---|"]

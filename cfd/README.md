@@ -6,7 +6,7 @@ Ring 5 lives here. Ansys Student 2026 R1 (Fluent), driven entirely from Python (
 |---|---|
 | `fluent_halfcar.py` | Mesh and solve one variant without clicks: `.venv/Scripts/python cfd/fluent_halfcar.py all C`. See `fluent_halfcar_setup.md`. |
 | `postprocess.py` | Forces and wake planes of every run to tables and plots; `--update-variants` puts the CFD numbers into `params/aero_variants.csv` (the lap sim's aero table). |
-| `visualise.py` | Pictures and films of A, B, C (= run CP), D from the saved case and data files, no Fluent licence needed: `.venv/Scripts/python cfd/visualise.py all` (about 8 min once the export cache exists). Steps `export`, `stills`, `anims`, `compare`, `smoke`; `--selftest`. Writes `../media/cfd/vis/`. |
+| `visualise.py` | Pictures and films of A, B (= run B_AB), C (= run CP), D (= run D_AB) from the saved case and data files, no Fluent licence needed: `.venv/Scripts/python cfd/visualise.py all` (about 8 min once the export cache exists). Steps `export`, `stills`, `anims`, `compare`, `smoke`; `--selftest`. Writes `../media/cfd/vis/`. |
 | `vis_common.py`, `vis_render.py`, `vis_smoke.py` | Used by `visualise.py`: streamline tracing and captions; stills, orbit / sweep / build-up films and the A-D comparison; the smoke tunnel films. |
 | `explore.py` | Opens one result ready to explore: `.venv/Scripts/python cfd/explore.py C` (CFD-Post with car Cp, streamlines, wake planes at 1/2/3 L, symmetry speed) or `... C --fluent` (Fluent window with case and data read). `--test` checks it without a window. |
 | `cases/vis/<run>/` | Cache of `visualise.py export` (car surface, 12.5 mm and 30 mm resampled grids, about 260 MB per run) and the CFD-Post session files. Ignored by git; remade on demand. |
@@ -34,6 +34,12 @@ Ring 5 lives here. Ansys Student 2026 R1 (Fluent), driven entirely from Python (
 - New actions in `fluent_halfcar.py`: `post` (re-export wake planes, window boxes and y+ from a saved run) and `cont` (continue a run). New options: `--boi win`, `--set KEY=VALUE`.
 
 **Status 2026-11-25:** pictures and films of the saved results in `../media/cfd/vis/` (`visualise.py`), and `explore.py` to open a result in CFD-Post or Fluent. No new solves. The surface Cp is that of the wall-adjacent cell, and the 3D fields are resampled onto 12.5 mm and 30 mm grids, so the pictures are a little smoother than Fluent's own. Like every number here they are steady RANS on a Student mesh: only the ranking of the variants is trustworthy.
+
+**Status 2026-11-25 (later):**
+- B and D are re-solved on CP's as-built bodywork as runs B_AB and D_AB, and they now feed rows B and D of `params/aero_variants.csv` (`TABLE_RUN` in `postprocess.py`). The old rows are in `params/aero_variants_simplified_BD.csv`.
+- **D_AB's diffuser is 12°, not 14°**, and D_AB has 1 prism layer; CP_bl1 is CP with 1 layer, for comparison. See `geometry_notes.md`.
+- `visualise.py` shows B_AB and D_AB as B and D. The old B and D pictures are in `../media/cfd/vis_old_simplified/` (git-ignored).
+- Only the ranking is trustworthy.
 
 ## forces.csv columns
 

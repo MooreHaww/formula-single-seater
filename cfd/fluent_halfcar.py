@@ -48,9 +48,11 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-GEO = ROOT / "cad" / "step" / "cfd"
+# CFD_GEO_DIR / CFD_RESULTS_DIR (optional): read the geometry from, and write run results to, another folder
+# (used for throw-away diagnosis meshes so they stay out of cad/step/cfd and cfd/results)
+GEO = Path(os.environ.get("CFD_GEO_DIR") or ROOT / "cad" / "step" / "cfd")
 CASES = ROOT / "cfd" / "cases"
-RESULTS = ROOT / "cfd" / "results"
+RESULTS = Path(os.environ.get("CFD_RESULTS_DIR") or ROOT / "cfd" / "results")
 ALLOW_OVER = False                      # --allow-over: write a mesh above the limit (only to test what the licence does)
 STUDENT_CELL_LIMIT = 1_048_576          # Ansys Student 2026 R1: Fluent refuses more cells (see cfd/fluent_halfcar_setup.md)
 CELL_TARGET = (800_000, 1_000_000)

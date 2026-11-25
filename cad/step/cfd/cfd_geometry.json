@@ -607,6 +607,175 @@
     "te_z": 1510.4,
     "endplate_top_z": 1550.4
    }
+  },
+  "B_AB": {
+   "variant": "B_AB",
+   "seconds": 25.3,
+   "car_bbox_mm": [
+    -1060.0,
+    2320.0,
+    -0.0,
+    806.0,
+    30.0,
+    1474.74
+   ],
+   "car_volume_m3": 0.4379,
+   "frontal_area_half_m2": {
+    "car": 0.5839,
+    "wheels": 0.0923,
+    "all": 0.6194
+   },
+   "frontal_area_full_m2": 1.2389,
+   "wetted_area_half_m2": {
+    "car_body": 2.8213,
+    "car_floor": 0.8647,
+    "car_fw": 1.6167,
+    "car_rw": 2.4479,
+    "wheel_front": 0.5335,
+    "wheel_rear": 0.5335
+   },
+   "faces": {
+    "car_body": 124,
+    "car_floor": 8,
+    "car_fw": 29,
+    "car_rw": 26,
+    "ground": 1,
+    "inlet": 1,
+    "outlet": 1,
+    "side": 1,
+    "symmetry": 2,
+    "top": 1,
+    "wheel_front": 9,
+    "wheel_rear": 9
+   },
+   "n_faces": 212,
+   "contact_patch_mm": {
+    "front": {
+     "length": 143.2,
+     "width": 172.1,
+     "area_mm2": 23497.9
+    },
+    "rear": {
+     "length": 143.2,
+     "width": 172.1,
+     "area_mm2": 23497.9
+    }
+   },
+   "floor": {
+    "diffuser": false,
+    "plate_mm": 10.0
+   },
+   "domain_mm": {
+    "xmin": -11200.0,
+    "xmax": 29360.0,
+    "ymin": 0.0,
+    "ymax": 6450.0,
+    "zmin": 0.0,
+    "zmax": 6200.0,
+    "car_length": 3380.0,
+    "car_width": 1612.0,
+    "car_height": 1550.3864066933083
+   },
+   "front_wing": {
+    "le_x": -960.0,
+    "le_z": 98.1,
+    "te_x": -287.6,
+    "te_z": 335.2,
+    "z_min": 60.0
+   },
+   "rear_wing": {
+    "le_x": 1564.5,
+    "le_z": 1150.0,
+    "te_x": 2300.0,
+    "te_z": 1434.7,
+    "endplate_top_z": 1474.7
+   }
+  },
+  "D_AB": {
+   "variant": "D_AB",
+   "seconds": 33.4,
+   "car_bbox_mm": [
+    -1060.0,
+    2320.0,
+    -0.0,
+    846.0,
+    30.0,
+    1579.11
+   ],
+   "car_volume_m3": 0.4435,
+   "frontal_area_half_m2": {
+    "car": 0.6926,
+    "wheels": 0.0923,
+    "all": 0.7186
+   },
+   "frontal_area_full_m2": 1.4371,
+   "wetted_area_half_m2": {
+    "car_body": 2.7543,
+    "car_floor": 1.6003,
+    "car_fw": 1.6405,
+    "car_rw": 2.7128,
+    "wheel_front": 0.5335,
+    "wheel_rear": 0.5335
+   },
+   "faces": {
+    "car_body": 122,
+    "car_floor": 29,
+    "car_fw": 40,
+    "car_rw": 46,
+    "ground": 1,
+    "inlet": 1,
+    "outlet": 1,
+    "side": 1,
+    "symmetry": 1,
+    "top": 1,
+    "wheel_front": 9,
+    "wheel_rear": 9
+   },
+   "n_faces": 261,
+   "contact_patch_mm": {
+    "front": {
+     "length": 143.2,
+     "width": 172.1,
+     "area_mm2": 23497.9
+    },
+    "rear": {
+     "length": 143.2,
+     "width": 172.1,
+     "area_mm2": 23497.9
+    }
+   },
+   "floor": {
+    "diffuser": true,
+    "plate_mm": 10.0,
+    "angle_deg": 12.0,
+    "x_exit": 2150.0,
+    "z_exit": 177.53393700201326
+   },
+   "domain_mm": {
+    "xmin": -11200.0,
+    "xmax": 29360.0,
+    "ymin": 0.0,
+    "ymax": 6450.0,
+    "zmin": 0.0,
+    "zmax": 6200.0,
+    "car_length": 3380.0,
+    "car_width": 1612.0,
+    "car_height": 1550.3864066933083
+   },
+   "front_wing": {
+    "le_x": -960.0,
+    "le_z": 94.0,
+    "te_x": -322.9,
+    "te_z": 395.7,
+    "z_min": 60.0
+   },
+   "rear_wing": {
+    "le_x": 1623.0,
+    "le_z": 1150.0,
+    "te_x": 2300.0,
+    "te_z": 1539.1,
+    "endplate_top_z": 1579.1
+   }
   }
  },
  "variant_defs": {
@@ -635,6 +804,16 @@
   "CP": {
    "base": "C",
    "body": "parts"
+  },
+  "B_AB": {
+   "base": "B",
+   "body": "parts",
+   "sym_split_z": 1050.0
+  },
+  "D_AB": {
+   "base": "D",
+   "body": "parts",
+   "diffuser_angle": 12.0
   }
  }
 }

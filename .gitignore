@@ -54,6 +54,8 @@ media/views/
 # CFD films, remade by: .venv/Scripts/python cfd/visualise.py all (the PNGs stay in git)
 media/cfd/vis/*.mp4
 media/cfd/vis/*.gif
+# old B and D pictures (simplified CFD bodywork), kept locally after B and D moved to the as-built bodywork (2026-11-25)
+media/cfd/vis_old_simplified/
 
 # ---- OS / editor ----
 Thumbs.db

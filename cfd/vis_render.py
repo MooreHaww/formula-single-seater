@@ -521,8 +521,7 @@ def compare(datas):
     bar = colorbar_strip("Cp", "surface pressure coefficient Cp (blue = suction)", int(0.6 * img.width))
     out = frame_with_text(img, "Variants A, B, C, D side by side: where the downforce comes from, and the wake",
                           "Same colour scales in every column. Downforce by part from Fluent's force reports (mean of the "
-                          "last 200 iterations). C is run CP (SolidWorks bodywork); A, B and D have the older CFD "
-                          "bodywork. " + CAPTION, bar)
+                          "last 200 iterations). B, C and D are runs B_AB, CP and D_AB. " + CAPTION, bar)
     save(out, "compare_ABCD.png")
     compare_video(datas, parts)
 

@@ -6,10 +6,13 @@ Reads cfd/cases/halfcar_<run>.cas.h5 + .dat.h5 with VTK's Fluent CFF reader
 
 Variants (labels in every picture):
     A  run A   no wings
-    B  run B   moderate wings
-    C  run CP  maximum wings, SolidWorks bodywork (as built; the lap sim uses it)
-    D  run D   wake-tuned
-A, B and D have the older CFD bodywork (see cfd/geometry_notes.md).
+    B  run B_AB  moderate wings, as-built bodywork
+    C  run CP    maximum wings, as-built (SolidWorks) bodywork (the lap sim uses it)
+    D  run D_AB  wake-tuned, as-built bodywork, diffuser 12 deg (NOT D's 14 deg:
+                 14 deg did not mesh on this bodywork), 1 prism layer
+B, C and D share the as-built bodywork (SolidWorks nose, sidepods, 10 mm floor
+plate) since 2026-11-25; A has the older CFD bodywork (see cfd/geometry_notes.md).
+The old B and D pictures (older bodywork) are in media/cfd/vis_old_simplified/.
 
 Steps (each reads what the step before it wrote):
     export   case/data -> cfd/cases/vis/<run>/ (git-ignored cache):
@@ -64,9 +67,9 @@ def slice_x(n_l: float) -> float:
 
 VARIANTS = {   # label -> (run folder, title)
     "A": ("A", "A  no wings"),
-    "B": ("B", "B  moderate wings"),
+    "B": ("B_AB", "B  moderate wings, as-built bodywork (run B_AB)"),
     "C": ("CP", "C  max wings, SolidWorks bodywork (run CP)"),
-    "D": ("D", "D  wake-tuned"),
+    "D": ("D_AB", "D  wake-tuned, as-built bodywork, diffuser 12° not 14° (run D_AB)"),
 }
 SMOKE_VARIANTS = ("C", "D", "A")
 
@@ -79,9 +82,11 @@ CAR_BOX = ((-1.30, 2.60), (2e-4, 0.95), (2e-4, 1.70))   # boundary faces inside 
 # common colour scales (the same in every picture, so variants compare side by side)
 CLIM = {"Cp": (-3.0, 1.0), "speed": (0.0, 1.4), "deficit": (0.0, 0.6), "k": (0.0, 8.0), "wx": (-200.0, 200.0)}
 CMAP = {"Cp": "RdBu_r", "speed": "turbo", "deficit": "magma", "k": "viridis", "wx": "coolwarm"}
-CAPTION = ("Steady RANS (k-omega SST), half car mirrored, Student mesh of about 1 million cells, 20 m/s. "
+BODY_NOTE = ("B, C and D are on the same as-built bodywork (D's diffuser is 12 degrees here, not 14); "
+             "A is on the older CFD bodywork. ")
+CAPTION = (BODY_NOTE + "Steady RANS (k-omega SST), half car mirrored, Student mesh of about 1 million cells, 20 m/s. "
            "Only the ranking of the variants is trustworthy, not the absolute values.")
-SMOKE_CAPTION = ("Steady-state RANS solution: the smoke shows time-averaged streamlines, not real unsteady "
+SMOKE_CAPTION = (BODY_NOTE + "Steady-state RANS solution: the smoke shows time-averaged streamlines, not real unsteady "
                  "turbulence. Only the ranking of the variants is trustworthy.")
 
 

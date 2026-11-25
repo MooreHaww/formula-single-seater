@@ -62,16 +62,39 @@ All numbers come from the scripts named in the table, as of 2026-11-25. None of 
 
 ### Lap times, aero variants (point-mass)
 
-A to D are the like-for-like comparison: CFD of each wing set on the older CFD bodywork. CP is the car as built: C's wings on the SOLIDWORKS nose, sidepods and 10 mm floor plate. It is the reference everywhere else in the repo (load cases, stress cases, cornering balance, sensitivity).
+CP is the car as built: C's wings on the SOLIDWORKS nose, sidepods and 10 mm floor plate. It is the reference everywhere else in the repo (load cases, stress cases, cornering balance, sensitivity). Since 2026-11-25, **B and D are on the same as-built bodywork as CP** (CFD runs B_AB and D_AB), so B, D and CP compare like for like. A and C are still on the older CFD bodywork.
 
-| Track | A no wings | B moderate | C maximum | D wake-tuned | **CP as built** |
+**D's diffuser is 12° in this comparison, not 14°.** The 14° diffuser would not mesh on the as-built bodywork. D_AB was also meshed with 1 prism layer instead of 2, to stay under the cell limit; on the old bodywork that change moved ClA by −0.2 % and CdA by −1.0 %. The old B and D results (older bodywork, 14° diffuser) are in `params/aero_variants_simplified_BD.csv`.
+
+| Track | A no wings | B moderate, as built | C maximum | D wake-tuned, as built, 12° diffuser | **CP as built** |
 |---|---|---|---|---|---|
-| skidpad | 5.12 s | 4.92 s | 4.89 s | 4.88 s | **4.89 s** |
+| skidpad | 5.12 s | 4.92 s | 4.89 s | 4.89 s | **4.89 s** |
 | accel 75 m | 4.41 s | 4.34 s | 4.35 s | 4.34 s | **4.35 s** |
-| autocross | 66.59 s | 61.64 s | 60.99 s | 60.65 s | **61.12 s** |
-| fast circuit | 84.15 s | 79.79 s | 82.52 s | 84.31 s | **82.97 s** |
+| autocross | 66.59 s | 61.72 s | 60.99 s | 60.90 s | **61.12 s** |
+| fast circuit | 84.15 s | 79.90 s | 82.52 s | 84.26 s | **82.97 s** |
 
 On the fast circuit the drag of C and D costs more than their downforce gains, because the car is power-limited on the straights (80 kW). The SOLIDWORKS bodywork costs 0.13 s on the autocross and 0.45 s on the fast circuit against C (ClA −2.3 %, CdA +1.6 %).
+
+### B, D and CP on the same as-built bodywork
+
+From half-car CFD at 20 m/s. Steady RANS on a Student mesh, so **only the ranking is trustworthy**. Wake q-ratio is the follower's window average at 1 / 2 / 3 car lengths behind the rear axle (1 = clean air). Lap times are point-mass. The following penalty puts the same car behind, one length back, in that variant's own wake.
+
+| | B (as built) | D (as built, **12° diffuser**) | CP (as built) | B old | D old |
+|---|---|---|---|---|---|
+| ClA / CdA (m²) | 3.36 / 1.32 | 4.03 / 1.76 | 3.89 / 1.66 | 3.43 / 1.29 | 4.20 / 1.77 |
+| L/D, front axle share | 2.54, 0.43 | 2.29, 0.39 | 2.34, 0.43 | 2.65, 0.45 | 2.38, 0.38 |
+| Wake q-ratio at 1 / 2 / 3 L | 0.67 / 0.89 / 0.95 | 0.65 / 0.92 / 0.98 | 0.64 / 0.92 / 0.98 | 0.66 / 0.86 / 0.93 | 0.65 / 0.92 / 0.97 |
+| Skidpad / autocross / fast circuit (s) | 4.92 / 61.72 / 79.90 | 4.89 / 60.90 / 84.26 | 4.89 / 61.12 / 82.97 | 4.92 / 61.64 / 79.79 | 4.88 / 60.65 / 84.31 |
+| Following penalty, autocross / fast circuit (s) | +1.69 / +1.14 | +2.14 / +1.14 | +2.14 / +1.21 | +1.80 / +1.23 | +2.21 / +1.09 |
+
+On the as-built bodywork:
+- B loses 2 % of its old downforce and D 4 %. Part of D's loss is the shallower 12° diffuser.
+- The ranking is unchanged from the old bodywork:
+  - D is fastest on the skidpad and autocross.
+  - B is fastest on the power-limited fast circuit.
+  - B leaves the cleanest air at 1 L.
+  - D and CP clean up faster by 2 to 3 L.
+Full tables: `media/cfd/cfd_results.md`, `media/results_table.md`, `media/lap_as_built_BD.csv`.
 
 ### Frame torsion diagonals: before and after
 
@@ -109,6 +132,7 @@ These are the things the numbers above depend on that were not measured, or were
 - **Aero.**
   - The CFD is a half car, steady RANS (k-ω SST), one mesh per variant, with no mesh-independence or y+ study and no wind-tunnel or track comparison. Only the ranking of the variants is trustworthy; the absolute ClA and CdA may be off by tens of percent.
   - Variant A's downforce did not converge.
+  - B and D were re-solved on the as-built bodywork (runs B_AB, D_AB). **D's diffuser there is 12°, not D's 14°:** at 14° the diffuser roof grazes the as-built hull, and the two fixes tried failed to mesh. D_AB has 1 prism layer instead of 2 (cell limit). A and C stay on the older CFD bodywork.
   - The front/rear aero split is an estimate. The balance target used for trimming (0.40 front) is a target, not a result.
 - **CFD mesh limit.** The Ansys Student licence stops at 1,048,576 cells (measured: above that, Fluent Meshing exits without writing a mesh). The meshes are 0.27 to 1.04 M cells, so the near-wall resolution and the far wake are coarse.
 - **Roll centres** are static: computed at ride height and held fixed with roll in the cornering model.

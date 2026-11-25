@@ -3,6 +3,34 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-25 (CFD session, evening): B and D on the as-built bodywork (B_AB, D_AB)
+
+**How I read the brief:**
+- "Exactly CP's settings" means CP's mesh sizes and solver settings. The two exceptions are written next to each result.
+- D's fallback (b) is the 12° diffuser, used only after two option-(a) fixes failed.
+- "Old B / old D" means the earlier runs on the simplified CFD bodywork.
+
+**Before:**
+- B and D in `params/aero_variants.csv` were on the older simplified CFD bodywork, so only CP was on the as-built bodywork.
+- The pictures showed old B and D.
+
+**After:**
+- B_AB and D_AB are meshed, solved, checked, and feed rows B and D. CP stays the default.
+- **D_AB's diffuser is 12°, not 14°.** 14° would not mesh on the as-built hull. D_AB also has 1 prism layer instead of 2 (cell limit), and CP_bl1 (CP with 1 layer) is its like-for-like partner.
+- Lap sim section 6 ran (hand-checked), the docs are updated, and all tests pass. The pictures and films are re-made with B_AB and D_AB; the old ones are in `media/cfd/vis_old_simplified/` (git-ignored).
+
+| | B_AB | D_AB (12°, 1 layer) | CP | CP_bl1 (1 layer) | B old | D old |
+|---|---|---|---|---|---|---|
+| cells | 953,238 | 1,002,218 | 1,007,086 | 918,527 | 900,187 | 1,042,343 |
+| ClA / CdA | 3.36 / 1.32 | 4.03 / 1.76 | 3.89 / 1.66 | 3.98 / 1.67 | 3.43 / 1.29 | 4.20 / 1.77 |
+| front share | 0.43 | 0.39 | 0.43 | 0.43 | 0.45 | 0.38 |
+| q-ratio 1 / 2 / 3 L | 0.67 / 0.89 / 0.95 | 0.65 / 0.92 / 0.98 | 0.64 / 0.92 / 0.98 | 0.65 / 0.91 / 0.97 | 0.66 / 0.86 / 0.93 | 0.65 / 0.92 / 0.97 |
+| autocross / fast circuit (s) | 61.72 / 79.90 | 60.90 / 84.26 | 61.12 / 82.97 | 60.99 / 82.98 | 61.64 / 79.79 | 60.65 / 84.31 |
+
+**Caveats:**
+- Steady RANS on a Student mesh: **only the ranking is trustworthy.**
+- CP itself is unsteady (downforce band 2.5 %), and CP_bl1 differs from CP by +2.2 % ClA, which is larger than D_AB's lead over CP_bl1 (+1.3 %).
+
 ## Summary, 2026-11-25 (CFD session): the aerodynamics made visible: pictures, films, smoke tunnel, explore command
 
 **Status: finished. No new solves, no commits.**
@@ -1302,3 +1330,123 @@ Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-u
 **Not done / next:**
 - **Films git-ignored** (user's choice after this entry): `.gitignore` now has `media/cfd/vis/*.mp4` and `*.gif`. Only the 21 PNGs (15 MB) go into git.
 - **The explore windows** have not been opened on screen by me (see above).
+
+## 2026-11-25 (CFD session), Ring 5: B and D re-solved on the as-built bodywork (B_AB, D_AB)
+
+**Reading taken (user away, no questions):**
+- **B_AB and D_AB** = variant B's and D's complete aero packages on CP's as-built bodywork, which is the same hull, sidepods, 10 mm floor plate, wheels and corner radii as CP.
+  - Each package keeps its own wing angles.
+  - D also keeps its endplate fins, beam wing and 14° diffuser.
+  - B has no diffuser, because that is how variant B is defined.
+  - Built by `cad/generate/cfd_variants.py` with `{"base": "B"/"D", "body": "parts"}`, exactly as CP is `{"base": "C", "body": "parts"}`.
+- **Why B keeps "no diffuser":** taking "only wing settings" literally would give B C's diffuser. Then B_AB would no longer be variant B, and the old-B to B_AB comparison would mix bodywork with a diffuser change.
+- **Solver and mesh:** the same command as CP, `cfd/fluent_halfcar.py all <V>` with the defaults: scale 2.0, the same sizes, 2 prism layers, k-omega SST, 20 m/s, moving ground, rotating wheels, the force-based stop and a 1200-iteration cap.
+- **Cell budget:** B_AB should fit (estimate CP + (B − C) ≈ 0.95 M). D_AB may not (estimate ≈ 1.09 M); if not, see the steps below.
+
+**Progress:**
+- **Step 1 (geometry), done:** `cfd_variants.py --only B_AB,D_AB` built both variants; 19 of 19 checks passed (new entries in `VARIANT_DEFS`).
+- **Step 2 (meshes), BLOCKED, first attempt failed for both:**
+  - **D_AB:** Fluent Meshing failed with "Breakout detected" and 360 self-intersections; no cells were made (`cfd/cases/mesh_D_AB.log`).
+    - Its sliver faces are the same ones that meshed fine in old D and CP.
+    - Suspect: D's 14° diffuser on CP's 10 mm floor plate (CP has 12°, old D had the floor block).
+    - A test copy with a 12° diffuser (`DX12`) is built in the session scratchpad, not in the repo. It has not been meshed yet.
+  - **B_AB:** "The surface meshing was not successful" (`cfd/cases/all_B_AB.log`). Not diagnosed yet.
+  - Under the job's rule, each variant has one failure so far. A second failure for the same reason stops that variant.
+- **Prepared, not yet run:**
+  - `cfd/postprocess.py`: rows B and D will come from runs B_AB and D_AB (`TABLE_RUN`) and get an as-built note.
+  - `params/aero_variants_simplified_BD.csv`: the old B and D rows, saved.
+  - `matlab/lapsim/lap_experiments.m`: new section 6 for B, D, CP, old B and old D. It covers point-mass and four-wheel lap times on skidpad, autocross and the fast circuit, and the following-car penalty from each variant's own wake.
+  - `cfd/fluent_halfcar.py`: optional `CFD_GEO_DIR` and `CFD_RESULTS_DIR` overrides for test meshes. Without them nothing changes.
+- **Not done:** solves, checks, comparison, `aero_variants.csv` update, lap-sim run, docs, tests and pictures. The session stopped at the usage limit.
+
+### 2026-11-25 (resumed): B_AB and D_AB meshing fixes
+
+**Reading taken:** the user's resume brief.
+- Fixes must keep each wing package exactly as defined. Topology-only or junction changes come first; a smaller D diffuser angle is the last resort and would be named in every table and caption.
+- Test copies live in the session scratchpad (`CFD_GEO_DIR` / `CFD_RESULTS_DIR`).
+- At most 3 more fix attempts per variant.
+
+**B_AB:**
+- **Attempt 1 (cause):** CAD tessellation "Breakout detected", then "Failed to project front-edges onto face (1985.7, 0, 1210) mm": B's rear wing section on the symmetry plane, 0.2 m above the body.
+  - B's rear wing faces are identical to old B's (which meshed). The refinement-box files differ only in their STEP header lines.
+  - What changed is the one-piece symmetry face, which now carries CP's hull section as well. The same fragility is documented for C and old D ("rear flap on Y = 0").
+- **Fix (attempt 2):** `split_symmetry_face` in `cfd_variants.py`, with `VARIANT_DEFS["B_AB"]["sym_split_x"] = [2600]`.
+  - A line at X 2600 mm splits the symmetry face. That is behind the car (car ends at X 2320) and crosses nothing.
+  - Topology only: same plane, same holes, same zone name; the wetted-area and zone checks pass (11 of 11).
+- **B_AB attempt 2 (symmetry face split at X 2600):** failed, same error at the same point (log `cfd/cases/all_B_AB_try2.log`). The split is removed from B_AB's definition; the function `split_symmetry_face` stays, unused.
+- **Diagnosis:** old B's own geometry, re-meshed today as scratch copy BX with the current driver, meshes at exactly 900,187 cells, as on 2026-11-17. So the failure comes from B's rear wing combined with CP's bodywork, not from the driver. The failing face is the leading edge of B's top flap (face 50) at Y = 0.
+- **B_AB attempt 3:** `imprint_rw_y` cuts the rear-wing faces along Y = 40 mm (`rw_imprint_y`). Topology only: 3 wing faces and 1 body face split, surface unchanged, 11 of 11 checks pass.
+
+**D_AB:**
+- **Diagnosis:** the scratch copy DX12 (D_AB with a 12° diffuser) meshes, so the 14° roof is the cause. At 14° the hull's rounded bottom corner grazes the roof top: hull 99.7 mm against roof 99.4 mm at Y 200, X 1700. At 12° the gap there is 5.8 mm.
+- **Cell budget:** DX12 has 1,100,486 cells, 52k over the limit.
+  - D's fins and beam wing add 16k rear-wing faces to CP's finer body; old D was on a body with 7.5k fewer faces.
+  - No D-only simplification removes about 11k faces without changing D's package.
+- **D_AB attempt 2:**
+  - **Junction fix (option a):** `hull_tail_fill` (`hull_fill_z = 150`). The hull outline at Z 150 is carried straight down onto the diffuser roof, from the rear axle (X 1550) to the body end (X 1900).
+    - It fills only the closed pocket between the roof top and the hull bottom.
+    - D's wings, fins, beam wing and 14° diffuser underside are unchanged; 11 of 11 checks pass.
+  - **Cell budget:** one prism layer (`--set bl_layers=1`) instead of CP's two. Solver settings are unchanged.
+    - Measured cost of this change on the old bodywork: D_bl1 against D gave ClA −0.2 %, CdA −1.0 %, front share 0.38 to 0.40; C_bl1 against C gave ClA +0.3 %, CdA −1.8 %.
+    - To be fair to the comparison, CP is also re-solved with one layer (CP_bl1), so D_AB has a like-for-like partner.
+- **D_AB attempt 2 result:** the self-intersections are gone (the hull fill works). The surface mesh then failed to project edges at two other spots (`cfd/cases/all_D_AB_try2.log`):
+  - the beam wing's leading edge at Y = 0 (1695, 0, 595 mm);
+  - the rear wing at the endplate plane (2040, 625, 1249 mm).
+  This is the same wing-meets-plane fragility as B_AB, and it is next to be fixed.
+- **B_AB attempt 3 result:** failed, same error at the same point (`cfd/cases/all_B_AB_try3.log`). `rw_imprint_y` is removed from B_AB's definition; the function stays, unused.
+- **B_AB attempt 4 (last):** `split_symmetry_face_z` (`sym_split_z = 1050`). A line at Z 1050 mm, from inlet to outlet, splits the symmetry face between the body's top at Y = 0 (990 mm) and B's rear wing at Y = 0 (from 1107 mm). The wing sections now sit on their own symmetry face, apart from CP's hull section. Topology only; 11 of 11 checks pass.
+- **B_AB attempt 4 result: meshed and solved** (`cfd/cases/all_B_AB.log`):
+  - 953,238 cells, under the 1,048,576 limit. CP's sizes, 2 prism layers, CP's solver settings, 1200 iterations.
+  - Force-converged by the project rule: drift 0.02 / 0.01 %, band 1.93 / 1.10 % (downforce / drag; the limit is 2 %).
+  - Mass imbalance 2.0e-06 of the inlet flow.
+  - y+ area averages 72 (front wing) to 126 (rear wheels); max 394 (body), min under 1 at sharp edges and stagnation points. Same range as CP.
+  - Hand check of `forces.out` (mean of the last 200 iterations, times 2): parts sum to the total (806.6 N against 806.6 N, drag 317.6 N against 317.6 N). ClA × q = 3.361 × 240 Pa = 806.6 N, which matches.
+  - ClA 3.36, CdA 1.32, front share 0.43. Old B: 3.43 / 1.29 / 0.45. Steady RANS on a Student mesh: only the ranking is trustworthy.
+
+**D_AB attempt 3:** same cause as B_AB (wing sections sharing the one-piece symmetry face with CP's hull section), so the same fix: `sym_split_z = 1050`, on top of the hull fill and 1 prism layer.
+- The beam wing at Y = 0 (Z 587 to 640) stays on the lower face with the hull, 7 mm above the hull top at X 1690. Old D had the same 7 mm gap and meshed, so the gap alone is not the cause.
+- The rear wing sections (Z 1117 to 1539) go on the upper face.
+- **D_AB attempt 3 result:** failed (`cfd/cases/all_D_AB_try3.log`). The two projection failures are the same, at the same coordinates (beam wing at Y = 0; rear wing at the endplate plane, Y = 625), plus a changing third one ("Front could not be closed" near the front wheel). Splitting the symmetry face does not reach them, and the Y = 625 one is not on the symmetry plane. The `sym_split_z` is removed from D_AB.
+- **Fix-preference (a) is exhausted** (two junction/topology fixes tried). Per the brief, **attempt 4 (last) is fallback (b): D_AB with a 12° diffuser instead of D's 14°.**
+  - The only geometry change is the diffuser angle. The wings, beam wing and fins are D's, with no hull fill.
+  - The scratch copy DX12 (the same geometry) already passed the surface and volume mesh today, at 1,100,486 cells with 2 layers.
+  - With 1 prism layer it should be about 1.0 M cells: old D_bl1 had 93k fewer cells than D.
+  - Every table, README text and caption must then say: **D's diffuser is 12° in D_AB, not 14°**.
+- **D_AB attempt 4 result: meshed and solved** (`cfd/cases/all_D_AB.log`). **D's diffuser is 12° in D_AB, not 14°.**
+  - 1,002,218 cells with 1 prism layer, under the limit. CP's other sizes and CP's solver settings, 1200 iterations.
+  - Force-converged: drift 0.00 / 0.01 %, band 1.04 / 0.25 %.
+  - Mass imbalance 8.4e-07 of the inlet flow.
+  - y+ area averages 76 (rear wing) to 147 (front wheels); max 386 (body), min 0.2 at edges. Averages run higher than B_AB because there is only 1 layer.
+  - Hand check: parts sum to the total (966.9 N, drag 422.4 N). ClA × q = 4.029 × 240 = 966.9 N, which matches.
+  - ClA 4.03, CdA 1.76, front share 0.39. Old D: 4.20 / 1.77 / 0.38. Only the ranking is trustworthy.
+  - The 14° attempts (hull fill; hull fill plus symmetry split) stay in the code as options, unused.
+- **CP_bl1** (CP with 1 prism layer, `--tag _bl1`): running, as D_AB's like-for-like partner.
+
+### 2026-11-25 (resumed): steps 5 and 6
+- **Variant table:** `postprocess.py --update-variants` was run.
+  - `params/aero_variants.csv` rows B and D are now B_AB (3.361 / 1.323 / 0.426) and D_AB (4.029 / 1.760 / 0.387). The note on the D row says the diffuser is 12°, not 14°, and that D_AB has 1 prism layer (`RUN_NOTE`).
+  - CP stays the default and is unchanged (3.892 / 1.661 / 0.433). It is still marked not force-converged (band 2.46 %), as before.
+- **Lap sim section 6** (`lap_experiments.m`) ran for the first time. It writes `media/lap_as_built_BD.csv` and a section in `media/results_table.md`.
+- **Hand check:** D's skidpad lap of 4.8862 s.
+  - The point-mass car holds a steady circle where the rear axle's grip left after cornering just covers drag and rolling resistance:
+    - mu = 1.4 (750 / (Fz / 4))^0.1;
+    - Fz = m g + 0.5 rho ClA v²;
+    - sqrt(Fmax² − (m v² / R)²) × rear share = 0.5 rho CdA v² + crr Fz;
+    - m 302.56 kg, R 9.125 m, ClA 4.029, CdA 1.760, front weight 0.418, front aero 0.387, crr 0.015.
+  - Bisection gives v = 11.7339 m/s, so 57.334 / 11.7339 = 4.8862 s. The lap sim gives 4.8862 s.
+  - Without the drag term the hand speed would be 11.751 m/s (4.879 s), so the drag-and-traction coupling is worth 0.15 %.
+- **Tests:** MATLAB `run_all('test')` passes 27 of 27; `postprocess.py --selftest` passes; `visualise.py --selftest` passes.
+- **Docs:** README (variant table, new section "B, D and CP on the same as-built bodywork", aero assumption), `cfd/README.md`, `cfd/geometry_notes.md`, and the header of `media/cfd/cfd_results.md` (from `postprocess.py`).
+- **Step 7 started:**
+  - The old B and D stills and films, `compare_ABCD.*`, `smoke_D.*` and `smoke_ABD.*` (all of which show old B or D) are moved to `media/cfd/vis_old_simplified/`, which is git-ignored. The tracked PNGs therefore show as deleted in git until the new ones are written.
+  - `visualise.py` maps B to run B_AB and D to run D_AB. Every caption now starts with "B, C and D are on the same as-built bodywork (D's diffuser is 12 degrees here, not 14); A is on the older CFD bodywork."
+- **Step 7 done:** `visualise.py all` ran in 681 s (`cfd/cases/vis_all_AB.log`) and wrote 55 files to `media/cfd/vis/`.
+  - Every MP4 is under 10 MB; the largest are smoke_ABD at 7.2 MB and smoke_C / smoke_D at 6.2 MB. No re-encode was needed.
+  - All 20 stills and `compare_ABCD.png` were checked by eye, plus a 5-frame sheet of every one of the 16 films. All show the right run label ("run B_AB", "run D_AB, diffuser 12° not 14°"), the bodywork caption, and no blank or broken frames.
+- **CP_bl1:** CP with 1 prism layer. The tag was given as `_bl1` and came out as `CP__bl1`; all its files were renamed to CP_bl1 like C_bl1 and D_bl1, and the first copy of the run folder (identical) was moved to the session scratchpad, not deleted.
+  - 918,527 cells, force-converged (band 0.62 / 0.13 %), mass imbalance 4.3e-07.
+  - Hand check: parts 954.4 N = total; ClA × q = 3.977 × 240 = 954.4 N.
+  - ClA 3.98, CdA 1.67, front 0.43: +2.2 % ClA and +0.4 % CdA against CP. The C and D layer checks moved ClA by under 0.3 %, but CP is unsteady (its own band is 2.5 %), so most of this difference is likely CP's unsteadiness, not the layer count.
+  - Lap sim with CP_bl1's aero: skidpad 4.889 s, autocross 60.99 s, fast circuit 82.98 s (point-mass).
+- **Like for like with 1 layer, D_AB against CP_bl1:** ClA +1.3 %, CdA +5.6 %, autocross −0.09 s, fast circuit +1.28 s. The downforce gain is inside CP's own unsteadiness.
+- **Not done / not checked:** see the final answer of this session.

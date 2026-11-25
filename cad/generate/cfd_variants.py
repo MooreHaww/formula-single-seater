@@ -98,6 +98,20 @@ VARIANT_DEFS = {
     "E": {"base": "C", "rw_angles_from": "D", "set": {"rw_height": 950.0, "rw_span": 1330.0}, "diffuser_angle": 14.0,
           "tail_cut_x": 1700.0},
     "CP": {"base": "C", "body": "parts"},
+    # B_AB, D_AB (2026-11-25): B's and D's aero packages (wing angles, D's endplate fins, beam
+    # wing and 14 deg diffuser; B without diffuser, as variant B is defined) on CP's as-built
+    # bodywork: the same hull, sidepods, 10 mm floor plate, wheels and corner radii as CP.
+    # sym_split_z: the symmetry face is split along Z = this (mm), between the body top (990) and B's rear
+    # wing at Y = 0 (1107), topology only (split_symmetry_face_z): B_AB's one-piece symmetry face failed to
+    # project edges at the top flap's section. Tried before and did not help: sym_split_x [2600] (split
+    # behind the car) and rw_imprint_y 40 (wing faces cut at Y 40; imprint_rw_y).
+    "B_AB": {"base": "B", "body": "parts", "sym_split_z": 1050.0},
+    # D_AB uses a 12 deg diffuser, NOT D's 14 deg (fallback (b), 2026-11-25): at 14 deg the roof grazes
+    # CP's hull bottom (360 self-intersections). Tried and did not mesh: hull_fill_z 150 (hull outline
+    # carried down onto the roof, hull_tail_fill), then that plus sym_split_z 1050; both failed to
+    # project edges at the beam wing (Y = 0) and the rear wing at the endplate (Y = 625). Wings, beam
+    # wing and fins are D's. Meshed with 1 prism layer (--set bl_layers=1) for the cell limit.
+    "D_AB": {"base": "D", "body": "parts", "diffuser_angle": 12.0},
 }
 
 
@@ -372,6 +386,23 @@ def diffuser_parts(p, variant: str, d: dict, parts: dict):
     return {"diffuser": True, "angle_deg": p[f"diffuser_angle_{variant}"], "x_exit": xe, "z_exit": ze}
 
 
+def hull_tail_fill(p, body, variant: str, h: float):
+    """D_AB (2026-11-25): the hull outline at height h carried straight down onto the diffuser
+    roof, from the rear axle to the body end. With D's 14 deg roof under CP's hull the hull's
+    rounded bottom corner grazes the roof top (0.3 mm at Y 200, X 1700) and the surface mesh
+    failed with self-intersections; the fill turns that graze into a clean corner. It changes
+    only the closed pocket between the roof top and the hull bottom, not the wings or the
+    diffuser's underside (angle, strakes, fence)."""
+    d = floor_dims(p)
+    ang = math.radians(p[f"diffuser_angle_{variant}"]); Ld = p["diffuser_length"]
+    xa, z1 = d["xa"], d["z1"]; xe, ze = xa + Ld, z1 + Ld * math.tan(ang)
+    slab = body & box_between(xa, xe, -OVER, d["hw_rear"], h - 1.0, h)
+    foot = sorted(one_solid(slab, "hull slab").faces(), key=lambda f: f.center().Z)[0]     # bottom face, Z = h - 1
+    column = extrude(foot, amount=h, dir=(0, 0, -1))
+    above_roof = prism_xz([(xa, z1 + 6.0), (xe, ze + 6.0), (xe, h), (xa, h)], -OVER, d["hw_rear"])   # roof mid-thickness up
+    return one_solid(column & above_roof, "hull tail fill")
+
+
 def build_floor_plate(p, variant: str):
     """Variant CP: the floor of build_parts.build_floor, a PLATE_T thick raked plate
     (wide to X 1290, then stepped in to |y| 455 to the rear axle), plus the diffuser."""
@@ -611,6 +642,81 @@ def domain_bounds(p, car_x, car_w, car_h):
             "ymax": round(4 * car_w, -1), "zmin": 0.0, "zmax": round(4 * car_h, -1), "car_length": L, "car_width": car_w, "car_height": car_h}
 
 
+def imprint_rw_y(fluid: Solid, y0: float, rw_box) -> Solid:
+    """Imprint the section with the plane Y = y0 on every fluid face inside rw_box (the rear
+    wing's bounding box) that crosses that plane. Topology only (each face is cut in two, the
+    surface is unchanged): it changes how Fluent tessellates the wing faces next to the
+    symmetry plane. Used for B_AB, whose surface mesh failed to project edges onto the top
+    flap at Y = 0 (2026-11-25)."""
+    from OCP.BRepAlgoAPI import BRepAlgoAPI_Section
+    from OCP.BRepFeat import BRepFeat_SplitShape
+    from OCP.TopAbs import TopAbs_EDGE
+    from OCP.TopExp import TopExp_Explorer
+    from OCP.TopoDS import TopoDS
+    from OCP.gp import gp_Dir, gp_Pln, gp_Pnt
+    pln = gp_Pln(gp_Pnt(0, y0, 0), gp_Dir(0, 1, 0))
+    sp = BRepFeat_SplitShape(fluid.wrapped)
+    n = 0
+    for f in fluid.faces():
+        b = f.bounding_box()
+        if not (b.min.Y < y0 < b.max.Y and b.min.X >= rw_box[0] - 1 and b.max.X <= rw_box[1] + 1 and b.min.Z >= rw_box[2] - 1):
+            continue
+        sec = BRepAlgoAPI_Section(f.wrapped, pln, True)
+        ex = TopExp_Explorer(sec.Shape(), TopAbs_EDGE)
+        while ex.More():
+            sp.Add(TopoDS.Edge(ex.Current()), f.wrapped); n += 1
+            ex.Next()
+    sp.Build()
+    if not sp.IsDone() or n == 0:
+        raise RuntimeError(f"imprint at Y {y0}: failed ({n} edges)")
+    return one_solid(Compound(sp.Shape()), "fluid (imprinted)")
+
+
+def split_symmetry_face_z(fluid: Solid, z: float, dom: dict) -> Solid:
+    """Imprint the line Z = z (inlet to outlet) on the symmetry face Y = 0, in a band where no
+    car part touches Y = 0 (checked: the line must not cross any hole). Topology only. B_AB
+    (2026-11-25): its rear-wing sections at Y = 0 get their own symmetry face, apart from
+    CP's hull section, after the one-piece face failed to mesh at the top flap."""
+    from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+    from OCP.BRepFeat import BRepFeat_SplitShape
+    from OCP.gp import gp_Pnt
+    sym = [f for f in fluid.faces() if abs(f.bounding_box().min.Y) < 1e-6 and abs(f.bounding_box().max.Y) < 1e-6]
+    if len(sym) != 1:
+        raise RuntimeError(f"symmetry split at Z {z}: {len(sym)} symmetry faces, expected 1")
+    for e in sym[0].edges():
+        b = e.bounding_box()
+        if b.min.Z - 1.0 < z < b.max.Z + 1.0 and b.min.X > dom["xmin"] + 1 and b.max.X < dom["xmax"] - 1:
+            raise RuntimeError(f"symmetry split at Z {z} would cross a car edge at X {b.min.X:.0f}..{b.max.X:.0f}")
+    e = BRepBuilderAPI_MakeEdge(gp_Pnt(dom["xmin"], 0, z), gp_Pnt(dom["xmax"], 0, z)).Edge()
+    sp = BRepFeat_SplitShape(fluid.wrapped); sp.Add(e, sym[0].wrapped); sp.Build()
+    if not sp.IsDone():
+        raise RuntimeError(f"symmetry split at Z {z} failed")
+    return one_solid(Compound(sp.Shape()), "fluid (split at Z)")
+
+
+def split_symmetry_face(fluid: Solid, xs, dom: dict) -> Solid:
+    """Imprint straight lines X = x (ground to top) on the symmetry face Y = 0, where they
+    cross no car part. Topology only: the zone is the same plane with the same holes, but
+    Fluent tessellates and meshes each piece on its own. Used for B_AB, whose single
+    symmetry face failed the surface mesh at the rear-wing section (2026-11-25)."""
+    from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+    from OCP.BRepFeat import BRepFeat_SplitShape
+    from OCP.gp import gp_Pnt
+    for x in xs:
+        sym = [f for f in fluid.faces() if abs(f.bounding_box().min.Y) < 1e-6 and abs(f.bounding_box().max.Y) < 1e-6
+               and f.bounding_box().min.X - 1 < x < f.bounding_box().max.X + 1]
+        if len(sym) != 1:
+            raise RuntimeError(f"symmetry split at X {x}: {len(sym)} faces found, expected 1")
+        e = BRepBuilderAPI_MakeEdge(gp_Pnt(x, 0, dom["zmin"]), gp_Pnt(x, 0, dom["zmax"])).Edge()
+        sp = BRepFeat_SplitShape(fluid.wrapped)
+        sp.Add(e, sym[0].wrapped)
+        sp.Build()
+        if not sp.IsDone():
+            raise RuntimeError(f"symmetry split at X {x} failed")
+        fluid = one_solid(Compound(sp.Shape()), "fluid (split)")
+    return fluid
+
+
 def classify_faces(fluid: Solid, dom: dict, comps: dict, wheel_boxes: dict):
     """Zone name for every face of the fluid solid."""
     rows = []
@@ -711,6 +817,8 @@ def build_variant(p, variant: str, out: Path, log, dom_fixed=None):
     p = variant_params(p, variant)
     L = p["wheelbase"]
     body = build_body(p, variant)
+    if VARIANT_DEFS[variant].get("hull_fill_z"):
+        body = one_solid(body + hull_tail_fill(p, body, variant, VARIANT_DEFS[variant]["hull_fill_z"]), "body + tail fill")
     floor, finfo = build_floor(p, variant)
     comps = {"car_body": body, "car_floor": floor}
     parts = {"body": body, "floor": floor}
@@ -750,6 +858,13 @@ def build_variant(p, variant: str, out: Path, log, dom_fixed=None):
     dom = dom_fixed or domain_bounds(p, (x_lo, x_hi), w_car, h_car)
     box = box_between(dom["xmin"], dom["xmax"], 0.0, dom["ymax"], 0.0, dom["zmax"])
     fluid = one_solid(box - car_over - wf_over - wr_over, f"fluid {variant}")
+    if VARIANT_DEFS[variant].get("sym_split_x"):
+        fluid = split_symmetry_face(fluid, VARIANT_DEFS[variant]["sym_split_x"], dom)
+    if VARIANT_DEFS[variant].get("sym_split_z"):
+        fluid = split_symmetry_face_z(fluid, VARIANT_DEFS[variant]["sym_split_z"], dom)
+    if VARIANT_DEFS[variant].get("rw_imprint_y") and "car_rw" in comps:
+        rb = comps["car_rw"].bounding_box()
+        fluid = imprint_rw_y(fluid, VARIANT_DEFS[variant]["rw_imprint_y"], (rb.min.X, rb.max.X, rb.min.Z))
 
     wheel_boxes = {}
     for nm, w in (("wheel_front", wf), ("wheel_rear", wr)):

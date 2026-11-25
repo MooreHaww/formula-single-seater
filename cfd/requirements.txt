@@ -9,3 +9,10 @@ matplotlib==3.11.2
 numpy==2.5.5
 pandas==2.3.3
 scipy==1.18.1
+# Visualisation (cfd/visualise.py, vis_*.py; added 2026-11-25): reads the Fluent .cas.h5/.dat.h5
+# directly with VTK's Fluent CFF reader, renders with PyVista, writes MP4 (H.264) and GIF.
+pyvista==0.49.3
+vtk==9.7.2
+imageio==2.38.2
+imageio-ffmpeg==0.8.1
+pillow==13.0.0

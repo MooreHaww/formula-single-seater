@@ -81,3 +81,5 @@ __pycache__/
 sim/stress/results/
 cad/analysis/old/
 cad/chassis/old/sim_results/
+
+**/old/

@@ -102,7 +102,6 @@ FS1_U-FS2_U_diag,FS1_U_R,FS2_U_L,front,25.4,1.6,606.4,0.570
 FB_L-FB_U_diag,FB_L_R,FB_U_L,bulkhead,25.4,1.6,500.0,0.470
 FH_L-MH_L_diag,FH_L_R,MH_L_L,front,25.4,1.6,848.5,0.797
 MH_L-RS1_L_diag,MH_L_R,RS1_L_L,rear,25.4,1.6,655.7,0.616
-RT1-RRK_diag,RT1_R,RRK_L,rear,25.4,1.6,642.8,0.604
 SP1_L-SP2_L_R,SP1_L_R,SP2_L_R,sidepod,25.4,1.6,600.0,0.563
 SP1_L-SP2_L_L,SP1_L_L,SP2_L_L,sidepod,25.4,1.6,600.0,0.563
 SP1_U-SP2_U_R,SP1_U_R,SP2_U_R,sidepod,25.4,1.6,600.0,0.563
@@ -123,4 +122,4 @@ SP1_L-SP2_U_R,SP1_L_R,SP2_U_R,sidepod,25.4,1.6,646.2,0.607
 SP1_L-SP2_U_L,SP1_L_L,SP2_U_L,sidepod,25.4,1.6,646.2,0.607
 FH_M-SP2_U_R,FH_M_R,SP2_U_R,sidepod,25.4,1.6,645.1,0.606
 FH_M-SP2_U_L,FH_M_L,SP2_U_L,sidepod,25.4,1.6,645.1,0.606
-# total length 48.17 m, total mass 49.3 kg (steel 7850 kg/m3, no joints, no brackets)
+# total length 47.53 m, total mass 48.7 kg (steel 7850 kg/m3, no joints, no brackets)

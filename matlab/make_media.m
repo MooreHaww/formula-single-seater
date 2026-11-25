@@ -164,7 +164,7 @@ C = frame_diagonal_search('--candidates');
 pairsOf = @(ids) vertcat(C(ismember({C.id}, ids)).pairs);
 fam = {'none (as built)', {}
     'floor only (4 that fit)', {'F0', 'F1', 'F3', 'F4'}
-    'floor + top (8 that fit)', {'F0', 'F1', 'F3', 'F4', 'T0', 'T1', 'T5', 'T6'}};
+    'floor + top (7 that fit)', {'F0', 'F1', 'F3', 'F4', 'T0', 'T1', 'T6'}};   % T5 dropped (5.4 deg joint, 2026-11-25)
 k = zeros(size(fam, 1) + 1, 1); m = k;
 for i = 1:size(fam, 1)
     args = struct('write', false, 'plot', false, 'torsion_only', true, 'drop_tubes', drop);
@@ -172,7 +172,9 @@ for i = 1:size(fam, 1)
     r = frame_fe(args); k(i) = r.torsion.k_Nm_deg; m(i) = r.frame_mass;
 end
 k(end) = A.torsion.k_Nm_deg; m(end) = A.frame_mass;
-lab = [fam(:, 1); {'chosen set (10 tubes)'}];
+TT = readtable(fullfile(repo_root(), 'cad', 'frame', 'frame_tubes.csv'), 'TextType', 'string', 'CommentStyle', '#');
+nDiag = sum(contains(TT.tube, "_diag") | startsWith(TT.tube, "FH_M-SP2_U"));
+lab = [fam(:, 1); {sprintf('chosen set (%d tubes)', nDiag)}];
 fig = figure('Visible', 'off', 'Position', [100 100 900 420], 'Color', 'w');
 try, theme(fig, 'light'); catch, end
 cat = categorical(lab, lab);
@@ -269,14 +271,16 @@ fprintf(fid, '## Aero variants (point-mass)\r\n\r\nA no wings, B moderate, C max
 fprintf(fid, '| Track | A | B | C | D | **CP (as built)** |\r\n|---|---|---|---|---|---|\r\n');
 for k = 1:numel(tracks), fprintf(fid, '| %s | %.2f s | %.2f s | %.2f s | %.2f s | **%.2f s** |\r\n', strrep(tracks{k}, '_', ' '), tv(k, :)); end
 fprintf(fid, '\r\n## Effect of the frame torsion diagonals (CP, as built)\r\n\r\n');
-fprintf(fid, 'Before: the car with the 10 diagonals removed (%.1f kg of tube plus brackets and welds, centroid x %.0f z %.0f mm): %.1f kg, CG x %.0f z %.0f mm. After: %.1f kg, CG x %.0f z %.0f mm (without driver; CG with driver).\r\n\r\n', ...
-    md, c(1), c(3), pb.mass_car, pb.cg_x_from_front_axle, pb.cg_height, p.mass_car, p.cg_x_from_front_axle, p.cg_height);
+fprintf(fid, 'Before: the car with the %d diagonals removed (%.1f kg of tube plus brackets and welds, centroid x %.0f z %.0f mm): %.1f kg, CG x %.0f z %.0f mm. After: %.1f kg, CG x %.0f z %.0f mm (without driver; CG with driver).\r\n\r\n', ...
+    sum(isd), md, c(1), c(3), pb.mass_car, pb.cg_x_from_front_axle, pb.cg_height, p.mass_car, p.cg_x_from_front_axle, p.cg_height);
 fprintf(fid, '| Track | point-mass before | after | change | four-wheel before | after | change |\r\n|---|---|---|---|---|---|---|\r\n');
 for k = 1:numel(tracks)
     fprintf(fid, '| %s | %.2f s | %.2f s | %+.2f s | %.2f s | %.2f s | %+.2f s |\r\n', strrep(tracks{k}, '_', ' '), ...
         t(k, 1, 1), t(k, 2, 1), t(k, 2, 1) - t(k, 1, 1), t(k, 1, 2), t(k, 2, 2), t(k, 2, 2) - t(k, 1, 2));
 end
-fprintf(fid, '\r\nThe lap sim cannot credit the stiffer frame: it treats the chassis as rigid, so the stiffness gain (834 to 1503 Nm/deg) shows nowhere in these numbers, only the added mass does.\r\n');
+kq = @(a) frame_fe(setfield(struct('write', false, 'plot', false, 'torsion_only', true), a{:})).torsion.k_Nm_deg; %#ok<SFLD>
+[~, k0] = evalc('kq({''drop_tubes'', ["_diag", "FH_M-SP2_U"]})'); [~, k1] = evalc('kq({''write'', false})');
+fprintf(fid, '\r\nThe lap sim cannot credit the stiffer frame: it treats the chassis as rigid, so the stiffness gain (%.0f to %.0f Nm/deg) shows nowhere in these numbers, only the added mass does.\r\n', k0, k1);
 fclose(fid);
 L = struct('tracks', {tracks}, 't_C', t, 't_variants', tv, 'dm_kg', md);
 fprintf('make_media: %s\n', file);

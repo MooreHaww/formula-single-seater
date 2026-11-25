@@ -3,7 +3,100 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-25 (CFD session): the aerodynamics made visible: pictures, films, smoke tunnel, explore command
+
+**Status: finished. No new solves, no commits.**
+- **One decision at commit:** whether the 111 MB of pictures and films in `media/cfd/vis/` go into git (they are not ignored).
+- **Files changed:**
+  - new: `cfd/visualise.py`, `vis_common.py`, `vis_render.py`, `vis_smoke.py`, `explore.py`;
+  - edited: `cfd/requirements.txt`, `cfd/README.md`, this log;
+  - output: `media/cfd/vis/` (new).
+- **Details:** in the entry at the bottom.
+
+**Commands** (from the repository folder):
+
+| What | Command |
+|---|---|
+| Everything | `.venv/Scripts/python cfd/visualise.py all` (about 8 min, 474 s measured; the first time also exports the Fluent results, about 2 min more) |
+| Smoke film, C / D / A | `.venv/Scripts/python cfd/visualise.py smoke C` (or `D`, `A`) |
+| Smoke side by side A-B-D | `.venv/Scripts/python cfd/visualise.py smoke ABD` |
+| Orbit / wake sweep / build-up of one variant | `.venv/Scripts/python cfd/visualise.py anims C --only orbit` (`sweep`, `buildup`; any of A B C D) |
+| A-B-C-D picture and film | `.venv/Scripts/python cfd/visualise.py compare` |
+| Stills | `.venv/Scripts/python cfd/visualise.py stills C` |
+| Explore in CFD-Post | `.venv/Scripts/python cfd/explore.py C`: car Cp, streamlines, wake planes at 1/2/3 L, symmetry speed and k planes to tick on |
+| Explore in Fluent | `.venv/Scripts/python cfd/explore.py C --fluent`: case and data read, car Cp, symmetry speed and pathline objects defined |
+
+**Installed** (pip into `.venv`, added to `cfd/requirements.txt`): pyvista 0.49.3, vtk 9.7.2, imageio 2.38.2, imageio-ffmpeg 0.8.1 (includes ffmpeg), pillow 13.0.0, and their dependencies.
+
+**What was made.** For A, B, C (= run CP) and D:
+- **Five stills each:**
+  - surface Cp, top, side and underbody;
+  - streamlines by speed;
+  - Q-criterion vortices, two views;
+  - wake slices at 1, 2 and 3 L, deficit and k;
+  - the centre-plane speed.
+- **Three films each:** orbit (10 s), wake-slice sweep (6 s), build-up (8.5 s).
+- **Comparison:** `compare_ABCD` picture and film (downforce by part, underbody Cp, the wake).
+- **Smoke tunnel:** films for C, D and A (18 s, 1.6 s of flow 11 times slower), and the A-B-D side by side.
+- **Format:** every film is MP4 and GIF.
+- **Scales and captions:**
+  - the same colour scales everywhere;
+  - every picture and frame carries a caption saying only the ranking of the variants is trustworthy;
+  - the smoke films also say they show time-averaged streamlines of a steady RANS solution, not unsteady turbulence.
+
+**Checks:**
+- **Looked at:** every still and frame sheets of every film.
+- **Self-test:** 9 of 9 PASS.
+- **Hand sum:** downforce by part adds up to Fluent's total.
+- **Against CFD-Post,** at 8 points:
+  - within 0.04 m/s in the wake;
+  - within 0.2 m/s near the car;
+  - +0.5 m/s (4.5 %) in the 20 mm floor gap, where the 12.5 mm grid smooths.
+
+**Not checked:** I did not open the two explore windows on your screen.
+- CFD-Post: the same session file was rendered in batch for C and A.
+- Fluent: case, data and graphics objects were tested without a window.
+
+## Summary, 2026-11-25: RT1-RRK diagonal removed, m_frame = trimmed weldment 46.26 kg, everything regenerated
+
+**Status: finished, nothing waits on you. No commits.**
+- **Rebuild:** `python tools/sw_run.py rebuild`: all 26 steps PASS, with the 123-tube frame. CheckChassis afterwards with the new m_frame: PASS, budget line +0.0 %.
+- **Tests:** MATLAB `run_all('test')` 27 of 27 PASS. The self-tests of the files changed after that also pass.
+- **Solid cross-check:** `FrameAnalysis 4` re-run on 123 tubes: ALL PASS.
+- **Details:** in the entry at the bottom.
+
+**Stiffness without RT1-RRK.** 1476 Nm/deg in the beam model; the fused solid model gives 1470. That is 24 Nm/deg (1.6 %) under the 1500 target and above your 1450 stop line, so I carried on.
+- **Nothing cheaper gets it back.** I re-ran the diagonal search without RT1-RRK. It now drops any candidate that meets a frame tube at under 10°. The lightest set reaching 1500 is the built set plus RRK-RT2, the twin diagonal behind the rocker mount: 1501 Nm/deg for +0.59 kg, 0.01 kg more than RT1-RRK. Its joints are at 12.3°; the frame already has 13° joints.
+- **Not added.** Decided afterwards: the frame stays at 1476 Nm/deg.
+- **Swapping in one other candidate instead:** FS1 plane 1480, RS2 plane 1471, sidepod floors 1541 Nm/deg (+1.17 kg).
+
+**Before (2026-11-18, 124 tubes, m_frame 47.5) → after (123 tubes, m_frame 46.26):**
+
+| | Before | After |
+|---|---|---|
+| Frame mass in the budget | 47.5 kg at x 841 / z 335 | **46.26 kg at x 832 / z 332** (trimmed weldment: 46.26 kg at 831.7 / 332.1) |
+| Car without / with driver | 233.8 / 303.8 kg | **232.6 / 302.6 kg** |
+| CG x / z, with driver | 903.3 / 312.0 mm | **902.0 / 311.3 mm** |
+| Front weight share | 41.72 % | **41.81 %** |
+| Torsion through the links (beam / solid) | 1503 / 1504 Nm/deg | **1476 / 1470 Nm/deg** |
+| Torsion, couples at the nodes (beam / solid) | 1386 / 1374 Nm/deg | 1365 / 1350 Nm/deg |
+| Lowest factor of safety (bump) | 2.68 (162 MPa) | **2.62 (166 MPa)**, RRK-RT1 |
+| Autocross, CP (point-mass / four-wheel) | 61.16 / 62.17 s | **61.12 / 62.12 s** |
+| Fast circuit, CP | 82.99 / 83.11 s | **82.97 / 83.08 s** |
+| Skidpad / 75 m, CP | 4.90 / 4.35 s | 4.89 / 4.35 s |
+| Cornering at R 45 m (CP, four-wheel) | 112.6 km/h, −6.7 %, rear limits | **112.9 km/h, −6.5 %, rear limits** |
+
+- **Other stress cases:**
+  - cornering 106 MPa, factor of safety 4.09 (was 109 / 3.99);
+  - braking 88 MPa, 4.93 (was 86 / 5.07);
+  - corner + brake 106 MPa, 4.10 (was 107 / 4.08).
+  - All are above the 1.5 wanted.
+- **Bump stress:** 166 MPa is what the frame carries with no diagonals at all. RT1-RRK was the only diagonal that unloaded the rocker-mount tube RRK-RT1.
+- **Lap times:** −0.04 s on the autocross and −0.02 s on the fast circuit, from 1.2 kg less mass. The lap sim treats the chassis as rigid, so it shows nothing of the 27 Nm/deg lost.
+
 ## Summary, 2026-11-19 night: weldment tubes rebuilt full length, every tube end now meets its neighbour
+
+> **Decision taken 2026-11-25 (summary above):** m_frame is now the trimmed weldment, 46.26 kg, with RT1-RRK removed.
 
 **Status: finished. One decision waits on you (the m_frame value, below). No commits.**
 - **Rebuild:** `python tools/sw_run.py rebuild`: all 26 steps PASS (00:33 to about 00:55).
@@ -1008,3 +1101,204 @@ The summary and the rules are at the top of this file. Not touched: `cfd/`, `cad
 - **m_frame:** 47.5 or the trimmed weldment's 46.7 kg (your call; regeneration as on 2026-11-18).
 - **RT1-RRK_diag:** keep the 5.4° gouged joint, move it, or drop it (1476 Nm/deg without it).
 - **Brackets and welds:** the 6.4 kg allowance is still a guess.
+
+## 2026-11-25, Ring 2/6: RT1-RRK_diag removed, m_frame set to the trimmed weldment, full regeneration
+
+**Asked:**
+- remove RT1-RRK_diag (5.4° joint);
+- re-run the diagonal check (does 1476 Nm/deg clear 1500; if not, by how much, and does another diagonal make it up at less cost);
+- rebuild, set m_frame to the trimmed weldment mass, regenerate everything once, and report before and after;
+- stop if the stiffness drops under 1450 Nm/deg.
+
+**Diagonal check:**
+- **`frame_diagonal_search.m`:** new joint-angle rule. A candidate meeting a frame tube (diagonals excluded) at under 10° is dropped, with the reason in the report. `joint_angle` has a hand check in the self-test (30° candidate against a straight rail).
+- **Shallowest joint per candidate:**
+  - F0 19.1°, F1 32.1°, F3 43.1°, F4 21.6°;
+  - T0 22.8°, T1 26.4°, T5 5.4° (dropped), T6 12.3°;
+  - B0 36.9°, B1 13.9°, B5 14.4°;
+  - P0 19.5°, P1 19.7°.
+- **Search result** (836 subsets, `sim/stress/frame_diagonals.txt`):
+  - floor + top best 1354 Nm/deg (was 1368);
+  - every candidate 1571 Nm/deg;
+  - F1 and T1 are still needed in every set;
+  - lightest set reaching 1500: F1 T1 F0 F3 F4 T0 T6 B0 P1, 1501 Nm/deg, +5.57 kg, i.e. the built set with T6 (RRK-RT2) in place of T5. Not added.
+- **Built set (9 tubes, 7 `_diag` plus the two sidepod tops):** 1476 Nm/deg, −1.6 % against the target, above the 1450 stop.
+
+**Changed:**
+- `matlab/cad/frame_layout.m`: the RT1-D:RRK row removed, with the reason. Frame CSVs regenerated: 123 tubes, 48.68 kg centre-line. `frame_trims.csv`: 194 rows.
+- `params/car_params.txt`:
+  - `m_frame` 46.26 (CheckChassis trimmed weldment);
+  - `x_frame` / `z_frame` 832 / 332 (weldment 831.7 / 332.1, coped CSV 833.0 / 333.8);
+  - brackets and welds moved with the frame to 832 / 332, still 6.4 kg.
+  - All lines are under 500 characters.
+- `matlab/make_media.m`: the torsion-family chart no longer counts T5. The lap table's diagonal count and stiffness are computed instead of hard-coded ("10 diagonals", "834 to 1503").
+- **Regenerated:**
+  - `sim/stress/` (load cases, frame_fe report, diagonals, frame analysis);
+  - `media/` (mass budget, lap and results tables, cornering balance, stress and torsion figures, GIF);
+  - `README.md` results, variant and diagonal tables;
+  - `docs/stress_frame.md`.
+
+**Checked:**
+- **Rebuild:** all 26 steps PASS.
+  - BuildTubes 123 bodies.
+  - TrimTubes 192 trims, 2 not needed; the second run changes nothing.
+  - CheckChassis: 46.26 kg; all 194 trimmed ends touch (largest gap 0.000 mm); the MH_T overlap warning is as before.
+  - ChassisStatics: studies set up, not solved, as before.
+  - Views saved.
+- **FrameAnalysis 4:**
+  - solid 46.57 kg of steel, 2.90 M nodes;
+  - links 1470 against frame_fe 1476 Nm/deg (−0.4 %);
+  - nodes 1350 against 1365 (−1.1 %).
+- **MATLAB:** `run_all('test')` 27 of 27; afterwards make_media, frame_diagonal_search, read_car_params and mass_budget self-tests PASS. The Simulink model was left as its self-test leaves it (variant C).
+
+**Numbers before and after:** in the summary at the top.
+
+**Next:**
+- **1500 Nm/deg:** decided 2026-11-25: the frame stays at 1476 Nm/deg, RRK-RT2 not added.
+- **Brackets and welds:** the 6.4 kg allowance is still a guess.
+
+## 2026-11-25, Ring 5: the aerodynamics made visible (pictures, films, smoke tunnel, explore command)
+
+**Brief (user, pasted):** use the existing results only, no new solves. For C (as-built bodywork CP), D, B and A, make:
+- surface pressure (top, side, underbody);
+- streamlines coloured by speed;
+- vorticity iso-surfaces;
+- wake slices at 1, 2 and 3 car lengths (deficit and TKE);
+- the symmetry-plane field.
+
+Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-up); an A-B-C-D side by side; one regenerate command and one explore command; a smoke tunnel for C, D and A plus an A-B-D side by side; captions on everything; every image checked; no commits.
+
+**Interpretations (mine):**
+- **Rendering engine.** The brief says "PyFluent or the Ansys post-processing that works on this install", and allows PyVista or ParaView for the smoke.
+  - I rendered everything with PyVista. It reads the Fluent `.cas.h5`/`.dat.h5` directly with VTK 9.7's `vtkFLUENTCFFReader`, so no Fluent licence is needed.
+  - Reason: identical cameras, colour scales, captions and frame-by-frame films for four variants are scriptable and repeatable there.
+  - CFD-Post (which works here) is used for the explore command.
+  - The two readers were cross-checked at 8 points (below).
+- **Location.** Output goes to `media/cfd/vis/`, a subfolder of the `media/cfd/` the brief named.
+- **Variant C** is run CP, labelled as such in every picture. A, B and D have the older CFD bodywork.
+- **"Side by side" for the smoke** is three rows one above the other, so the 11 m long wakes line up and stay readable.
+
+**Installed** (pip, into `.venv`, now in `cfd/requirements.txt`):
+- pyvista 0.49.3, vtk 9.7.2, imageio 2.38.2, imageio-ffmpeg 0.8.1 (brings its own ffmpeg), pillow 13.0.0;
+- pulled in by them: scooby, pooch, rich, cyclopts and small helpers.
+
+**How it works:**
+- **`visualise.py export`** reads each case and data file once and writes `cfd/cases/vis/<run>/` (git-ignored, about 260 MB per run, about 2 min for all four in parallel). It holds:
+  - the car and wheel surface, with the values of the wall-adjacent cell (first prism layer);
+  - two resampled grids, from cell values averaged to the nodes:
+    - 12.5 mm around the car: X −1.3..3.4, Y 0..0.95, Z 0..1.8 m;
+    - 30 mm to 3.2 car lengths: X −1.3..11.2, Y 0..1.6, Z 0..2.8 m;
+  - zero velocity inside solids, a validity mask, and vorticity and Q from the grids.
+- **Common scales:**
+
+  | Quantity | Range | Colours |
+  |---|---|---|
+  | Cp | −3..+1 | white at 0 |
+  | speed/U | 0..1.4 | turbo |
+  | deficit 1 − u/U | 0..0.6 | magma |
+  | k | 0..8 m²/s² | viridis |
+  | ωx | ±200 1/s | coolwarm |
+
+- **Wake slices** sit at X 4.50, 7.45 and 10.40 m (rear axle + n × 2.95 m), with the following car's low and high windows of `wake_boxes.csv` drawn on.
+- **Streamlines** (216 per half car, mirrored) are traced on the fine grid and continued on the wake grid from where they leave it.
+- **Vortices** are Q iso-surfaces: 4000 1/s² on the fine grid and 667 on the wake grid, blanked within 2 cells of a wall (otherwise the zero velocity inside the car makes false sheets).
+- **Smoke:**
+  - 100 seeds per half car: a 7 × 9 grid 1.25 m ahead of the car, plus 37 next to the front-wing tips, the front and rear wheels, the rear-wing endplates and under the floor (positions measured from the car surfaces).
+  - Particles are released every 0.02 s with a random phase per seed (mirror pairs equal). Each is moved along its streamline by integration time and drawn as a 0.009 s streak coloured by speed.
+  - 1.6 s of flow in 18 s of film (11 times slower).
+- **Forces by part** (comparison) come from Fluent's `forces.out` (mean of the last 200 iterations, × 2 for the full car). Columns are found by header name, because A has no wing columns.
+
+**Output, `media/cfd/vis/` (55 files, 111 MB):**
+
+| Files | What | Size |
+|---|---|---|
+| `A_surface_cp`, `_streamlines`, `_vortices`, `_wake_slices`, `_symmetry` .png | stills of A | 2.3 MB |
+| `A_orbit` .mp4 / .gif | orbit around the streamlines, 10 s | 4.9 / 3.5 MB |
+| `A_sweep` .mp4 / .gif | wake slice from the rear wing to 3 L, 6 s | 0.1 / 1.2 MB |
+| `A_buildup` .mp4 / .gif | streamlines appearing front to back, 8.5 s | 0.1 / 1.6 MB |
+| `B_surface_cp`, `_streamlines`, `_vortices`, `_wake_slices`, `_symmetry` .png | stills of B | 3.5 MB |
+| `B_orbit` .mp4 / .gif | orbit around the streamlines, 10 s | 5.5 / 3.9 MB |
+| `B_sweep` .mp4 / .gif | wake slice from the rear wing to 3 L, 6 s | 0.2 / 1.6 MB |
+| `B_buildup` .mp4 / .gif | streamlines appearing front to back, 8.5 s | 0.2 / 1.7 MB |
+| `C_surface_cp`, `_streamlines`, `_vortices`, `_wake_slices`, `_symmetry` .png | stills of C | 3.7 MB |
+| `C_orbit` .mp4 / .gif | orbit around the streamlines, 10 s | 5.7 / 4.0 MB |
+| `C_sweep` .mp4 / .gif | wake slice from the rear wing to 3 L, 6 s | 0.2 / 1.7 MB |
+| `C_buildup` .mp4 / .gif | streamlines appearing front to back, 8.5 s | 0.2 / 1.7 MB |
+| `D_surface_cp`, `_streamlines`, `_vortices`, `_wake_slices`, `_symmetry` .png | stills of D | 3.7 MB |
+| `D_orbit` .mp4 / .gif | orbit around the streamlines, 10 s | 6.0 / 4.1 MB |
+| `D_sweep` .mp4 / .gif | wake slice from the rear wing to 3 L, 6 s | 0.2 / 1.7 MB |
+| `D_buildup` .mp4 / .gif | streamlines appearing front to back, 8.5 s | 0.2 / 1.6 MB |
+| `compare_ABCD` .png / .mp4 / .gif | A-B-C-D: underbody and top Cp, downforce by part, wake at 1 L; film with the wake slice moving back | 2.0 / 0.5 / 5.1 MB |
+| `smoke_C` .mp4 / .gif | smoke tunnel C, camera swinging front to rear three-quarter, 18 s | 6.1 / 3.6 MB |
+| `smoke_D` .mp4 / .gif | smoke tunnel D, 18 s | 6.1 / 3.6 MB |
+| `smoke_A` .mp4 / .gif | smoke tunnel A, 18 s | 3.5 / 3.3 MB |
+| `smoke_ABD` .mp4 / .gif | smoke tunnel A, B, D in rows, same seeds, camera and time, 18 s | 7.2 / 4.8 MB |
+
+**Checks:**
+- **Self-test:** `visualise.py --selftest` 9 of 9 PASS:
+  - Cp of −480 Pa = −2;
+  - slices at 4.50 and 10.40 m;
+  - ωx of a 3 rad/s solid-body rotation = 6;
+  - smoke particles on a straight 20 m/s line: released at 0, 0.25 and 0.5 s, at t = 0.6 s their heads are at X 2, 7 and 12 m, and a 0.05 s tail is 1 m long.
+  - My first hand value said 2 particles; I had forgotten the release at 0.5 s. The code was right and the test was corrected.
+- **Hand sum:** downforce by part adds up to Fluent's total in all four runs. A −7 N, B 823, CP 934 (= ClA 3.892 × 240 Pa), D 1008 N.
+- **Cross-check against CFD-Post** (Ansys's own reader and interpolation, run CP), u and k at 8 points:
+  - wake points within 0.04 m/s and 0.05 m²/s²;
+  - near the car within 0.2 m/s;
+  - except in the 20 mm floor gap (X 1.0, Z 0.02 m), where the 12.5 mm grid gives 11.50 against 11.00 m/s (+4.5 %).
+  - The underbody speeds in the pictures are therefore a little smoothed.
+- **Looked at, every one:**
+  - all 20 stills;
+  - frame sheets of every film (6 frames of each C film; 4 of each other film, of the comparison video, of the 4 smoke films);
+  - the CFD-Post check pictures for C and A.
+- **Found and fixed while looking:**
+  - Cp colours all pink (white was at −1);
+  - clipped colour-bar labels;
+  - one colour bar per wake row;
+  - fake Q sheets on walls;
+  - near grid too low for the rear wing (re-exported to Z 1.8 m);
+  - diffuser vortices hidden (low view added);
+  - smoke too dense at first (326 streaks every 16 cm became a solid blanket);
+  - side-by-side camera cutting the front wings and the upwash;
+  - comparison crashed on A (no wing columns);
+  - white margins in the first sweep frames (near grid only; now the wake grid underneath);
+  - comparison title descenders clipped;
+  - orbit film 28 MB (CRF encoding now, 5 to 6 MB).
+- **Full regeneration:** `visualise.py all` run end to end at the finish: exit 0, about 8 min (474 s measured) with no errors in the log.
+
+**What the pictures show** (pictures of existing results; the heights below were measured on the 30 mm grid for this entry):
+- **Upwash.** Behind B, C and D the wake rises, the reaction to the downforce.
+  - Deficit-weighted centre height of the wake (half plane, deficit > 0.15):
+
+    | Variant | at 1 L | at 3 L |
+    |---|---|---|
+    | A | 0.25 m | 0.26 m |
+    | B | 1.02 m | 2.56 m (near the grid top at 2.8 m, may be cut) |
+    | C | 1.23 m | 2.16 m |
+    | D | 1.30 m | 2.02 m |
+
+  - A's wake stays at the ground and flat.
+- **Following car's rear-wing window at 1 L** (`wake_boxes.csv`):
+  - CP has the most TKE: 5.9 m²/s² against 4.6 for D and 2.1 for B. In the pictures this shows as one lobe on each side, from the rear-wing tip vortices.
+  - D has the largest deficit: 0.34 against 0.32 for CP. Its core sits higher, with its peak at Z 1.38 m against 1.17 m for C.
+- **Vortex pairs.**
+  - B, C and D: each sheds a rear-wing tip vortex pair that runs to the end of the wake grid, and front-wing tip and wheel vortices along the sidepods.
+  - A: only weak wheel and floor-edge vortices.
+- **Under the floor.** The air leaving the floor and diffuser is the slowest stream (blue in the smoke films), low behind the car.
+- **Body lift.** The body makes about 80 to 100 N of lift in every variant. The wings carry the downforce: front 466 N, rear 492 N, floor 96 N in CP.
+
+**Caveats:**
+- Steady RANS (k-omega SST) on a Student mesh of about 1 M cells. The films show time-averaged streamlines, not unsteady turbulence (CP and E are themselves unsteady, mean good to about 1 %).
+- Surface Cp is the first-cell value; the 3D fields are resampled (see the cross-check above).
+- The Q levels differ between the two grids, so the pictures show where vortices are, not how strong.
+- Only the ranking of the variants is trustworthy. Every picture says so.
+
+**Explore command** (`cfd/explore.py`):
+- **CFD-Post (default):** the session file was tested in CFD-Post batch (`--test`) for C and A; the pictures were checked. I did not open the CFD-Post window itself on your screen; it uses the same session file with `-session` instead of `-batch`.
+- **Fluent (`--fluent`):** tested without a window. It reads D's case and data and defines `car_cp`, `symmetry_speed` and `pathlines`.
+  - The first launch attempt failed with `LaunchFluentError` and left no process; the retry worked.
+  - In the window, open the other graphics objects from the tree.
+
+**Not done / next:**
+- **Media files are not git-ignored.** `media/cfd/vis/` is 111 MB. Decide at commit whether the films go into git.
+- **The explore windows** have not been opened on screen by me (see above).

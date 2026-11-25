@@ -1,4 +1,4 @@
-ALL PASS (1 warning)   (2026-11-19 00:49, harness swh.exe)  SuspensionMotion, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
+ALL PASS (1 warning)   (2026-11-25 10:39, harness swh.exe)  SuspensionMotion, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
 
 INFO  motion studies before: 1
 INFO  study types this installation offers (GetSupportedStudyTypes = 7): swMotionStudyTypeAssembly, swMotionStudyTypePhysicalSimulation, swMotionStudyTypeCosmosMotion

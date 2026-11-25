@@ -1,40 +1,40 @@
-ALL PASS   (2026-11-19 00:46, harness swh.exe)  BuildAssembly, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
+ALL PASS   (2026-11-25 10:35, harness swh.exe)  BuildAssembly, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
 
-INFO  floor_diffuser.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\floor_diffuser_20261119_004432.SLDPRT
+INFO  floor_diffuser.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\floor_diffuser_20261125_103410.SLDPRT
 PASS  floor_diffuser.step: imported and saved as cad\body\floor_diffuser.SLDPRT
-INFO  fw_endplate_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_endplate_L_20261119_004434.SLDPRT
+INFO  fw_endplate_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_endplate_L_20261125_103411.SLDPRT
 PASS  fw_endplate_L.step: imported and saved as cad\body\fw_endplate_L.SLDPRT
-INFO  fw_endplate_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_endplate_R_20261119_004438.SLDPRT
+INFO  fw_endplate_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_endplate_R_20261125_103416.SLDPRT
 PASS  fw_endplate_R.step: imported and saved as cad\body\fw_endplate_R.SLDPRT
-INFO  fw_flap1.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_flap1_20261119_004441.SLDPRT
+INFO  fw_flap1.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_flap1_20261125_103419.SLDPRT
 PASS  fw_flap1.step: imported and saved as cad\body\fw_flap1.SLDPRT
-INFO  fw_flap2.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_flap2_20261119_004442.SLDPRT
+INFO  fw_flap2.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_flap2_20261125_103421.SLDPRT
 PASS  fw_flap2.step: imported and saved as cad\body\fw_flap2.SLDPRT
-INFO  fw_main.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_main_20261119_004443.SLDPRT
+INFO  fw_main.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_main_20261125_103422.SLDPRT
 PASS  fw_main.step: imported and saved as cad\body\fw_main.SLDPRT
-INFO  nose.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\nose_20261119_004444.SLDPRT
+INFO  nose.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\nose_20261125_103423.SLDPRT
 PASS  nose.step: imported and saved as cad\body\nose.SLDPRT
-INFO  rim_front.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rim_front_20261119_004446.SLDPRT
+INFO  rim_front.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rim_front_20261125_103425.SLDPRT
 PASS  rim_front.step: imported and saved as cad\body\rim_front.SLDPRT
-INFO  rim_rear.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rim_rear_20261119_004449.SLDPRT
+INFO  rim_rear.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rim_rear_20261125_103428.SLDPRT
 PASS  rim_rear.step: imported and saved as cad\body\rim_rear.SLDPRT
-INFO  rw_endplate_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_endplate_L_20261119_004451.SLDPRT
+INFO  rw_endplate_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_endplate_L_20261125_103431.SLDPRT
 PASS  rw_endplate_L.step: imported and saved as cad\body\rw_endplate_L.SLDPRT
-INFO  rw_endplate_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_endplate_R_20261119_004454.SLDPRT
+INFO  rw_endplate_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_endplate_R_20261125_103434.SLDPRT
 PASS  rw_endplate_R.step: imported and saved as cad\body\rw_endplate_R.SLDPRT
-INFO  rw_flap1.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_flap1_20261119_004457.SLDPRT
+INFO  rw_flap1.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_flap1_20261125_103437.SLDPRT
 PASS  rw_flap1.step: imported and saved as cad\body\rw_flap1.SLDPRT
-INFO  rw_flap2.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_flap2_20261119_004458.SLDPRT
+INFO  rw_flap2.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_flap2_20261125_103438.SLDPRT
 PASS  rw_flap2.step: imported and saved as cad\body\rw_flap2.SLDPRT
-INFO  rw_main.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_main_20261119_004459.SLDPRT
+INFO  rw_main.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_main_20261125_103439.SLDPRT
 PASS  rw_main.step: imported and saved as cad\body\rw_main.SLDPRT
-INFO  sidepod_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\sidepod_L_20261119_004500.SLDPRT
+INFO  sidepod_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\sidepod_L_20261125_103440.SLDPRT
 PASS  sidepod_L.step: imported and saved as cad\body\sidepod_L.SLDPRT
-INFO  sidepod_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\sidepod_R_20261119_004501.SLDPRT
+INFO  sidepod_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\sidepod_R_20261125_103442.SLDPRT
 PASS  sidepod_R.step: imported and saved as cad\body\sidepod_R.SLDPRT
-INFO  tyre_front.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\tyre_front_20261119_004503.SLDPRT
+INFO  tyre_front.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\tyre_front_20261125_103443.SLDPRT
 PASS  tyre_front.step: imported and saved as cad\body\tyre_front.SLDPRT
-INFO  tyre_rear.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\tyre_rear_20261119_004504.SLDPRT
+INFO  tyre_rear.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\tyre_rear_20261125_103444.SLDPRT
 PASS  tyre_rear.step: imported and saved as cad\body\tyre_rear.SLDPRT
 PASS  parts: chassis + 18 of 18 STEP bodies as cad\body\*.SLDPRT (18 imported in this run)
 PASS  master_layout: inserted, fixed
@@ -42,9 +42,9 @@ PASS  parts: 19 mated to GROUND/CENTRE/FRONT_AXLE, 0 fixed instead, 0 already th
 PASS  left wheels: 4 instances turned 180 deg about the axle's vertical axis, fixed
 PASS  assembly features (mates) with errors: 0
 INFO  components: 24
-INFO  touching only (< 1 mm3, not a clash): rim_front-2 / tyre_front-2, rim_rear-2 / tyre_rear-2, rim_rear-1 / tyre_rear-1, rim_front-1 / tyre_front-1
+INFO  touching only (< 1 mm3, not a clash): rim_front-1 / tyre_front-1, rim_rear-2 / tyre_rear-2, rim_front-2 / tyre_front-2, rim_rear-1 / tyre_rear-1
 PASS  interference: none
-INFO  mass of what is in the assembly: 156.6 kg, CG x 818 / y 0 / z 458 mm (partial car: no driver, battery, motor or suspension yet; imported STEP bodies have no material, so SolidWorks counts them at its default density)
+INFO  mass of what is in the assembly: 156.2 kg, CG x 816 / y 0 / z 458 mm (partial car: no driver, battery, motor or suspension yet; imported STEP bodies have no material, so SolidWorks counts them at its default density)
 PASS  saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
 
 No failures.

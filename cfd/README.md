@@ -6,6 +6,10 @@ Ring 5 lives here. Ansys Student 2026 R1 (Fluent), driven entirely from Python (
 |---|---|
 | `fluent_halfcar.py` | Mesh and solve one variant without clicks: `.venv/Scripts/python cfd/fluent_halfcar.py all C`. See `fluent_halfcar_setup.md`. |
 | `postprocess.py` | Forces and wake planes of every run to tables and plots; `--update-variants` puts the CFD numbers into `params/aero_variants.csv` (the lap sim's aero table). |
+| `visualise.py` | Pictures and films of A, B, C (= run CP), D from the saved case and data files, no Fluent licence needed: `.venv/Scripts/python cfd/visualise.py all` (about 8 min once the export cache exists). Steps `export`, `stills`, `anims`, `compare`, `smoke`; `--selftest`. Writes `../media/cfd/vis/`. |
+| `vis_common.py`, `vis_render.py`, `vis_smoke.py` | Used by `visualise.py`: streamline tracing and captions; stills, orbit / sweep / build-up films and the A-D comparison; the smoke tunnel films. |
+| `explore.py` | Opens one result ready to explore: `.venv/Scripts/python cfd/explore.py C` (CFD-Post with car Cp, streamlines, wake planes at 1/2/3 L, symmetry speed) or `... C --fluent` (Fluent window with case and data read). `--test` checks it without a window. |
+| `cases/vis/<run>/` | Cache of `visualise.py export` (car surface, 12.5 mm and 30 mm resampled grids, about 260 MB per run) and the CFD-Post session files. Ignored by git; remade on demand. |
 | `fluent_halfcar_setup.md` | What the scripts do, what has run on this PC, the cell limit, first-run checklist, how to read the results. |
 | `geometry_notes.md` | The half-car geometry from `cad/generate/cfd_variants.py`: zones, domain, checks, simplifications. |
 | `ansys_quickstart.md` | Install notes and a single-wing smoke test (manual, by clicking). |
@@ -28,6 +32,8 @@ Ring 5 lives here. Ansys Student 2026 R1 (Fluent), driven entirely from Python (
 - Details are in `fluent_halfcar_setup.md`.
 - `params/aero_variants.csv`: row C now comes from run CP, the SolidWorks bodywork (`TABLE_RUN` in `postprocess.py`, user's choice 2026-11-18). A, B and D are still on the older CFD bodywork. The following-car penalty still uses C's wake planes.
 - New actions in `fluent_halfcar.py`: `post` (re-export wake planes, window boxes and y+ from a saved run) and `cont` (continue a run). New options: `--boi win`, `--set KEY=VALUE`.
+
+**Status 2026-11-25:** pictures and films of the saved results in `../media/cfd/vis/` (`visualise.py`), and `explore.py` to open a result in CFD-Post or Fluent. No new solves. The surface Cp is that of the wall-adjacent cell, and the 3D fields are resampled onto 12.5 mm and 30 mm grids, so the pictures are a little smoother than Fluent's own. Like every number here they are steady RANS on a Student mesh: only the ranking of the variants is trustworthy.
 
 ## forces.csv columns
 

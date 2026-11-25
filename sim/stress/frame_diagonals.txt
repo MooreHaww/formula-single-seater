@@ -1,47 +1,46 @@
 frame_diagonal_search: target 1500 Nm/deg (frame_fe torsion through the links, free-free)
 as built: 834 Nm/deg, 41.94 kg
 
-candidates (25.4 x 1.6 tube; envelope margin beyond the 10 mm rule):
-  F0  floor    nose floor                 alone   851 Nm/deg  +0.44 kg  (margin 343 mm to legs)
-  F1  floor    front box floor            alone   932 Nm/deg  +0.54 kg  (margin 46 mm to legs)
-  F3  floor    cockpit floor              alone  1019 Nm/deg  +0.77 kg  (margin 17 mm to torso)
-  F4  floor    engine bay floor           alone   925 Nm/deg  +0.59 kg  (margin 22 mm to torso)
-  T0  top      nose top                   alone   840 Nm/deg  +0.46 kg  (margin 317 mm to legs)
-  T1  top      front box top              alone   843 Nm/deg  +0.55 kg  (margin 67 mm to legs)
-  T5  top      rear top, fwd of rocker    alone   841 Nm/deg  +0.58 kg  (margin 121 mm to motor)
-  T6  top      rear top, aft of rocker    alone   844 Nm/deg  +0.59 kg  (margin 145 mm to diff)
-  B0  plane    front bulkhead plane       alone   861 Nm/deg  +0.45 kg  (margin 477 mm to legs)
-  B1  plane    FS1 plane                  alone   842 Nm/deg  +0.49 kg  (margin 311 mm to legs)
-  B5  plane    RS2 plane (rear end)       alone   847 Nm/deg  +0.61 kg  (margin 42 mm to diff)
-  P0  sidepod  sidepod floor (both)       alone   885 Nm/deg  +1.17 kg  (margin 2 mm to battery_R)
-  P1  sidepod  sidepod top (both)         alone   852 Nm/deg  +1.17 kg  (margin 5 mm to battery_R)
-dropped (would hit an envelope):
+candidates (25.4 x 1.6 tube; envelope margin beyond the 10 mm rule; shallowest joint, 10 deg minimum):
+  F0  floor    nose floor                 alone   851 Nm/deg  +0.44 kg  (margin 343 mm to legs; joint 19.1 deg)
+  F1  floor    front box floor            alone   932 Nm/deg  +0.54 kg  (margin 46 mm to legs; joint 32.1 deg)
+  F3  floor    cockpit floor              alone  1019 Nm/deg  +0.77 kg  (margin 17 mm to torso; joint 43.1 deg)
+  F4  floor    engine bay floor           alone   925 Nm/deg  +0.59 kg  (margin 22 mm to torso; joint 21.6 deg)
+  T0  top      nose top                   alone   840 Nm/deg  +0.46 kg  (margin 317 mm to legs; joint 22.8 deg)
+  T1  top      front box top              alone   843 Nm/deg  +0.55 kg  (margin 67 mm to legs; joint 26.4 deg)
+  T6  top      rear top, aft of rocker    alone   844 Nm/deg  +0.59 kg  (margin 145 mm to diff; joint 12.3 deg)
+  B0  plane    front bulkhead plane       alone   861 Nm/deg  +0.45 kg  (margin 477 mm to legs; joint 36.9 deg)
+  B1  plane    FS1 plane                  alone   842 Nm/deg  +0.49 kg  (margin 311 mm to legs; joint 13.9 deg)
+  B5  plane    RS2 plane (rear end)       alone   847 Nm/deg  +0.61 kg  (margin 42 mm to diff; joint 14.4 deg)
+  P0  sidepod  sidepod floor (both)       alone   885 Nm/deg  +1.17 kg  (margin 2 mm to battery_R; joint 19.5 deg)
+  P1  sidepod  sidepod top (both)         alone   852 Nm/deg  +1.17 kg  (margin 5 mm to battery_R; joint 19.7 deg)
+dropped (would hit an envelope, or meet a tube at under 10 deg):
   F2: 12 mm short of the clearance to legs
   F5: 16 mm short of the clearance to diff
   T2: 23 mm short of the clearance to legs
   T3: 73 mm short of the clearance to motor
   T4: 20 mm short of the clearance to diff
+  T5: meets RT1_cross at RT1_R at 5.4 deg (under 10 deg: the tube would lie along its neighbour, a long gouged joint that cannot be built cleanly)
   B3: 39 mm short of the clearance to motor
   B4: 40 mm short of the clearance to diff
   cockpit top (front hoop to main hoop): not a candidate, it is the cockpit opening
   FS2 plane FS2_L_R-FS2_U_L: not a candidate, it crosses the pedal and feet window between the FS2 cross tubes
 
 floor only  : target not reached; best 1161 Nm/deg with all of F0 F1 F3 F4 (44.29 kg), 15 subsets solved
-floor + top : target not reached; best 1368 Nm/deg with all of F0 F1 F3 F4 T0 T1 T5 T6 (46.47 kg), 255 subsets solved
-all candidates together: 1588 Nm/deg
+floor + top : target not reached; best 1354 Nm/deg with all of F0 F1 F3 F4 T0 T1 T6 (45.89 kg), 127 subsets solved
+all candidates together: 1571 Nm/deg
 all candidates less one (a candidate is needed in every set when this is under 97 % of the target):
-  without F0   1542 Nm/deg
-  without F1   1368 Nm/deg
-  without F3   1542 Nm/deg
-  without F4   1487 Nm/deg
-  without T0   1536 Nm/deg
-  without T1   1425 Nm/deg
-  without T5   1571 Nm/deg
-  without T6   1571 Nm/deg
-  without B0   1479 Nm/deg
-  without B1   1586 Nm/deg
-  without B5   1590 Nm/deg
-  without P0   1517 Nm/deg
-  without P1   1499 Nm/deg
+  without F0   1526 Nm/deg
+  without F1   1353 Nm/deg
+  without F3   1528 Nm/deg
+  without F4   1475 Nm/deg
+  without T0   1520 Nm/deg
+  without T1   1409 Nm/deg
+  without T6   1540 Nm/deg
+  without B0   1463 Nm/deg
+  without B1   1569 Nm/deg
+  without B5   1573 Nm/deg
+  without P0   1501 Nm/deg
+  without P1   1484 Nm/deg
 needed in every set: F1 T1
-all candidates: lightest set reaching the target: F1 T1 F0 F3 F4 T0 T5 B0 P1, 1503 Nm/deg, 47.50 kg (+5.56), after 1507 subsets in order of mass
+all candidates: lightest set reaching the target: F1 T1 F0 F3 F4 T0 T6 B0 P1, 1501 Nm/deg, 47.51 kg (+5.57), after 836 subsets in order of mass

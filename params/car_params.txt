@@ -46,12 +46,12 @@
 ' MATLAB roll them up identically. matlab/mass_budget.m prints the table,
 ' media/mass_budget.md and media/mass_budget.png. At the end of Ring 2 every
 ' line is replaced by SolidWorks Mass Properties of the real part.
-"m_frame"= 47.5                ' CALC SolidWorks weldment, AISI 1020, 124 tubes of 25.4 mm incl. battery structure and torsion diagonals (2026-11-18; 49.3 from centreline lengths double-counted the coped ends). Trimmed weldment 46.68 kg since the tubes are built full length (2026-11-19, CheckChassis), coped CSV 46.8, solid frame 47.0; 47.5 kept until decided. No welds, no brackets (next line)
-"x_frame"= 841                 ' CALC centroid of the CSV tubes with the joint overlaps removed (matlab/cad/frame_trimmed_mass.m: x 839.3, z 335.0; SolidWorks trimmed weldment x 837.9, z 333.4, 2026-11-19); mass_budget.m and CheckChassis warn if it drifts
-"z_frame"= 335
-"m_brackets_welds"= 6.4        ' GUESS tabs, weld fill, bulkhead plates, floor close-out, battery box mounts (about 13 % of the 49.3 kg centreline frame; was 5.5 before the diagonals; kept at 6.4 when m_frame became the weldment's 47.5 kg)
-"x_brackets_welds"= 841
-"z_brackets_welds"= 335
+"m_frame"= 46.26               ' CALC SolidWorks trimmed weldment (CheckChassis 2026-11-25), AISI 1020, 123 tubes of 25.4 mm incl. battery structure and 9 torsion diagonals (RT1-RRK_diag removed 2026-11-25). Coped CSV 46.38 kg (frame_trimmed_mass.m); 48.7 on centreline lengths, which count each coped end twice. Was 47.5 (untrimmed weldment). No welds, no brackets (next line)
+"x_frame"= 832                 ' CALC SolidWorks trimmed weldment centre of mass x 831.7, z 332.1 (2026-11-25); coped CSV x 833.0, z 333.8 (frame_trimmed_mass.m); mass_budget.m and CheckChassis warn if it drifts
+"z_frame"= 332
+"m_brackets_welds"= 6.4        ' GUESS tabs, weld fill, bulkhead plates, floor close-out, battery box mounts (about 13 % of the 49.3 kg centreline frame; was 5.5 before the diagonals; kept at 6.4 when m_frame became the trimmed weldment)
+"x_brackets_welds"= 832
+"z_brackets_welds"= 332
 "m_battery"= 45.0              ' ESTIMATE 6 kWh in two sidepod packs with boxes at about 135 Wh/kg; measured once the cells are chosen
 ' x_battery, z_battery: further down, after the battery geometry (SolidWorks solves equations top-down)
 "m_motor"= 12.3                ' CATALOGUE Emrax 228 class (230 Nm peak matches motor_torque_max); an Emrax 208 would be 9.4

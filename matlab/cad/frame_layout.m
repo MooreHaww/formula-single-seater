@@ -229,7 +229,10 @@ T = {
     'FB_L', 'D:FB_U', 'bulkhead'    % front bulkhead plane, behind the anti-intrusion plate
     'FH_L', 'D:MH_L', 'front'       % cockpit floor, under the seat
     'MH_L', 'D:RS1_L', 'rear'       % engine bay floor
-    'RT1', 'D:RRK', 'rear'          % rear top, ahead of the rocker mount
+    % removed 2026-11-25: 'RT1', 'D:RRK' (rear top, ahead of the rocker
+    % mount) met the RT1 and RRK cross tubes at 5.4 deg, 60 mm apart, and lay
+    % along them for about 270 mm at each end: not buildable cleanly. Without
+    % it the beam model gives 1476 Nm/deg instead of 1503 (sim/stress/frame_diagonals.txt)
     };
 if sidepods
     T = [T; {

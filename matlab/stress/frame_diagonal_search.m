@@ -127,14 +127,39 @@ for k = 1:numel(c)
         end
     end
     c(k).clear_margin = worst; c(k).clear_item = item;
+    [c(k).min_angle, c(k).angle_with] = joint_angle(c(k).pairs, lay);
     if worst < 0
         ok(k) = false; why(k) = sprintf('%s: %.0f mm short of the clearance to %s', c(k).id, -worst, item);
+    elseif c(k).min_angle < MIN_JOINT_DEG
+        ok(k) = false; why(k) = sprintf('%s: meets %s at %.1f deg (under %g deg: the tube would lie along its neighbour, a long gouged joint that cannot be built cleanly)', ...
+            c(k).id, c(k).angle_with, c(k).min_angle, MIN_JOINT_DEG);
     end
 end
 keep = c(ok);
 dropped = struct('id', {c(~ok).id}, 'desc', {c(~ok).desc}, 'why', reshape(cellstr(why(~ok)), 1, []));
 % the cockpit top (front hoop to main hoop) is not a candidate at all: it is
 % the cockpit opening the driver gets in and out through
+end
+
+function [amin, with] = joint_angle(pairs, lay)
+% smallest angle between a candidate tube and any frame tube (without the
+% torsion diagonals) at either of its end nodes
+NL = lay.nodes; T = lay.tubes;
+base = ~contains(string(T(:, 4)), "_diag") & ~startsWith(string(T(:, 4)), "FH_M-SP2_U");
+T = T(base, :);
+amin = 180; with = "";
+for i = 1:size(pairs, 1)
+    for e = 1:2
+        n = pairs(i, e); o = pairs(i, 3 - e);
+        u = NL.(o) - NL.(n); u = u / norm(u);
+        for r = 1:size(T, 1)
+            if strcmp(T{r, 1}, n), m = T{r, 2}; elseif strcmp(T{r, 2}, n), m = T{r, 1}; else, continue; end
+            w = NL.(m) - NL.(n); w = w / norm(w);
+            a = acosd(max(-1, min(1, dot(u, w))));
+            if a < amin, amin = a; with = string(T{r, 4}) + " at " + n; end
+        end
+    end
+end
 end
 
 function d = box_dist(pts, bx)
@@ -211,13 +236,13 @@ end
 function print_report(out, fid)
 fprintf(fid, 'frame_diagonal_search: target %g Nm/deg (frame_fe torsion through the links, free-free)\r\n', out.target);
 fprintf(fid, 'as built: %.0f Nm/deg, %.2f kg\r\n\r\n', out.base.k, out.base.mass);
-fprintf(fid, 'candidates (25.4 x 1.6 tube; envelope margin beyond the 10 mm rule):\r\n');
+fprintf(fid, 'candidates (25.4 x 1.6 tube; envelope margin beyond the 10 mm rule; shallowest joint, %g deg minimum):\r\n', MIN_JOINT_DEG);
 for k = 1:numel(out.cand)
     c = out.cand(k);
-    fprintf(fid, '  %-3s %-8s %-26s alone %5.0f Nm/deg  +%.2f kg  (margin %.0f mm to %s)\r\n', ...
-        c.id, c.group, c.desc, c.k_alone, c.dmass, c.clear_margin, c.clear_item);
+    fprintf(fid, '  %-3s %-8s %-26s alone %5.0f Nm/deg  +%.2f kg  (margin %.0f mm to %s; joint %.1f deg)\r\n', ...
+        c.id, c.group, c.desc, c.k_alone, c.dmass, c.clear_margin, c.clear_item, c.min_angle);
 end
-fprintf(fid, 'dropped (would hit an envelope):\r\n');
+fprintf(fid, 'dropped (would hit an envelope, or meet a tube at under %g deg):\r\n', MIN_JOINT_DEG);
 for k = 1:numel(out.dropped), fprintf(fid, '  %s\r\n', out.dropped(k).why); end
 fprintf(fid, '  cockpit top (front hoop to main hoop): not a candidate, it is the cockpit opening\r\n');
 fprintf(fid, '  FS2 plane FS2_L_R-FS2_U_L: not a candidate, it crosses the pedal and feet window between the FS2 cross tubes\r\n\r\n');
@@ -262,6 +287,20 @@ dm = [1 2 4]; M = (1:7).'; B = false(7, 3);
 for j = 1:3, B(:, j) = bitget(M, j) == 1; end
 [~, ord] = sort(B * dm(:));
 ok = ok && isequal(ord.', 1:7);
+% joint angle: a candidate at 30 deg to a rail through its end node; the
+% rail's two halves make 30 and 150 deg, so the shallowest is 30
+L.nodes = struct('N0', [0 0 0], 'NX', [100 0 0], 'NW', [-100 0 0], 'NY', [100 * cosd(30), 100 * sind(30), 0]);
+L.tubes = {'N0', 'NX', 'g', 'railA'; 'NW', 'N0', 'g', 'railB'; 'N0', 'NY', 'g', 'x_diag'};
+[a, w] = joint_angle(["N0", "NY"], L);
+ok = ok && abs(a - 30) < 1e-9 && w == "railA at N0";
 fprintf('frame_diagonal_search selftest: %s\n', string(ok));
 if ~ok, error('frame_diagonal_search:selftest', 'self-test failed'); end
+end
+
+function a = MIN_JOINT_DEG()
+% a candidate meeting a frame tube at a smaller angle is dropped (2026-11-25:
+% T5, RT1_R-RRK_L, met the RT1 and RRK cross tubes at 5.4 deg and lay along
+% them for about 270 mm at each end; the shallowest joint in the frame
+% without diagonals is 13 deg)
+a = 10;
 end

@@ -16,7 +16,7 @@ python tools/sw_run.py rebuild
 
 The command:
 - closes SolidWorks without saving and starts it fresh;
-- builds the chassis weldment from `cad/frame/*.csv` (124 tubes), trims every tube end and checks the result;
+- builds the chassis weldment from `cad/frame/*.csv` (123 tubes), trims every tube end and checks the result;
 - builds the master layout, bodywork and wings, the assembly, and the 24 suspension parts;
 - checks suspension clearance over ±30 mm travel and full steering lock, and runs the motion study and the frame beam studies;
 - saves the standard views to `media/views/`.
@@ -38,27 +38,27 @@ run_all('test')                                        % 24 self-tests
 
 ## Results
 
-All numbers come from the scripts named in the table, as of 2026-11-18. None of them is a measurement on a real car.
+All numbers come from the scripts named in the table, as of 2026-11-25. None of them is a measurement on a real car.
 
 | Quantity | Value | Source |
 |---|---|---|
-| Mass, car without / with driver | 233.8 / 303.8 kg, 41.7 % front, CG 903 mm behind the front axle, 312 mm high | `matlab/mass_budget.m`, `media/mass_table.md` |
-| Frame | 124 tubes of 25.4 mm 4130, 47.5 kg as the SOLIDWORKS weldment (49.3 kg on centre-line lengths, which count each coped end twice); no welds or brackets (6.4 kg allowance on its own line) | `params/car_params.txt`, `matlab/cad/frame_trimmed_mass.m` (CG) |
-| Frame torsional stiffness | 1503 Nm/deg (834 before the 10 torsion diagonals added on 2026-11-18); a fused solid model in SOLIDWORKS Simulation gives 1504 (same load case, 2.9 M-node mesh) | `matlab/stress/frame_fe.m` (beam model), `tools/sw_harness/FrameAnalysis.cs` (solid cross-check) |
-| Frame, lowest factor of safety on yield | 2.68, bump case (3 g total wheel load), nominal beam stress | `matlab/stress/frame_fe.m`, `docs/stress_frame.md` |
+| Mass, car without / with driver | 232.6 / 302.6 kg, 41.8 % front, CG 902 mm behind the front axle, 311 mm high | `matlab/mass_budget.m`, `media/mass_table.md` |
+| Frame | 123 tubes of 25.4 mm 4130, 46.26 kg as the trimmed SOLIDWORKS weldment (48.7 kg on centre-line lengths, which count each coped end twice); no welds or brackets (6.4 kg allowance on its own line) | `params/car_params.txt`, `matlab/cad/frame_trimmed_mass.m` (CG) |
+| Frame torsional stiffness | 1476 Nm/deg, 1.6 % under the 1500 target (834 without the 9 torsion diagonals; 1503 with a tenth, RT1-RRK, removed on 2026-11-25 because it met its cross tubes at 5.4 deg); a fused solid model in SOLIDWORKS Simulation gives 1470 (same load case, 2.9 M-node mesh) | `matlab/stress/frame_fe.m` (beam model), `tools/sw_harness/FrameAnalysis.cs` (solid cross-check) |
+| Frame, lowest factor of safety on yield | 2.62, bump case (3 g total wheel load), nominal beam stress | `matlab/stress/frame_fe.m`, `docs/stress_frame.md` |
 | Camber gain, front / rear | −0.039 / −0.043 deg/mm | `matlab/suspension_geometry.m` |
 | Bump steer over ±30 mm, front / rear | 0.010 / 0.021 deg | same |
 | Static roll centre, front / rear | 60 / 79 mm | same |
 | Motion ratio, front / rear | 0.71 / 0.77 | same |
 | Outer ball joint housing to rim barrel, smallest | 4.0 mm (rear upper joint), with a 12.5 mm housing radius assumed | `matlab/suspension_optimise.m` |
 | Aero, as built (CP: variant C's wings on the SOLIDWORKS nose, sidepods and floor plate), half-car CFD | ClA 3.89 m², CdA 1.66 m², L/D 2.34, 43 % on the front axle (unsteady, mean good to about 1 %) | `media/cfd/cfd_results.md`, `params/aero_variants.csv` |
-| Lap time, FS-style autocross, as built (CP) | 61.16 s point-mass, 62.17 s with four-wheel load transfer | `media/lap_time_table.md`, `media/results_table.md` |
-| Lap time, fast circuit, as built (CP) | 82.99 s point-mass, 83.11 s four-wheel | same |
-| Wings worth (A no wings → C, like for like), autocross / fast circuit | 5.57 s / 1.61 s | same |
-| Skidpad / 75 m acceleration, as built (CP) | 4.90 s / 4.35 s; 0–100 km/h 3.47 s | `matlab/accel_test.m`, lap sim |
-| Simulink 75 m model vs MATLAB (CP) | 4.3492 s vs 4.3492 s | `matlab/simulink/run_accel_simulink.m` |
-| Following one car length behind (CP) | 64 % of the free-stream dynamic pressure in the follower's window (CP's own wake); +2.13 s autocross, +1.21 s fast circuit | CFD wake plane, `matlab/lapsim/lap_experiments.m` |
-| Cornering balance at a 45 m radius (CP, four-wheel) | 112.6 km/h, rear axle at its limit first, balance −6.7 % (front use minus rear use); neutral with 39 % of the aero load on the front axle against the 43 % CP has | `matlab/lapsim/cornering_balance_study.m`, `media/cornering_balance.md` |
+| Lap time, FS-style autocross, as built (CP) | 61.12 s point-mass, 62.12 s with four-wheel load transfer | `media/lap_time_table.md`, `media/results_table.md` |
+| Lap time, fast circuit, as built (CP) | 82.97 s point-mass, 83.08 s four-wheel | same |
+| Wings worth (A no wings → C, like for like), autocross / fast circuit | 5.60 s / 1.63 s | same |
+| Skidpad / 75 m acceleration, as built (CP) | 4.89 s / 4.35 s; 0–100 km/h 3.47 s | `matlab/accel_test.m`, lap sim |
+| Simulink 75 m model vs MATLAB (CP) | 4.3499 s vs 4.3499 s | `matlab/simulink/run_accel_simulink.m` |
+| Following one car length behind (CP) | 64 % of the free-stream dynamic pressure in the follower's window (CP's own wake); +2.14 s autocross, +1.21 s fast circuit | CFD wake plane, `matlab/lapsim/lap_experiments.m` |
+| Cornering balance at a 45 m radius (CP, four-wheel) | 112.9 km/h, rear axle at its limit first, balance −6.5 % (front use minus rear use); neutral with 39 % of the aero load on the front axle against the 43 % CP has | `matlab/lapsim/cornering_balance_study.m`, `media/cornering_balance.md` |
 
 ### Lap times, aero variants (point-mass)
 
@@ -66,10 +66,10 @@ A to D are the like-for-like comparison: CFD of each wing set on the older CFD b
 
 | Track | A no wings | B moderate | C maximum | D wake-tuned | **CP as built** |
 |---|---|---|---|---|---|
-| skidpad | 5.12 s | 4.92 s | 4.89 s | 4.88 s | **4.90 s** |
+| skidpad | 5.12 s | 4.92 s | 4.89 s | 4.88 s | **4.89 s** |
 | accel 75 m | 4.41 s | 4.34 s | 4.35 s | 4.34 s | **4.35 s** |
-| autocross | 66.60 s | 61.67 s | 61.03 s | 60.68 s | **61.16 s** |
-| fast circuit | 84.16 s | 79.81 s | 82.54 s | 84.32 s | **82.99 s** |
+| autocross | 66.59 s | 61.64 s | 60.99 s | 60.65 s | **61.12 s** |
+| fast circuit | 84.15 s | 79.79 s | 82.52 s | 84.31 s | **82.97 s** |
 
 On the fast circuit the drag of C and D costs more than their downforce gains, because the car is power-limited on the straights (80 kW). The SOLIDWORKS bodywork costs 0.13 s on the autocross and 0.45 s on the fast circuit against C (ClA −2.3 %, CdA +1.6 %).
 
@@ -77,15 +77,15 @@ On the fast circuit the drag of C and D costs more than their downforce gains, b
 
 | | Before | After |
 |---|---|---|
-| Torsional stiffness (through the suspension links) | 834 Nm/deg | 1503 Nm/deg |
-| Frame tubes (weldment mass; centre-line 43.5 / 49.3 kg) | 41.9 kg | 47.5 kg |
-| Car without driver | 227.5 kg | 233.8 kg |
-| Autocross, as built (CP), point-mass / four-wheel | 60.92 / 61.99 s | 61.16 / 62.17 s |
-| Fast circuit, as built (CP), point-mass / four-wheel | 82.88 / 83.00 s | 82.99 / 83.11 s |
+| Torsional stiffness (through the suspension links) | 834 Nm/deg | 1476 Nm/deg |
+| Frame tubes (trimmed-weldment mass; centre-line 43.5 / 48.7 kg) | 41.4 kg | 46.3 kg |
+| Car without driver | 227.0 kg | 232.6 kg |
+| Autocross, as built (CP), point-mass / four-wheel | 60.90 / 61.97 s | 61.12 / 62.12 s |
+| Fast circuit, as built (CP), point-mass / four-wheel | 82.87 / 82.99 s | 82.97 / 83.08 s |
 
-The lap sim treats the chassis as rigid. It therefore shows only the cost of the added mass (+0.24 s on the autocross), not any benefit of the stiffer frame.
+The lap sim treats the chassis as rigid. It therefore shows only the cost of the added mass (+0.22 s on the autocross), not any benefit of the stiffer frame.
 
-The diagonals were chosen by `matlab/stress/frame_diagonal_search.m`: the lightest set that reaches 1500 Nm/deg and clears the driver, battery, motor and diff envelopes. Floor diagonals alone reach 1161 Nm/deg, and floor plus top diagonals reach 1368. The sidepod tops and the front bulkhead plane are also needed.
+The diagonals were chosen by `matlab/stress/frame_diagonal_search.m`: the lightest set that reaches 1500 Nm/deg, clears the driver, battery, motor and diff envelopes, and meets no frame tube at under 10 deg. Floor diagonals alone reach 1161 Nm/deg, and floor plus top diagonals reach 1354. The sidepod tops and the front bulkhead plane are also needed. The search's chosen set had a tenth tube, RT1-RRK (rear top, ahead of the rocker mount). It was removed on 2026-11-25: it met the RT1 and RRK cross tubes, 60 mm apart, at 5.4 deg, so it could only be built as a gouged joint about 270 mm long at each end. Without it the frame gives 1476 Nm/deg. The lightest way back to 1500 is its twin behind the rocker mount (RRK-RT2, 1501 Nm/deg, +0.59 kg, 12.3 deg joints); nothing lighter reaches the target. It was not added.
 
 ### Media
 
@@ -117,7 +117,7 @@ These are the things the numbers above depend on that were not measured, or were
   - rigid joints at the node centres;
   - no weld detail, no stress concentration, no fatigue.
   - It is self-tested against hand calculations for single tubes.
-  - **Torsional stiffness is confirmed by a solid model.** A separate analysis-only solid frame (`cad/analysis/frame_analysis.SLDPRT`, built from the same tube data, tube ends overlapping their neighbours by 1 mm and fused into one body) gives 1504 Nm/deg against the beam model's 1503 in the headline case, and 1374 against 1386 with couples at the nodes. Going from a 5 mm to a 4 mm mesh changes this by 0.3 %; a 3 mm mesh failed to mesh on the Student licence (see `docs/stress_frame.md`).
+  - **Torsional stiffness is confirmed by a solid model.** A separate analysis-only solid frame (`cad/analysis/frame_analysis.SLDPRT`, built from the same tube data, tube ends overlapping their neighbours by 1 mm and fused into one body) gives 1470 Nm/deg against the beam model's 1476 in the headline case, and 1350 against 1365 with couples at the nodes (123 tubes, 2026-11-25). Going from a 5 mm to a 4 mm mesh changes this by 0.3 %; a 3 mm mesh failed to mesh on the Student licence (see `docs/stress_frame.md`).
   - **Stresses are not confirmed.** The solid model's peaks sit where the point loads enter and are not used. The frame stresses and factors of safety are the beam model's nominal values.
   - **What neither model includes:** both assume perfectly fused joints, with no welds as built, no brackets and no fabrication tolerances. The real frame will be softer than both by an amount neither can predict. Only a physical torsion test would settle it.
 - **Mass and CG.** 24 % of the mass is a placeholder (flag GUESS in `media/mass_table.md`), including the brackets and welds, the inverter, the wings and the bodywork. The CG height is therefore partly a guess too.

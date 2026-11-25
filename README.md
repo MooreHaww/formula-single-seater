@@ -77,7 +77,7 @@ On the fast circuit the drag of C and D costs more than their downforce gains, b
 
 ### B, D and CP on the same as-built bodywork
 
-From half-car CFD at 20 m/s. Steady RANS on a Student mesh, so **only the ranking is trustworthy**. Wake q-ratio is the follower's window average at 1 / 2 / 3 car lengths behind the rear axle (1 = clean air). Lap times are point-mass. The following penalty puts the same car behind, one length back, in that variant's own wake.
+From half-car CFD at 20 m/s. Steady RANS on a Student mesh, so **only the ranking is trustworthy**. Wake q-ratio is the follower's window average at 1 / 2 / 3 car lengths behind the rear axle (1 = clean air; lower = dirtier air for the follower, which is our goal). Lap times are point-mass. The following penalty puts the same car behind, one length back, in that variant's own wake.
 
 | | B (as built) | D (as built, **12° diffuser**) | CP (as built) | B old | D old |
 |---|---|---|---|---|---|
@@ -92,8 +92,14 @@ On the as-built bodywork:
 - The ranking is unchanged from the old bodywork:
   - D is fastest on the skidpad and autocross.
   - B is fastest on the power-limited fast circuit.
-  - B leaves the cleanest air at 1 L.
-  - D and CP clean up faster by 2 to 3 L.
+
+
+**Dirty air is the goal:** we want the following car to be disturbed, so a lower q-ratio and a bigger following penalty are better for us.
+- At 1 car length, CP and D disturb a follower most (q-ratio 0.64 / 0.65, autocross penalty +2.14 s each), and B least (0.67, +1.69 s).
+- At 2 and 3 lengths, B's wake persists slightly longer (0.89 / 0.95, against 0.92 / 0.98 for CP and D).
+
+**CP is the chosen car.** D's downforce lead over CP on the as-built hull (ClA +1.3 %, D_AB against CP_bl1) is smaller than the 2.2 % between CP's own two runs (CP and CP_bl1), so D and CP cannot be told apart on downforce.
+
 Full tables: `media/cfd/cfd_results.md`, `media/results_table.md`, `media/lap_as_built_BD.csv`.
 
 ### Frame torsion diagonals: before and after

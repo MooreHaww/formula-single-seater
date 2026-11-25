@@ -31,6 +31,12 @@ One entry per session. Newest at the bottom. Each entry: date, ring, what was do
 - Steady RANS on a Student mesh: **only the ranking is trustworthy.**
 - CP itself is unsteady (downforce band 2.5 %), and CP_bl1 differs from CP by +2.2 % ClA, which is larger than D_AB's lead over CP_bl1 (+1.3 %).
 
+**Dirty air is the goal (wording corrected the same evening):**
+- We want the following car to be disturbed. A lower q-ratio and a bigger following penalty mean dirtier air, which is better for us.
+- At 1 car length, CP and D_AB disturb a follower most (q-ratio 0.64 / 0.65, autocross penalty +2.14 s each), and B_AB least (0.67, +1.69 s).
+- At 2 and 3 lengths, B_AB's wake persists slightly longer (0.89 / 0.95, against 0.92 / 0.98).
+- **CP is the chosen car.** D's ClA lead over CP (+1.3 %) is smaller than CP's own 2.2 % run-to-run difference, so D and CP cannot be told apart on downforce.
+
 ## Summary, 2026-11-25 (CFD session): the aerodynamics made visible: pictures, films, smoke tunnel, explore command
 
 **Status: finished. No new solves, no commits.**
@@ -1450,3 +1456,15 @@ Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-u
   - Lap sim with CP_bl1's aero: skidpad 4.889 s, autocross 60.99 s, fast circuit 82.98 s (point-mass).
 - **Like for like with 1 layer, D_AB against CP_bl1:** ClA +1.3 %, CdA +5.6 %, autocross −0.09 s, fast circuit +1.28 s. The downforce gain is inside CP's own unsteadiness.
 - **Not done / not checked:** see the final answer of this session.
+
+## 2026-11-25 (late), Ring 5: dirty-air wording corrected
+
+- **Why:** the goal is the opposite of "least disturbed follower": we want the car behind to be disturbed. A lower follower q-ratio and a bigger following penalty mean dirtier air, the goal.
+- **Searched** README.md, docs/log.md, media/cfd/cfd_results.md, cfd/visualise.py, cfd/postprocess.py, and also cfd/vis_render.py, vis_smoke.py, vis_common.py, cfd/README.md, media/results_table.md and matlab/lapsim/lap_experiments.m, for "dirty / clean air", "disturb", "best for", "least", wake judgement words.
+- **Found wrong:** only README.md, which said "B leaves the cleanest air at 1 L" and "D and CP clean up faster by 2 to 3 L". The "best for dirty air: B" statement was in this session's chat answer, not in a file. No caption or label in the code had a wake ranking, so no still or film was regenerated.
+- **Changed:**
+  - README.md: those two bullets replaced by a "Dirty air is the goal" paragraph with the corrected result, plus "CP is the chosen car" and the D vs CP downforce statement; the q-ratio definition now says lower = dirtier = our goal.
+  - cfd/postprocess.py: a "Dirty air is the goal" paragraph in the header of cfd_results.md (numbers hard-coded with the date). media/cfd/cfd_results.md regenerated with `--no-plots`; only that paragraph changed. The run also rewrote cfd/results/cfd_summary.csv with the part columns in a different order (same values); restored to the committed file.
+  - this log: a paragraph in the top summary.
+- **Left as is:** the old entry "For a low dirty-air wake, keep the rear wing high..." (2026-11-18, variant E): it is about where the wake sits, and already treats dirty air as the aim. "D wake-tuned" is the variant's name.
+- **Checked:** postprocess self-test PASS.

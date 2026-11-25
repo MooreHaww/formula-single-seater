@@ -4,6 +4,8 @@ Written by `cfd/postprocess.py`. **What these numbers mean:** one mesh per varia
 
 **Bodywork.** CP, B_AB and D_AB share the as-built bodywork (SOLIDWORKS nose, sidepods, 10 mm floor plate) and are the like-for-like comparison; rows B and D of `params/aero_variants.csv` come from B_AB and D_AB since 2026-11-25. A, B, C, D, E and the checks are on the older CFD bodywork. **D_AB's diffuser is 12 degrees, not D's 14** (14 did not mesh on the as-built bodywork), and D_AB has 1 prism layer instead of 2 (cell limit); CP_bl1 is CP with the same 1 layer, for comparison.
 
+**Dirty air is the goal.** We want the car behind to be disturbed, so a LOWER q-ratio in the following car's window and a BIGGER following penalty mean dirtier air, which is better for us. As built (2026-11-25, wake planes below and `media/lap_as_built_BD.csv`): at 1 car length CP and D_AB disturb a follower most (q-ratio 0.64 / 0.65, autocross penalty +2.14 s each) and B_AB least (0.67, +1.69 s); at 2 and 3 lengths B_AB's wake persists slightly longer (0.89 / 0.95 against 0.92 / 0.98 for CP and D_AB). CP is the chosen car. D_AB's downforce lead over CP_bl1 (ClA +1.3 %) is smaller than the 2.2 % between CP's own two runs (CP and CP_bl1), so D and CP cannot be told apart on downforce.
+
 ## All runs
 
 | run | cells | iter | ClA (m2) | CdA (m2) | L/D | front axle share | DF drift / band % | drag drift / band % | force-converged |

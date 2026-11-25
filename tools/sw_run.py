@@ -10,6 +10,8 @@ new-layout, BuildLayout, DrivenTest, BuildBodies (build123d bodies + clearance
 check, no SolidWorks), new-assembly, BuildAssembly, SuspensionParts,
 SuspensionAssembly, SuspensionCheck, SuspensionMotion, ChassisStatics,
 SaveStandardViews <file> [--show prefixes --name label]. Diagnostics: mitre, makeprofile, ChassisStatics probe.
+Showcase: showcase-build (car build-up film: fresh SolidWorks, ShowcaseBuild stills, close-all,
+tools/showcase_build.py -> media/showcase/car_buildup.mp4 and .gif).
 
 How it works: the build logic lives in tools/sw_harness/*.cs (C#, ported from
 cad/macros/*.bas). This script compiles it with the Roslyn compiler of the
@@ -190,7 +192,43 @@ def py_step(step, args):
     return code, out, []
 
 
-PY_STEPS = {"buildbodies": py_step}
+def showcase_build_step(step, args):
+    """showcase-build: the car build-up film. A fresh SolidWorks (GDI rule), the ShowcaseBuild stills
+    (media/showcase/frames_build/), close-all without saving, then tools/showcase_build.py (.venv: Pillow and
+    imageio-ffmpeg) makes media/showcase/car_buildup.mp4 and .gif. Exit 0 only if every part passes."""
+    t0 = time.time()
+    out = ""
+    code = 0
+    for s in ("restart-sw", "ShowcaseBuild", "close-all"):
+        print("\n==== showcase-build: %s" % s)
+        c, o, _ = run_step(s, [])
+        out += o
+        if c != 0:
+            code = c
+            if s != "close-all":
+                run_step("close-all", [])
+                break
+    if code == 0:
+        py = build123d_python()
+        print("\n==== showcase-build: tools/showcase_build.py")
+        if py is None:
+            o, code = "STOPPED: no .venv Python (Pillow, imageio-ffmpeg) for tools/showcase_build.py\n", 2
+        else:
+            r = subprocess.run(py + [os.path.join(REPO, "tools", "showcase_build.py")] + args, capture_output=True, text=True,
+                               encoding="utf-8", errors="replace", cwd=REPO)
+            o, code = r.stdout + r.stderr, r.returncode
+        out += o
+        try:
+            sys.stdout.write(o)
+        except (OSError, UnicodeEncodeError):
+            pass
+    first = next((l.strip() for l in out.splitlines() if l.startswith(("PASS  car", "FAIL  car", "STOPPED"))), "exit %d" % code)
+    stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_run("%s  %-18s %-22s exit %d  %5.0f s  %s" % (stamp, step, " ".join(args), code, time.time() - t0, first[:150]))
+    return code, out, []
+
+
+PY_STEPS = {"buildbodies": py_step, "showcase-build": showcase_build_step}
 
 
 # ------------------------------------------------------------------ dialog watcher

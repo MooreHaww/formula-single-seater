@@ -88,3 +88,11 @@ cad/analysis/old/
 cad/chassis/old/sim_results/
 
 **/old/
+
+# ---- showcase films (remade by: python tools/sw_run.py showcase-build, and matlab/make_lap_video.m) ----
+media/showcase/frames_build/
+media/showcase/frames_lap/
+media/showcase/*.mp4
+media/showcase/*.gif
+# ground plate for the build-up film, remade on every run
+cad/showcase/

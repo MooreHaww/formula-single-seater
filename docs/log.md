@@ -3,6 +3,35 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-26 (CFD session): rear-wing support designs E-H in CFD
+
+**Status: finished, no commits.** Plan and record: `docs/wing_supports_plan.md`. Results: `media/cfd/supports/wing_supports_results.md`.
+- **Runs** (CP with only the rear pylon replaced; 1 prism layer, reference CP_bl1; CP's solver settings):
+  - E_bl1, a lens support;
+  - F_bl1, a lens with a 5 mm round front edge;
+  - H_bl1, a lens with a flared 24 mm blunt tail.
+  - All are force-converged. Mass imbalance is under 1e-6, y+ about 87 on the supports, and the part forces add up to the total.
+  - **G (ridges) failed to mesh 3 times** (the last two at the wing slots) and was not run.
+- **Results:**
+
+| | CP_bl1 | E_bl1 | F_bl1 | H_bl1 |
+|---|---|---|---|---|
+| support down / drag, half car (N) | -0.12 / 4.34 | -0.06 / 0.81 | -0.05 / 0.41 | -0.06 / 2.80 |
+| ClA / CdA | 3.98 / 1.67 | 4.14 / 1.69 | 4.15 / 1.69 | 4.09 / 1.69 |
+| front share | 0.43 | 0.40 | 0.39 | 0.41 |
+| q-ratio 1 / 2 / 3 L | 0.65 / 0.91 / 0.97 | 0.66 / 0.92 / 0.97 | 0.66 / 0.92 / 0.97 | 0.66 / 0.92 / 0.97 |
+
+- **What it means:**
+  - The lens sections stop the flat plate's separation. The rear wing gains 7 to 9 % downforce, and total ClA rises 4.2 % (E) and 4.4 % (F), above the 2.2 % spread.
+  - CdA and the wake do not change measurably.
+  - F has the lowest support drag. **Would build F.** H costs 3.5 times E's support drag for no gain.
+  - Not changed: CP, A-D data, `params/aero_variants.csv`, SOLIDWORKS files.
+- **Mesher-forced changes:**
+  - lens edges are 3 mm square (knife edges did not mesh);
+  - E's rear edge is 3.05 mm (keeps the side faces split);
+  - G was simplified to 2 ridges per face, 14 mm thick, 10 mm proud, and still failed.
+- Old variant E (the 2026-11-18 wake experiment: lower, wider rear wing and a blunt tail) was removed with its geometry, runs, wake data and notes, because it was a failed experiment and the letters E-H now name the new support variants; nothing else depended on it.
+
 ## Summary, 2026-11-25 (CFD session, evening): B and D on the as-built bodywork (B_AB, D_AB)
 
 **How I read the brief:**
@@ -1468,3 +1497,31 @@ Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-u
   - this log: a paragraph in the top summary.
 - **Left as is:** the old entry "For a low dirty-air wake, keep the rear wing high..." (2026-11-18, variant E): it is about where the wake sits, and already treats dirty air as the aim. "D wake-tuned" is the variant's name.
 - **Checked:** postprocess self-test PASS.
+
+
+## 2026-11-26, CFD session: rear-wing supports E-H (detail)
+
+- **Old variant E removed.** Deleted: `cfd/variant_E.md`; `cad/step/cfd/{halfcar,fluid,faces}_E.*`, `check_report_E*.txt`; `cfd/results/runs/E`, `E_w`; `cfd/results/wake/E_*`; `media/cfd/halfcar_E_views.png`, `wake_E*.png`; locally the case, data, mesh, log, wake-box and y+ files in `cfd/cases/`. References removed from `cfd_variants.py` (the E definition and its only-E features `tail_cut_x` and `rw_angles_from`), `cfd_geometry.json`, `postprocess.py`, `explore.py`, `fluent_halfcar.py` (help text), `cfd/README.md`, `geometry_notes.md`, `fluent_halfcar_setup.md`. `postprocess.py` re-run: the tables lost only their E rows (cfd_summary.csv's per-part columns came out in a different order, same values). Older log entries about E are left as history.
+- **New code:**
+  - `cad/generate/cfd_variants.py`: variants E-H, `rws_section`, `rws_ridges`, `build_rw_support`, zone `car_rws`.
+  - `cfd/fluent_halfcar.py`: `car_rws` as a stationary wall with the wing face size, so it gets its own force reports. CP's path is unchanged because the zone is absent there.
+  - New scripts:
+    - `cad/generate/render_rw_supports.py` (geometry pictures);
+    - `cfd/support_forces.py` (force on any face subset from a per-face export, checked against the zone reports to 1e-11; self-test PASS);
+    - `cfd/support_flow.py` (planes next to the support; self-test PASS).
+- **Meshing record (cfd/cases/mesh_try*/):**
+  1. Knife edges: E, G, H, F all failed (self-intersections and breakouts).
+  2. 3 mm edges, 2 layers: H meshed; F at 1,080,650 cells, over the limit, so everything went to 1 layer. E failed in the CAD tessellation (its side faces had merged into one), and G had 16 self-intersections.
+  3. Rear edge 3.05 mm for E and G, 1 layer:
+     - E meshed (977,893 cells) and H meshed (945,815).
+     - G failed at the rear flap-1 slot.
+     - F failed at rear flap 2 after a 0.05 mm change: it went back to 3.00 mm and meshed (987,878).
+  4. G with 2 larger ridges failed at rear flap 2 and the front-flap inner end. G stopped there (3-attempt rule).
+- **Tag slip:** runs first came out as `E__bl1`, because the driver adds its own underscore to `--tag`. They were renamed to `E_bl1` and `H_bl1`, with the mesh path fixed in `mesh_info.json`.
+- **Solves:** E 12:09-13:21, H -14:33, F -15:49, about 65 to 75 min each.
+- **CP pylon force:** per-face export of `car_rw` (pressure times the face area vector, plus wall shear times the area), with faces picked by position and normal. 2,939 faces, 0.319 m².
+- **Docs:**
+  - README Future work: the wing-supports concept bullet replaced by what was found.
+  - Also updated: `cfd/README.md`, `cfd/geometry_notes.md`, `media/cfd/cfd_results.md` (regenerated).
+- **Not checked:** see the results file. Lap time and balance were not re-run; there are no 2-layer runs, no yaw, no structure and no CAD.
+

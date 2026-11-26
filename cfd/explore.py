@@ -5,7 +5,7 @@ the pictures of cfd/visualise.py already set up, ready to explore and screen-rec
     .venv/Scripts/python cfd/explore.py D --fluent     # Fluent window (PyFluent, GUI)
     .venv/Scripts/python cfd/explore.py A --test       # CFD-Post in batch: writes a check picture, no window
 
-Variants: A, B, C (= run CP), D, or any run folder name (E, CP, ...).
+Variants: A, B, C (= run CP), D, or any run folder name (CP, CP_bl1, ...).
 
 CFD-Post opens with (Outline tree, tick the boxes to show or hide):
     car Cp            car and wheel walls coloured by Cp = p / 240 Pa, -3 to +1
@@ -281,7 +281,7 @@ def open_fluent(run: str, test: bool) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("variant", help="A, B, C (= run CP), D, or a run name such as E")
+    ap.add_argument("variant", help="A, B, C (= run CP), D, or a run name such as CP_bl1")
     ap.add_argument("--fluent", action="store_true", help="open in Fluent instead of CFD-Post")
     ap.add_argument("--test", action="store_true", help="no window: check that the set-up works")
     a = ap.parse_args(argv)

@@ -46,7 +46,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_parts import ROOT, read_airfoil, read_car_params, section_ellipse, section_rounded  # noqa: E402
 
 from build123d import (  # noqa: E402
-    Box, Compound, Cylinder, GeomType, Line, Pos, Rot, Solid, Sphere, Spline, Vector, Vertex, Wire,
+    Box, Compound, Cylinder, GeomType, Line, Pos, Rot, Solid, Sphere, Spline, ThreePointArc, Vector, Vertex, Wire,
     export_step, extrude, fillet, import_step, loft, make_face,
 )
 from OCP.BRepCheck import BRepCheck_Analyzer  # noqa: E402
@@ -55,10 +55,11 @@ from OCP.BRep import BRep_Tool  # noqa: E402
 OVER = 20.0          # overshoot across Y = 0 and below Z = 0 so the cuts are clean
 PLINTH = 5.0         # height of the vertical step where a tyre meets the ground
 ZONES = ["inlet", "outlet", "symmetry", "side", "top", "ground", "wheel_front", "wheel_rear",
-         "car_body", "car_floor", "car_fw", "car_rw"]
+         "car_body", "car_floor", "car_fw", "car_rw", "car_rws"]   # car_rws: rear-wing supports, variants E-H only
 COLOURS = {"inlet": (0.2, 0.6, 1.0), "outlet": (1.0, 0.4, 0.2), "symmetry": (0.8, 0.8, 0.8), "side": (0.7, 0.7, 0.7),
            "top": (0.6, 0.6, 0.6), "ground": (0.4, 0.3, 0.2), "wheel_front": (0.1, 0.1, 0.1), "wheel_rear": (0.25, 0.25, 0.25),
-           "car_body": (0.9, 0.1, 0.1), "car_floor": (0.5, 0.5, 0.1), "car_fw": (0.1, 0.7, 0.2), "car_rw": (0.1, 0.3, 0.9)}
+           "car_body": (0.9, 0.1, 0.1), "car_floor": (0.5, 0.5, 0.1), "car_fw": (0.1, 0.7, 0.2), "car_rw": (0.1, 0.3, 0.9),
+           "car_rws": (0.6, 0.1, 0.8)}
 
 
 # ---------------------------------------------------------------------------
@@ -87,16 +88,11 @@ def airfoil_points(name: str, chord: float, aoa_deg: float, le_x: float, le_z: f
 
 
 # Derived variants: built from a base variant's parameters with overrides.
-#   E  (2026-11-18): C with a lower, wider rear wing at D's angles, D's 14 deg diffuser and
-#                    a blunt tail (body cut at X 1745). Aim: a lower, more turbulent wake at
-#                    C's downforce. Physics and prediction: cfd/variant_E.md (written before the run).
 #   CP (2026-11-18): C with the SolidWorks bodywork of cad/generate/build_parts.py: nose
 #                    sections from the frame, taller and longer sidepods, 10 mm floor plate.
 #                    Simplifications against the parts: cfd/geometry_notes.md.
 VARIANT_DEFS = {
     "A": {"base": "A"}, "B": {"base": "B"}, "C": {"base": "C"}, "D": {"base": "D"},
-    "E": {"base": "C", "rw_angles_from": "D", "set": {"rw_height": 950.0, "rw_span": 1330.0}, "diffuser_angle": 14.0,
-          "tail_cut_x": 1700.0},
     "CP": {"base": "C", "body": "parts"},
     # B_AB, D_AB (2026-11-25): B's and D's aero packages (wing angles, D's endplate fins, beam
     # wing and 14 deg diffuser; B without diffuser, as variant B is defined) on CP's as-built
@@ -112,6 +108,15 @@ VARIANT_DEFS = {
     # project edges at the beam wing (Y = 0) and the rear wing at the endplate (Y = 625). Wings, beam
     # wing and fins are D's. Meshed with 1 prism layer (--set bl_layers=1) for the cell limit.
     "D_AB": {"base": "D", "body": "parts", "diffuser_angle": 12.0},
+    # E-H (2026-11-26): rear-wing support designs, docs/wing_supports_plan.md. CP with its rear pylon (a flat
+    # 16 mm plate) replaced by a support in the same envelope (same X range, Y centre, 16 mm maximum
+    # thickness and side outline); its own force zone car_rws. Each differs from E by one thing:
+    #   E lens (biconvex circular arcs, sharp front and back edges); F E's front edge rounded (RWS_NOSE_R);
+    #   G E plus curved ridges on both faces (RWS_RIDGES); H E's rear half flared to a blunt base (RWS_FLARE_T).
+    "E": {"base": "C", "body": "parts", "rw_support": "lens"},
+    "F": {"base": "C", "body": "parts", "rw_support": "round"},
+    "G": {"base": "C", "body": "parts", "rw_support": "ridges"},
+    "H": {"base": "C", "body": "parts", "rw_support": "flare"},
 }
 
 
@@ -131,10 +136,6 @@ def variant_params(p: dict, variant: str) -> dict:
     for k, v in p.items():
         if k.endswith(f"_{b}"):
             q[k[: -len(b)] + variant] = v
-    src = d.get("rw_angles_from")
-    if src:
-        for el in ("main", "flap1", "flap2"):
-            q[f"rw_{el}_aoa_{variant}"] = p[f"rw_{el}_aoa_{src}"]
     if "diffuser_angle" in d:
         q[f"diffuser_angle_{variant}"] = d["diffuser_angle"]
     q.update(d.get("set", {}))
@@ -143,6 +144,15 @@ def variant_params(p: dict, variant: str) -> dict:
 
 VG_T = 10.0          # mm, thickness of the variant-D endplate fins (5 mm fins gave many tiny faces and a fragile surface mesh)
 SLOT_EXTRA = 8.0     # mm added to wing_element_gap: the CAD's 14 mm leaves 5 to 8 mm between the surfaces, too thin to mesh inside the cell limit
+RWS_EDGE_T = 3.0     # mm: E-H lens edges cut square this thick (knife edges: 31 self-intersections in the surface mesh, 2026-11-26)
+RWS_EDGE_DIFF = 0.05 # mm: rear lens edge this much thicker than the front one (keeps the side faces split at mid-chord)
+RWS_NOSE_R = 5.0     # mm: F's front-edge radius (E-H rear-wing supports, rws_section)
+RWS_FLARE_T = 24.0   # mm: H's base thickness (E-H: 16 mm maximum)
+# G's ridges: Z of each ridge's front end, start and end as chord fractions, rise angle at the back (deg;
+# horizontal at the front), radial thickness, and the height out of each face at mid-chord (mm)
+# first design 3 ridges (Z 650, 830, 1010), 10 mm thick, 8 mm proud: G failed to mesh twice; mesh attempt 3
+# (2026-11-26) uses fewer, larger ridges: 2 ridges, 14 mm thick, 10 mm proud
+RWS_RIDGES = {"z0": (700.0, 950.0), "u0": 0.20, "u1": 0.85, "angle": 20.0, "thick": 14.0, "height": 10.0}
 TE_CUT = 0.97        # wing sections are cut at this chord fraction at most: a blunt trailing edge instead of a knife edge
 TE_MIN_MM = 0.0      # (0 = off) ... or further forward, where the section is this thick: thinner edges (1.1 to 1.8 mm at 0.97 c on the flaps)
                      # are below the 2.5 mm minimum mesh size. Tried at 3.0 on 2026-11-17: the surface mesh of D then failed in
@@ -333,8 +343,7 @@ def sidepod_parts(p):
 def build_body(p, variant: str = "C"):
     """Chassis envelope, closed cockpit, driver (torso and helmet), roll-hoop
     fairing, sidepod with the battery pack inside. Variant CP: the SolidWorks
-    nose and sidepods (body_sections_parts, sidepod_parts). Variant E: cut off
-    square at tail_cut_x (blunt base)."""
+    nose and sidepods (body_sections_parts, sidepod_parts)."""
     d = VARIANT_DEFS[variant]
     parts_body = d.get("body") == "parts"
     hull = loft([section_rounded(*s) for s in (body_sections_parts(p) if parts_body else body_sections(p))], ruled=True)
@@ -354,8 +363,6 @@ def build_body(p, variant: str = "C"):
                     section_rounded(1240, w, h, 25, z_bot, yc),
                     section_rounded(1295, 120, 180, 30, 70, 370)], ruled=True)
     body = fuse_all({"hull": hull, "torso": torso, "helmet": helmet, "hoop fairing": hoop, "sidepod": pod}, "body")
-    if "tail_cut_x" in d:
-        body = one_solid(body & box_between(-1e4, d["tail_cut_x"], -1e4, 1e4, -1e4, 1e4), "body with blunt tail")
     return body
 
 
@@ -520,7 +527,12 @@ def build_rear_wing(p, variant: str):
     parts = {"endplate": ep}; parts.update(solids)
     info = {"geo": geo, "endplate": epi, "pylon_x": (xa, xb)}
     info["no_pylon"] = fuse_all(dict(parts), "rear wing without pylon")      # for the wing-to-body clearance check
-    parts["pylon"] = pyl
+    sk = VARIANT_DEFS.get(variant, {}).get("rw_support")
+    if sk:                                   # E-H: the support replaces the pylon and is returned on its own (zone car_rws)
+        info["support"] = build_rw_support(p, sk, xa, xb, mid_z_at(pts, xa), mid_z_at(pts, xb), RWS_EDGE_T)
+        info["support_kind"] = sk
+    else:
+        parts["pylon"] = pyl
     if kind(variant) == "D":
         parts.update({f"rw {k}": v for k, v in strakes(p, epi, p["vg_count_rw"]).items()})
         f, binfo = airfoil_face_cfd("rw_flap1", p["beam_chord"], p["beam_aoa_D"], p["beam_x_le"], p["beam_z_le"])
@@ -528,6 +540,114 @@ def build_rear_wing(p, variant: str):
         parts["beam wing"] = Pos(0, -OVER, 0) * extrude(f, amount=p["beam_span"] / 2 + OVER, dir=(0, 1, 0))
         info["beam"] = binfo
     return fuse_all(parts, "rear wing"), info
+
+
+# ---------------------------------------------------------------------------
+# rear-wing supports, variants E-H (docs/wing_supports_plan.md)
+def _arc_radius(h, half_len):
+    """Radius of the circle with its top (zero slope) at height h, through height 0 half_len away."""
+    return (half_len ** 2 + h ** 2) / (2 * h)
+
+
+def rws_section(kind_: str, xa: float, xb: float, yc: float, t: float, e: float = 0.0):
+    """Plan-view section (X-Y plane, Z = 0) of a support from X xa to xb, centred on Y yc,
+    t thick at mid-chord. lens: two circular arcs, sharp front and back edges. round: the
+    rear half as lens; the front edge is a circle of RWS_NOSE_R tangent to a front arc that
+    still reaches full thickness with zero slope at mid-chord (chord kept). flare: the front
+    half as lens, the rear half curving outwards to a flat base RWS_FLARE_T wide at xb.
+    e > 0: the lens edges are cut square, e thick, at xa and xb (the arcs are re-fitted so the
+    chord and the mid-chord thickness stay); e = 0: knife edges."""
+    c, h, xm = xb - xa, t / 2, (xa + xb) / 2
+    V = lambda x, y: Vector(x, y, 0.0)                                    # noqa: E731
+    R = _arc_radius(h - e / 2, c / 2)
+    yl = lambda x: math.sqrt(max(R * R - (x - xm) ** 2, 0.0)) - (R - h)  # noqa: E731  lens half-thickness (e / 2 at xa, xb)
+    # the rear arcs end RWS_EDGE_DIFF thicker than the front ones, so front and rear arcs lie on different
+    # circles: on one circle the boolean merged each side into one face from edge to edge, and E's surface
+    # mesh failed ("Breakout detected" in the CAD tessellation, 2026-11-26)
+    er = e + RWS_EDGE_DIFF if e > 0 and kind_ in ("lens", "ridges") else e      # F, H: arcs already on different circles
+    Rr = _arc_radius(h - er / 2, c / 2)
+    ylr = lambda x: math.sqrt(max(Rr * Rr - (x - xm) ** 2, 0.0)) - (Rr - h)  # noqa: E731
+    q1, q3 = xm + c / 4, xm - c / 4
+    rear_up = ThreePointArc(V(xm, yc + h), V(q1, yc + ylr(q1)), V(xb, yc + er / 2))
+    rear_lo = ThreePointArc(V(xb, yc - er / 2), V(q1, yc - ylr(q1)), V(xm, yc - h))
+    front_up = ThreePointArc(V(xa, yc + e / 2), V(q3, yc + yl(q3)), V(xm, yc + h))
+    front_lo = ThreePointArc(V(xm, yc - h), V(q3, yc - yl(q3)), V(xa, yc - e / 2))
+    rear = [rear_up] + ([Line(V(xb, yc + er / 2), V(xb, yc - er / 2))] if e > 0 else []) + [rear_lo]
+    front_close = [Line(V(xa, yc - e / 2), V(xa, yc + e / 2))] if e > 0 else []
+    if kind_ in ("lens", "ridges"):
+        edges = [front_up] + rear + [front_lo] + front_close
+    elif kind_ == "round":
+        r = RWS_NOSE_R
+        # front arc: radius Rf, top (zero slope) at (xm, h), centre (xm, h - Rf); nose circle: radius r,
+        # centre (xa + r, 0), nose at xa. Internal tangency, |centres| = Rf - r, gives
+        # Rf = (D^2 + h^2 - r^2) / (2 (h - r)) with D = xm - xa - r (needs r < h)
+        D = xm - xa - r
+        Rf = (D * D + h * h - r * r) / (2 * (h - r))
+        xn = xa + r                                                        # nose circle centre on the axis
+        cx, cy = xm, h - Rf                                                # upper front arc centre (y measured from yc)
+        dist = math.hypot(xn - cx, cy)
+        if abs(dist - (Rf - r)) > 0.05:
+            raise RuntimeError(f"round nose: tangency off by {dist - (Rf - r):.3f} mm")
+        ux, uy = (xn - cx) / dist, -cy / dist
+        tx, ty = xn + r * ux, r * uy                                       # tangent point, upper side
+        xmid = (tx + xm) / 2
+        ymid = math.sqrt(Rf * Rf - (xmid - cx) ** 2) + cy
+        f_up = ThreePointArc(V(tx, yc + ty), V(xmid, yc + ymid), V(xm, yc + h))
+        f_lo = ThreePointArc(V(xm, yc - h), V(xmid, yc - ymid), V(tx, yc - ty))
+        nose = ThreePointArc(V(tx, yc - ty), V(xa, yc), V(tx, yc + ty))
+        edges = [nose, f_up] + rear + [f_lo]
+    elif kind_ == "flare":
+        hb = RWS_FLARE_T / 2
+        Rr = ((c / 2) ** 2 + (hb - h) ** 2) / (2 * (hb - h))                # centre above: y = h + Rr - sqrt(Rr^2 - (x - xm)^2)
+        yr = lambda x: h + Rr - math.sqrt(Rr * Rr - (x - xm) ** 2)         # noqa: E731
+        f_up = ThreePointArc(V(xm, yc + h), V(q1, yc + yr(q1)), V(xb, yc + hb))
+        base = Line(V(xb, yc + hb), V(xb, yc - hb))
+        f_lo = ThreePointArc(V(xb, yc - hb), V(q1, yc - yr(q1)), V(xm, yc - h))
+        edges = [front_up, f_up, base, f_lo, front_lo] + front_close
+    else:
+        raise ValueError(kind_)
+    return make_face(Wire(edges))
+
+
+def rws_ridges(xa: float, xb: float, yc: float, t: float, e: float = 0.0):
+    """G's ridges: bands along a circular arc in the X-Z plane (horizontal at the front,
+    rising RWS_RIDGES['angle'] at the back), through the support, trimmed to a lens of the
+    same chord and t + 2 * height thickness: each stands out of both faces by
+    height * (lens half-thickness there / at mid-chord)."""
+    g = RWS_RIDGES
+    c = xb - xa
+    x0, x1 = xa + g["u0"] * c, xa + g["u1"] * c
+    a = math.radians(g["angle"])
+    Rp = (x1 - x0) / math.sin(a)                                          # path radius
+    V = lambda x, z: Vector(x, 0.0, z)                                     # noqa: E731
+    big = extrude(rws_section("lens", xa, xb, yc, t + 2 * g["height"], e), amount=2000.0, dir=(0, 0, 1))
+    out = []
+    for z0 in g["z0"]:
+        cz = z0 + Rp                                                      # path centre (x0, cz): the path leaves (x0, z0) horizontally
+        o, i = [[(x0 + rr * math.sin(a * k / 2), cz - rr * math.cos(a * k / 2)) for k in (0, 1, 2)]
+                for rr in (Rp + g["thick"] / 2, Rp - g["thick"] / 2)]
+        w = Wire([ThreePointArc(V(*o[0]), V(*o[1]), V(*o[2])), Line(V(*o[2]), V(*i[2])),
+                  ThreePointArc(V(*i[2]), V(*i[1]), V(*i[0])), Line(V(*i[0]), V(*o[0]))])
+        band = Pos(0, yc - t - 2 * g["height"], 0) * extrude(make_face(w), amount=2 * t + 4 * g["height"], dir=(0, 1, 0))
+        out.append(one_solid(band & big, "ridge"))
+    return out
+
+
+def build_rw_support(p, kind_: str, xa: float, xb: float, z_top_a: float, z_top_b: float, e: float = 0.0):
+    """One rear-wing support (half model) in CP's pylon envelope: rws_section from X xa to
+    xb at Y rw_pylon_y, rw_pylon_thickness thick, extruded in Z and cut to CP's side outline
+    (bottom Z 300 inside the hull, top on the main element's middle line)."""
+    yc, t = p["rw_pylon_y"], p["rw_pylon_thickness"]
+    sec = extrude(rws_section(kind_, xa, xb, yc, t, e), amount=2000.0, dir=(0, 0, 1))
+    slope = (z_top_b - z_top_a) / (xb - xa)
+    xa_, xb_ = xa - 10.0, xb + 10.0                                       # outline a little longer: no coplanar faces at xa, xb
+    side = prism_xz([(xa_, 300.0), (xb_, 300.0), (xb_, z_top_b + slope * 10.0), (xa_, z_top_a - slope * 10.0)],
+                    yc - 40.0, yc + 40.0)
+    sup = one_solid(sec & side, f"support {kind_}")
+    if kind_ == "ridges":
+        sup = fuse_all({"support": sup, **{f"ridge {k + 1}": r_ for k, r_ in enumerate(rws_ridges(xa, xb, yc, t, e))}},
+                       "support with ridges")
+    return sup
 
 
 def build_wheel(p, x_axle: float, half_track: float):
@@ -834,7 +954,11 @@ def build_variant(p, variant: str, out: Path, log, dom_fixed=None):
             if gapmm < 15.0:
                 raise RuntimeError(f"variant {variant}: only {gapmm:.1f} mm between the body and the {nm}")
         fw = one_solid(fw + fw_pylon, "front wing + pylon")
-        comps.update({"car_fw": fw, "car_rw": rw}); parts.update({"front wing": fw, "rear wing": rw})
+        comps.update({"car_fw": fw, "car_rw": rw}); parts["front wing"] = fw
+        if "support" in rwi:                                   # E-H: rear-wing support, its own zone; joins the body before the wing
+            sup = rwi.pop("support")
+            comps["car_rws"] = sup; parts["rear wing support"] = sup
+        parts["rear wing"] = rw
         winfo = {"fw": fwi, "rw": rwi}
     car_over = fuse_all(parts, f"car {variant}")
     wf_over, patch_f = build_wheel(p, 0.0, p["track_front"] / 2)
@@ -900,7 +1024,8 @@ def build_variant(p, variant: str, out: Path, log, dom_fixed=None):
             results[-1]["ok"] = False; results[-1]["problems"].append(f"wetted area of {k}: {wet_got[k]:.0f} mm2 in the fluid, {wet_expect[k]:.0f} on the body")
     results[-1]["wetted_check_mm2"] = {k: (round(wet_got[k]), round(wet_expect[k])) for k in wet_expect}
     zones = sorted({r_["zone"] for r_ in rows})
-    need = [z for z in ZONES if not (kind(variant) == "A" and z in ("car_fw", "car_rw"))]
+    need = [z for z in ZONES if not (kind(variant) == "A" and z in ("car_fw", "car_rw"))
+            and not (z == "car_rws" and not VARIANT_DEFS[variant].get("rw_support"))]
     if sorted(need) != zones:
         results[-1]["ok"] = False; results[-1]["problems"].append(f"zones {zones}, expected {sorted(need)}")
 

@@ -323,7 +323,7 @@ def plots(runs, hist, wakes, est, final):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     MEDIA.mkdir(parents=True, exist_ok=True)
-    col = {"A": "#7f7f7f", "B": "#1f77b4", "C": "#d62728", "D": "#2ca02c", "E": "#9467bd", "CP": "#ff7f0e", "B_AB": "#17becf", "D_AB": "#bcbd22"}
+    col = {"A": "#7f7f7f", "B": "#1f77b4", "C": "#d62728", "D": "#2ca02c", "CP": "#ff7f0e", "B_AB": "#17becf", "D_AB": "#bcbd22"}
     # ClA vs CdA: CFD (final runs) and the estimates with their ranges
     fig, ax = plt.subplots(figsize=(7, 5.5))
     for v, e in sorted(est.items()):
@@ -396,7 +396,7 @@ def write_md(runs, final, wakes, est, changed, boxes=(), yrows=(), comp=()):
          "forces still moving by more than 1 % between the last two averaging windows or oscillating more than 2 %.", "",
          "**Bodywork.** CP, B_AB and D_AB share the as-built bodywork (SOLIDWORKS nose, sidepods, 10 mm floor plate) "
          "and are the like-for-like comparison; rows B and D of `params/aero_variants.csv` come from B_AB and D_AB "
-         "since 2026-11-25. A, B, C, D, E and the checks are on the older CFD bodywork. **D_AB's diffuser is 12 "
+         "since 2026-11-25. A, B, C, D and the checks are on the older CFD bodywork. **D_AB's diffuser is 12 "
          "degrees, not D's 14** (14 did not mesh on the as-built bodywork), and D_AB has 1 prism layer instead of 2 "
          "(cell limit); CP_bl1 is CP with the same 1 layer, for comparison.", "",
          "**Dirty air is the goal.** We want the car behind to be disturbed, so a LOWER q-ratio in the following "

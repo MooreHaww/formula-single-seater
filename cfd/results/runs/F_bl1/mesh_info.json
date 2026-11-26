@@ -1,0 +1,79 @@
+{
+ "variant": "F",
+ "scale": 2.0,
+ "wing_scale": 1.0,
+ "sizes_mm": {
+  "min": 2.5,
+  "max": 640.0,
+  "growth": 1.2,
+  "curvature_angle": 18.0,
+  "face": {
+   "car_fw": 12.0,
+   "car_rw": 12.0,
+   "car_rws": 12.0,
+   "wheel_front": 14.0,
+   "wheel_rear": 14.0,
+   "car_floor": 18.0,
+   "car_body": 24.0,
+   "ground": 160.0
+  },
+  "boi_near": 40.0,
+  "boi_wake": 70.0,
+  "vol_growth": 1.35,
+  "cells_per_gap": 1.0,
+  "proximity_to": "edges",
+  "bl_layers": 1,
+  "bl_rate": 1.2,
+  "bl_transition": 0.272
+ },
+ "boi": "",
+ "win_size_mm": null,
+ "started": "2026-11-26 12:07:02",
+ "labels_after_boi_import": [
+  "boi_wake-solid",
+  "boi_near-solid",
+  "fluid-solid"
+ ],
+ "surface_faces": {
+  "car_body": 36691,
+  "car_floor": 27496,
+  "car_fw": 58882,
+  "car_rw": 66526,
+  "car_rws": 16631,
+  "ground": 23046,
+  "inlet": 318,
+  "outlet": 318,
+  "side": 1909,
+  "symmetry": 14074,
+  "top": 1537,
+  "wheel_front": 11100,
+  "wheel_rear": 11150
+ },
+ "cells": 987878,
+ "orthogonal_quality_min_avg_max": [
+  987878,
+  0.138245308032883,
+  1.0,
+  0.9136004738946853,
+  0.0,
+  0
+ ],
+ "zones": {
+  "wheel_rear": "wall",
+  "wheel_front": "wall",
+  "car_rws": "wall",
+  "car_rw": "wall",
+  "car_fw": "wall",
+  "car_floor": "wall",
+  "car_body": "wall",
+  "outlet": "pressure-outlet",
+  "ground": "wall",
+  "side": "symmetry",
+  "top": "symmetry",
+  "symmetry": "symmetry",
+  "inlet": "velocity-inlet",
+  "interior--fluid-solid": "interior"
+ },
+ "mesh_file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\halfcar_F_bl1.msh.h5",
+ "finished": "2026-11-26 12:09:17"
+}

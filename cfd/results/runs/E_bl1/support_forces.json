@@ -1,0 +1,39 @@
+{
+ "run": "E_bl1",
+ "note": "half car, N; snapshot of the saved iteration; downforce = -Fz",
+ "zones": {
+  "car_rw": {
+   "faces": 36936,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 270.5699835716603,
+   "sum_drag_N": 85.85778109639669,
+   "fluent_downforce_N_last": 270.5699835716652,
+   "fluent_drag_N_last": 85.85778109690789,
+   "mean200_downforce_N": 270.39632738737305,
+   "mean200_drag_N": 85.82630354099938,
+   "check_downforce_rel": -1.8067540077795345e-14,
+   "check_drag_rel": -5.9539491853191715e-12,
+   "check_pass": true
+  },
+  "car_rws": {
+   "faces": 7958,
+   "shear_sign": 1.0,
+   "sum_downforce_N": -0.060814323348377955,
+   "sum_drag_N": 0.8124343849723723,
+   "fluent_downforce_N_last": -0.06081432334854495,
+   "fluent_drag_N_last": 0.8124343849610645,
+   "mean200_downforce_N": -0.059629012759006506,
+   "mean200_drag_N": 0.8149269050607131,
+   "check_downforce_rel": 1.6699835958533527e-13,
+   "check_drag_rel": 1.1307843550412144e-11,
+   "check_pass": true,
+   "support": {
+    "faces": 7958,
+    "area_m2": 0.30309659328128463,
+    "downforce_N": -0.060814323348377955,
+    "drag_N": 0.8124343849723723,
+    "side_N": -13.266335072214218
+   }
+  }
+ }
+}

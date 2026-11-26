@@ -60,16 +60,16 @@ CELL_TARGET = (800_000, 1_000_000)
 # mesh sizes in mm at --scale 1 (multiplied by --scale, except the wing faces and the minimum: --wing-scale)
 SIZES = {
     "min": 2.5, "max": 640.0, "growth": 1.2, "curvature_angle": 18.0,
-    "face": {"car_fw": 12.0, "car_rw": 12.0, "wheel_front": 14.0, "wheel_rear": 14.0, "car_floor": 18.0, "car_body": 24.0, "ground": 160.0},
+    "face": {"car_fw": 12.0, "car_rw": 12.0, "car_rws": 12.0, "wheel_front": 14.0, "wheel_rear": 14.0, "car_floor": 18.0, "car_body": 24.0, "ground": 160.0},
     "boi_near": 40.0, "boi_wake": 70.0,
     "vol_growth": 1.35, "cells_per_gap": 1.0, "proximity_to": "edges",
     "bl_layers": 2, "bl_rate": 1.2, "bl_transition": 0.272,
 }
 BOUNDARY_TYPES = {"inlet": "velocity-inlet", "outlet": "pressure-outlet", "symmetry": "symmetry", "side": "symmetry", "top": "symmetry"}
-WALLS_STATIONARY = ["car_body", "car_floor", "car_fw", "car_rw"]
+WALLS_STATIONARY = ["car_body", "car_floor", "car_fw", "car_rw", "car_rws"]   # car_rws: rear-wing supports, variants E-H only (CP: pylon inside car_rw)
 # --scale coarsens everything except these face sizes and the minimum size (--wing-scale):
 # at 1.2 x the wing faces the slots and the rear flap at Y = 0 fail the surface mesh ("breakout detected")
-WING_ZONES = ("car_fw", "car_rw")
+WING_ZONES = ("car_fw", "car_rw", "car_rws")
 
 
 def log(*a):
@@ -619,7 +619,7 @@ def run_solve(variant: str, speed: float | None, iters: int, tag: str, cores: in
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("action", choices=["mesh", "solve", "all", "post", "cont"])
-    ap.add_argument("variant", help="A, B, C, D or any other variant with cad/step/cfd/faces_<V>.csv (E, CP, ...)")
+    ap.add_argument("variant", help="A, B, C, D or any other variant with cad/step/cfd/faces_<V>.csv (CP, B_AB, ...)")
     ap.add_argument("--scale", type=float, default=2.0, help="multiplies the body, floor, wheel, ground and refinement-box sizes")
     ap.add_argument("--wing-scale", type=float, default=1.0, help="multiplies the wing face sizes (the minimum size 2.5 mm is never scaled)")
     ap.add_argument("--speed", type=float, default=None)

@@ -95,7 +95,7 @@ Forces were flat from about iteration 200 on B, C and D, but the residuals stall
 - The force-based stop (0.2 % over 100 iterations) was accepted by Fluent without error but never stopped a run, so every run used the full 1500 iterations. **Cause, found 2026-11-18:** with residual criteria active, Fluent stops only when the residuals AND the report criteria are met, and continuity stalls at 6e-3. Fix in `set_convergence()`: residual `criterion_type = "none"`, stop on the three force reports alone. First run with the fix: C_coarse stopped at iteration 407.
 - B and D each had one failed launch ("Connection refused" from the gRPC channel); the retry in `fluent_halfcar.py` started them on the second attempt.
 
-### 2026-11-18: mesh checks, convergence, y+, variants E and CP
+### 2026-11-18: mesh checks, convergence, y+, variant CP
 
 | Run | Cells | What changed against the base run | Iterations | ClA | CdA | front share |
 |---|---|---|---|---|---|---|
@@ -105,8 +105,6 @@ Forces were flat from about iteration 200 on B, C and D, but the residuals stall
 | C_bl1 | 871,424 | 1 prism layer instead of 2 (`--set bl_layers=1`) | 401 | +0.12 % | −2.40 % | +0.010 |
 | D_bl1 | 949,206 | the same on D | 1200 | −0.28 % | −1.19 % | +0.010 |
 | C_curv, D_curv | - | curvature angle 24 or 21 deg instead of 18 (coarser surface) | - | surface mesh failed at the wing slots, no result | | |
-| E | 964,025 | new variant, `cfd/variant_E.md` | 1200 | 4.03 | 1.71 | 0.45 |
-| E_w | 1,046,660 | E with the wake windows | 1200 | 4.05 | 1.72 | 0.45 |
 | CP | 1,007,086 | C with the SolidWorks nose, sidepods and 10 mm floor plate | 1200 | 3.89 (−2.3 %) | 1.66 (+1.8 %) | 0.43 |
 
 **Why the body surface does not coarsen with `--scale`:** the curvature (18 deg) and proximity size functions set the face size on the car, not the zone face size. At `--scale 2.6` the body had 27,944 faces against 28,079. A `--scale` change is a volume-mesh check. The surface cannot be coarsened or refined in a useful way under the limit: a coarser curvature angle breaks the wing slots, and a finer one goes over 1,048,576 cells.
@@ -143,7 +141,7 @@ The first cell sits in the log layer on most of the car, and the buffer layer on
 - **Forces:**
   - C is steady: band 0.04 %. The force stop would have ended it at about iteration 560, and its checks stopped at about 400.
   - B and D oscillate with a fixed amplitude (downforce band 0.13 to 0.16 %, period 14 to 36 iterations). They are stationary, not drifting, and their means are good to under 0.1 %. They do not meet the 0.1 % stop and run to `--iters`.
-  - E and CP are unsteady (bands 3 to 6 % and 2.5 %): the blunt base and the parts' sidepod tails shed vortices. Their 200-iteration means drift by 0.2 to 0.8 %. Postprocess marks them NOT converged; their means are good to about 1 %.
+  - CP is unsteady (band 2.5 %): the parts' sidepod tails shed vortices. Its 200-iteration means drift by under 1 %. Postprocess marks it NOT converged; its mean is good to about 1 %.
   - A steady solver cannot do better on these flows; a transient run would, but it costs far more than the Student setup allows here.
 
 ## Reading the results

@@ -240,15 +240,28 @@ These are the things the numbers above depend on that were not measured, or were
 ## Future work
 
 - **Design the wing mountings (front and rear).** The CAD has no supports on either wing (no pylons or struts). Both wings float in the model, as the build-up film shows. Mounting is not designed. The CFD has idealised flat pylons on both wings: front, one each side from the main element into the nose; rear, one each side from 300 mm above the ground into the main element. These are not a design.
-- **Wing supports: planned concept (an idea: not designed, modelled or simulated).**
-  - **Shape.** Two supports per wing. Seen from above, each support has a lens-shaped section, pointed at the front and back along the airflow. Seen from the side, it is a tall, slightly tapered plate with curved ridges (strakes) across its faces, rising towards the back, so that the air meeting them is turned upwards.
-  - **Expected effect.** Turning air upwards pushes the support down, so the ridges could add a little downforce. The upturned air would also raise the wake behind the car (more upwash), which fits the dirty-air goal. It could also change the flow into the wing, helping or hurting it.
-  - **Next steps.** Model it in CAD, then compare three versions in CFD against the current idealised pylons:
-    - a plain lens support;
-    - a lens support with ridges;
-    - a version with a rounded front edge (a sharp front edge can separate the flow when the air arrives at an angle).
-
-    Judge them on downforce, drag and the wake.
+- **Wing supports: rear wing, first CFD round (2026-11-26; CFD only, not in CAD).**
+  - **What was run.** Three rear-wing supports were compared in the half-car CFD on the as-built car, against CP's idealised flat pylon. All four runs had 1 prism layer (cell limit), so the reference is CP_bl1. Each support has the pylon's envelope: 228 mm chord, 16 mm thick, two per car. The three sections:
+    - E: lens;
+    - F: lens with a rounded front edge;
+    - H: lens with a flared blunt tail.
+  - **The ridged support (G) could not be meshed** in three attempts (the failures were at the wing slots), so the ridge idea is untested.
+  - **Found** (steady RANS, only the ranking is trustworthy):
+    - The lens supports keep the flow attached where the flat plate separates.
+    - The support's own drag falls from 4.3 N (half car) to 0.8 N (E) and 0.4 N (F); H's blunt tail costs 2.8 N.
+    - The rear wing above them carries 7 to 9 % more downforce, and total ClA rises 4.2 % (E) and 4.4 % (F), about twice CP's 2.2 % run-to-run spread. So CP's ClA probably carries a penalty of about 4 % from its idealised pylon.
+    - Total drag and the wake behind the car do not change measurably.
+    - The aero balance moves rearward, from 43 % to about 40 % front.
+    - No support makes downforce itself.
+  - **Would build:** F (lens, 5 mm front-edge radius).
+  - **Not done yet:**
+    - lap time and balance with these forces;
+    - 2 prism layers;
+    - yaw;
+    - structure;
+    - CAD;
+    - the front-wing supports.
+  - **Details:** `media/cfd/supports/wing_supports_results.md` and `docs/wing_supports_plan.md`.
 - Make the SolidWorks Simulation beam studies on the production weldment solve, so the frame stress has a second source.
 - Decide the frame material in the CAD (AISI 1020 now) against the 4130 the stress model assumes.
 - Reach the motion study's ±30 mm of bump (it stops at +23 / +14 mm).

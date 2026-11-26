@@ -2,7 +2,7 @@
 
 Written by `cfd/postprocess.py`. **What these numbers mean:** one mesh per variant, sized to stay under the Ansys Student cell limit, steady RANS (k-omega SST), no mesh-independence or y+ study, no comparison with a test. The absolute ClA, CdA and balance can be off by tens of percent; **only the ranking of the variants (same meshing settings, same solver settings) is the trustworthy output.** Runs marked *not converged* have forces still moving by more than 1 % between the last two averaging windows or oscillating more than 2 %.
 
-**Bodywork.** CP, B_AB and D_AB share the as-built bodywork (SOLIDWORKS nose, sidepods, 10 mm floor plate) and are the like-for-like comparison; rows B and D of `params/aero_variants.csv` come from B_AB and D_AB since 2026-11-25. A, B, C, D, E and the checks are on the older CFD bodywork. **D_AB's diffuser is 12 degrees, not D's 14** (14 did not mesh on the as-built bodywork), and D_AB has 1 prism layer instead of 2 (cell limit); CP_bl1 is CP with the same 1 layer, for comparison.
+**Bodywork.** CP, B_AB and D_AB share the as-built bodywork (SOLIDWORKS nose, sidepods, 10 mm floor plate) and are the like-for-like comparison; rows B and D of `params/aero_variants.csv` come from B_AB and D_AB since 2026-11-25. A, B, C, D and the checks are on the older CFD bodywork. **D_AB's diffuser is 12 degrees, not D's 14** (14 did not mesh on the as-built bodywork), and D_AB has 1 prism layer instead of 2 (cell limit); CP_bl1 is CP with the same 1 layer, for comparison.
 
 **Dirty air is the goal.** We want the car behind to be disturbed, so a LOWER q-ratio in the following car's window and a BIGGER following penalty mean dirtier air, which is better for us. As built (2026-11-25, wake planes below and `media/lap_as_built_BD.csv`): at 1 car length CP and D_AB disturb a follower most (q-ratio 0.64 / 0.65, autocross penalty +2.14 s each) and B_AB least (0.67, +1.69 s); at 2 and 3 lengths B_AB's wake persists slightly longer (0.89 / 0.95 against 0.92 / 0.98 for CP and D_AB). CP is the chosen car. D_AB's downforce lead over CP_bl1 (ClA +1.3 %) is smaller than the 2.2 % between CP's own two runs (CP and CP_bl1), so D and CP cannot be told apart on downforce.
 
@@ -24,8 +24,9 @@ Written by `cfd/postprocess.py`. **What these numbers mean:** one mesh per varia
 | D | 1,042,343 | 1500 | 4.20 | 1.77 | 2.37 | 0.38 | 0.00 / 0.13 | 0.00 / 0.05 | yes |
 | D_AB | 1,002,218 | 1200 | 4.03 | 1.76 | 2.29 | 0.39 | 0.00 / 1.04 | 0.01 / 0.25 | yes |
 | D_bl1 | 949,206 | 1200 | 4.19 | 1.75 | 2.40 | 0.40 | 0.00 / 0.09 | 0.00 / 0.14 | yes |
-| E | 964,025 | 1200 | 4.03 | 1.71 | 2.36 | 0.45 | 0.23 / 3.06 | 0.16 / 2.95 | NO |
-| E_w | 1,046,660 | 1200 | 4.05 | 1.72 | 2.35 | 0.45 | 0.76 / 5.54 | 0.66 / 5.86 | NO |
+| E_bl1 | 977,893 | 1200 | 4.14 | 1.69 | 2.45 | 0.40 | 0.00 / 0.56 | 0.00 / 0.14 | yes |
+| F_bl1 | 987,878 | 1200 | 4.15 | 1.69 | 2.46 | 0.39 | 0.00 / 0.83 | 0.00 / 0.13 | yes |
+| H_bl1 | 945,815 | 1200 | 4.09 | 1.69 | 2.42 | 0.41 | 0.01 / 1.39 | 0.02 / 0.59 | yes |
 
 ## Final run per variant against the pre-CFD estimate
 
@@ -38,9 +39,8 @@ Written by `cfd/postprocess.py`. **What these numbers mean:** one mesh per varia
 | CP | CP | 3.89 | - | 1.66 | - | 0.43 | - |
 | D | D | 4.20 | 4.59 (3.51 to 5.38) | 1.77 | 1.52 (1.14 to 1.83) | 0.38 | 0.43 |
 | D_AB | D_AB | 4.03 | - | 1.76 | - | 0.39 | - |
-| E | E | 4.03 | - | 1.71 | - | 0.45 | - |
 
-Ranking by downforce (CFD): D (4.20) > E (4.03) > D_AB (4.03) > C (3.98) > CP (3.89) > B (3.43) > B_AB (3.36) > A (-0.03);  by drag: D (1.77) > D_AB (1.76) > E (1.71) > CP (1.66) > C (1.63) > B_AB (1.32) > B (1.29) > A (0.42).
+Ranking by downforce (CFD): D (4.20) > D_AB (4.03) > C (3.98) > CP (3.89) > B (3.43) > B_AB (3.36) > A (-0.03);  by drag: D (1.77) > D_AB (1.76) > CP (1.66) > C (1.63) > B_AB (1.32) > B (1.29) > A (0.42).
 
 ## Components (full car, final runs)
 
@@ -53,7 +53,6 @@ Ranking by downforce (CFD): D (4.20) > E (4.03) > D_AB (4.03) > C (3.98) > CP (3
 | CP | -0.38 / 0.33 | 0.40 / 0.03 | 1.94 / 0.49 | 2.05 / 0.71 | -0.12 / 0.09 |
 | D | -0.34 / 0.28 | 0.49 / 0.07 | 1.97 / 0.49 | 2.20 / 0.82 | -0.12 / 0.11 |
 | D_AB | -0.33 / 0.34 | 0.40 / 0.04 | 1.92 / 0.49 | 2.16 / 0.81 | -0.13 / 0.09 |
-| E | -0.33 / 0.30 | 0.42 / 0.06 | 1.99 / 0.48 | 2.07 / 0.76 | -0.12 / 0.11 |
 
 ## Wake planes
 
@@ -117,14 +116,18 @@ Area-weighted on a 10 mm grid; window = following car's frontal window (1.4 m wi
 | D_bl1 | 1 | 0.64 | 0.00, 1.38 | 0.68 | 1.96 | 0.21 | 0.65 | 0.063 | 8.6 | 0.86 | 762 |
 | D_bl1 | 2 | 0.36 | 0.01, 2.40 | 2.06 | 1.31 | 0.04 | 0.92 | 0.027 | 4.9 | 0.97 | 748 |
 | D_bl1 | 3 | 0.24 | 0.99, 1.82 | 2.80 | 1.10 | 0.01 | 0.97 | 0.016 | 3.0 | 0.79 | 733 |
-| E | 0.5 | 0.77 | 0.09, 0.50 | 0.70 | 1.61 | 0.33 | 0.50 | 0.078 | 14.6 | 0.51 | 1189 |
-| E | 1 | 0.64 | 0.00, 1.28 | 0.56 | 1.55 | 0.18 | 0.70 | 0.058 | 9.4 | 0.92 | 759 |
-| E | 2 | 0.30 | 0.17, 2.42 | 1.28 | 0.72 | 0.05 | 0.90 | 0.031 | 6.4 | 1.03 | 727 |
-| E | 3 | 0.27 | 0.51, 1.82 | 2.08 | 1.40 | 0.03 | 0.94 | 0.026 | 3.9 | 0.83 | 741 |
-| E_w | 0.5 | 0.75 | 0.10, 0.47 | 0.68 | 1.64 | 0.33 | 0.50 | 0.079 | 14.6 | 0.50 | 1216 |
-| E_w | 1 | 0.65 | 0.00, 1.49 | 0.68 | 1.76 | 0.16 | 0.73 | 0.055 | 9.5 | 0.85 | 2006 |
-| E_w | 2 | 0.34 | 0.59, 1.46 | 2.16 | 1.46 | 0.05 | 0.91 | 0.029 | 6.4 | 0.97 | 2013 |
-| E_w | 3 | 0.30 | 0.50, 1.82 | 1.92 | 1.42 | 0.03 | 0.94 | 0.026 | 3.6 | 0.79 | 2078 |
+| E_bl1 | 0.5 | 0.89 | 0.12, 0.05 | 0.54 | 0.81 | 0.36 | 0.47 | 0.092 | 11.2 | 0.33 | 1202 |
+| E_bl1 | 1 | 0.57 | 0.00, 1.39 | 0.64 | 1.87 | 0.20 | 0.66 | 0.070 | 8.7 | 0.82 | 766 |
+| E_bl1 | 2 | 0.33 | 0.00, 2.48 | 1.76 | 1.35 | 0.04 | 0.92 | 0.028 | 4.8 | 0.85 | 750 |
+| E_bl1 | 3 | 0.22 | 0.66, 1.98 | 2.44 | 1.00 | 0.01 | 0.97 | 0.016 | 2.7 | 0.64 | 731 |
+| F_bl1 | 0.5 | 0.88 | 0.00, 0.16 | 0.40 | 0.84 | 0.36 | 0.47 | 0.092 | 11.1 | 0.33 | 1190 |
+| F_bl1 | 1 | 0.56 | 0.00, 1.27 | 0.70 | 1.88 | 0.20 | 0.66 | 0.071 | 8.7 | 0.81 | 749 |
+| F_bl1 | 2 | 0.33 | 0.06, 2.50 | 1.70 | 1.28 | 0.04 | 0.92 | 0.028 | 4.8 | 0.83 | 749 |
+| F_bl1 | 3 | 0.22 | 0.66, 1.98 | 2.44 | 0.98 | 0.01 | 0.97 | 0.016 | 2.7 | 0.63 | 737 |
+| H_bl1 | 0.5 | 0.92 | 0.12, 0.03 | 0.54 | 0.91 | 0.37 | 0.46 | 0.092 | 10.9 | 0.35 | 1219 |
+| H_bl1 | 1 | 0.61 | 0.00, 1.39 | 0.60 | 1.94 | 0.20 | 0.66 | 0.068 | 8.8 | 0.82 | 758 |
+| H_bl1 | 2 | 0.34 | 0.22, 2.46 | 1.78 | 0.69 | 0.04 | 0.92 | 0.027 | 4.9 | 0.87 | 732 |
+| H_bl1 | 3 | 0.22 | 0.67, 1.82 | 2.46 | 1.06 | 0.01 | 0.97 | 0.016 | 2.8 | 0.67 | 715 |
 
 ## Checks: tagged runs against the standard run of the same variant
 
@@ -138,7 +141,6 @@ Area-weighted on a 10 mm grid; window = following car's frontal window (1.4 m wi
 | C_w | 1,037,523 | C | 955,009 | -0.1 | -0.1 | +0.000 |
 | CP_bl1 | 918,527 | CP | 1,007,086 | +2.2 | +0.4 | -0.002 |
 | D_bl1 | 949,206 | D | 1,042,343 | -0.3 | -1.2 | +0.010 |
-| E_w | 1,046,660 | E | 964,025 | +0.4 | +0.8 | -0.003 |
 
 ## Wake boxes (following car at 1, 2, 3 car lengths)
 
@@ -224,18 +226,24 @@ Five planes 0.15 m apart (a 0.6 m deep box) around each station, half model. `lo
 | D_bl1 | 2 | high | 0.092 | 0.828 | 1.625 | 0.052 | 8.48 | 11.25 | 14.3 | 177 |
 | D_bl1 | 3 | low | 0.008 | 0.984 | 0.108 | 0.013 | 0.77 | 1.36 | 0.9 | 307 |
 | D_bl1 | 3 | high | 0.040 | 0.923 | 0.669 | 0.033 | 2.11 | 4.75 | 9.0 | 191 |
-| E | 1 | low | 0.108 | 0.808 | 1.216 | 0.045 | 5.46 | 12.15 | 3.2 | 318 |
-| E | 1 | high | 0.294 | 0.536 | 4.253 | 0.084 | 16.83 | 31.02 | 22.0 | 179 |
-| E | 2 | low | 0.020 | 0.960 | 0.210 | 0.019 | 1.26 | 2.46 | 1.8 | 291 |
-| E | 2 | high | 0.150 | 0.727 | 2.028 | 0.058 | 12.52 | 15.97 | 18.1 | 169 |
-| E | 3 | low | 0.007 | 0.985 | 0.104 | 0.013 | 0.91 | 1.39 | 1.1 | 295 |
-| E | 3 | high | 0.124 | 0.771 | 2.089 | 0.059 | 7.16 | 10.40 | 12.1 | 182 |
-| E_w | 1 | low | 0.103 | 0.818 | 1.146 | 0.044 | 6.71 | 14.99 | 3.1 | 2091 |
-| E_w | 1 | high | 0.261 | 0.603 | 5.018 | 0.091 | 17.56 | 36.67 | 24.2 | 1568 |
-| E_w | 2 | low | 0.020 | 0.961 | 0.160 | 0.016 | 1.59 | 2.67 | 1.7 | 2013 |
-| E_w | 2 | high | 0.160 | 0.713 | 2.942 | 0.070 | 13.60 | 19.40 | 19.6 | 1545 |
-| E_w | 3 | low | 0.008 | 0.984 | 0.076 | 0.011 | 1.23 | 1.67 | 1.0 | 2028 |
-| E_w | 3 | high | 0.134 | 0.755 | 2.919 | 0.070 | 7.23 | 11.02 | 12.1 | 1538 |
+| E_bl1 | 1 | low | 0.095 | 0.825 | 1.007 | 0.041 | 5.71 | 11.96 | 3.0 | 312 |
+| E_bl1 | 1 | high | 0.305 | 0.517 | 6.858 | 0.107 | 11.11 | 26.56 | 19.2 | 185 |
+| E_bl1 | 2 | low | 0.025 | 0.951 | 0.174 | 0.017 | 1.24 | 2.37 | 1.4 | 308 |
+| E_bl1 | 2 | high | 0.098 | 0.816 | 2.127 | 0.060 | 8.63 | 10.94 | 14.2 | 183 |
+| E_bl1 | 3 | low | 0.009 | 0.982 | 0.085 | 0.012 | 0.75 | 1.29 | 0.8 | 282 |
+| E_bl1 | 3 | high | 0.036 | 0.929 | 0.731 | 0.035 | 1.84 | 3.78 | 8.0 | 183 |
+| F_bl1 | 1 | low | 0.092 | 0.831 | 0.941 | 0.040 | 5.93 | 11.63 | 3.1 | 301 |
+| F_bl1 | 1 | high | 0.298 | 0.526 | 6.746 | 0.106 | 10.59 | 25.95 | 19.3 | 181 |
+| F_bl1 | 2 | low | 0.025 | 0.951 | 0.166 | 0.017 | 1.23 | 2.33 | 1.4 | 293 |
+| F_bl1 | 2 | high | 0.097 | 0.817 | 2.216 | 0.061 | 8.64 | 10.87 | 14.1 | 170 |
+| F_bl1 | 3 | low | 0.009 | 0.983 | 0.082 | 0.012 | 0.75 | 1.27 | 0.8 | 302 |
+| F_bl1 | 3 | high | 0.035 | 0.931 | 0.722 | 0.035 | 1.77 | 3.62 | 7.9 | 178 |
+| H_bl1 | 1 | low | 0.094 | 0.828 | 1.029 | 0.041 | 5.81 | 12.15 | 3.1 | 300 |
+| H_bl1 | 1 | high | 0.308 | 0.518 | 6.247 | 0.102 | 10.33 | 26.57 | 19.2 | 191 |
+| H_bl1 | 2 | low | 0.025 | 0.951 | 0.186 | 0.018 | 1.26 | 2.41 | 1.5 | 293 |
+| H_bl1 | 2 | high | 0.096 | 0.819 | 1.923 | 0.057 | 8.88 | 11.21 | 14.5 | 168 |
+| H_bl1 | 3 | low | 0.009 | 0.982 | 0.093 | 0.012 | 0.76 | 1.32 | 0.8 | 277 |
+| H_bl1 | 3 | high | 0.041 | 0.921 | 0.757 | 0.036 | 2.18 | 4.32 | 8.5 | 207 |
 
 ## y+ on the walls
 
@@ -319,20 +327,29 @@ From Fluent's area-weighted average and face maximum, and the share of faces per
 | D_bl1 | car_rw | 75 | 198 | 6 | 39 | 129 | 3 % | 38 % | 60 % | 0 % |
 | D_bl1 | wheel_front | 143 | 350 | 24 | 82 | 211 | 0 % | 9 % | 90 % | 1 % |
 | D_bl1 | wheel_rear | 147 | 349 | 31 | 96 | 216 | 0 % | 4 % | 95 % | 1 % |
-| E | car_body | 152 | 390 | 8 | 44 | 200 | 2 % | 35 % | 62 % | 1 % |
-| E | car_floor | 82 | 211 | 6 | 32 | 125 | 3 % | 45 % | 52 % | 0 % |
-| E | car_fw | 75 | 201 | 6 | 31 | 126 | 4 % | 45 % | 51 % | 0 % |
-| E | car_rw | 65 | 165 | 5 | 37 | 110 | 4 % | 38 % | 58 % | 0 % |
-| E | wheel_front | 121 | 298 | 22 | 70 | 177 | 0 % | 11 % | 89 % | 0 % |
-| E | wheel_rear | 125 | 295 | 27 | 78 | 187 | 0 % | 7 % | 93 % | 0 % |
-| E_w | car_body | 152 | 377 | 8 | 43 | 200 | 2 % | 35 % | 62 % | 1 % |
-| E_w | car_floor | 82 | 211 | 6 | 32 | 125 | 3 % | 45 % | 53 % | 0 % |
-| E_w | car_fw | 75 | 204 | 6 | 31 | 126 | 4 % | 45 % | 52 % | 0 % |
-| E_w | car_rw | 66 | 165 | 6 | 38 | 110 | 4 % | 38 % | 58 % | 0 % |
-| E_w | wheel_front | 121 | 295 | 22 | 70 | 178 | 0 % | 11 % | 89 % | 0 % |
-| E_w | wheel_rear | 124 | 298 | 27 | 78 | 181 | 0 % | 6 % | 94 % | 0 % |
+| E_bl1 | car_body | 137 | 458 | 7 | 51 | 197 | 2 % | 27 % | 69 % | 1 % |
+| E_bl1 | car_floor | 91 | 428 | 7 | 33 | 133 | 3 % | 43 % | 55 % | 0 % |
+| E_bl1 | car_fw | 89 | 233 | 7 | 37 | 152 | 3 % | 40 % | 57 % | 0 % |
+| E_bl1 | car_rw | 84 | 203 | 6 | 44 | 146 | 3 % | 34 % | 63 % | 0 % |
+| E_bl1 | car_rws | 87 | 184 | 8 | 24 | 143 | 2 % | 56 % | 42 % | 0 % |
+| E_bl1 | wheel_front | 147 | 361 | 23 | 88 | 215 | 0 % | 9 % | 90 % | 1 % |
+| E_bl1 | wheel_rear | 144 | 349 | 31 | 96 | 212 | 0 % | 4 % | 95 % | 1 % |
+| F_bl1 | car_body | 137 | 384 | 6 | 51 | 198 | 3 % | 27 % | 69 % | 1 % |
+| F_bl1 | car_floor | 89 | 344 | 7 | 33 | 132 | 3 % | 43 % | 54 % | 0 % |
+| F_bl1 | car_fw | 89 | 243 | 7 | 37 | 150 | 3 % | 40 % | 57 % | 0 % |
+| F_bl1 | car_rw | 85 | 199 | 6 | 44 | 148 | 3 % | 35 % | 62 % | 0 % |
+| F_bl1 | car_rws | 87 | 178 | 8 | 34 | 140 | 2 % | 43 % | 55 % | 0 % |
+| F_bl1 | wheel_front | 147 | 354 | 25 | 89 | 213 | 0 % | 9 % | 90 % | 1 % |
+| F_bl1 | wheel_rear | 147 | 354 | 31 | 98 | 216 | 0 % | 4 % | 95 % | 1 % |
+| H_bl1 | car_body | 138 | 410 | 7 | 52 | 198 | 3 % | 27 % | 70 % | 1 % |
+| H_bl1 | car_floor | 89 | 377 | 6 | 33 | 132 | 3 % | 43 % | 54 % | 0 % |
+| H_bl1 | car_fw | 88 | 231 | 7 | 37 | 151 | 3 % | 40 % | 58 % | 0 % |
+| H_bl1 | car_rw | 84 | 196 | 6 | 44 | 146 | 3 % | 34 % | 63 % | 0 % |
+| H_bl1 | car_rws | 86 | 179 | 9 | 39 | 142 | 1 % | 42 % | 57 % | 0 % |
+| H_bl1 | wheel_front | 147 | 360 | 24 | 88 | 214 | 0 % | 9 % | 90 % | 1 % |
+| H_bl1 | wheel_rear | 146 | 347 | 31 | 97 | 217 | 0 % | 4 % | 95 % | 1 % |
 
-Mass imbalance (net mass flow / inlet mass flow): A 4.6e-07, B 2.2e-07, B_AB 2.0e-06, C 1.2e-07, CP 2.5e-06, CP_bl1 4.3e-07, C_bl1 9.0e-08, C_coarse 8.8e-09, C_num 6.8e-08, C_w 5.1e-08, D 6.3e-08, D_AB 8.4e-07, D_bl1 2.1e-07, E 4.2e-08, E_w 1.4e-06.
+Mass imbalance (net mass flow / inlet mass flow): A 4.6e-07, B 2.2e-07, B_AB 2.0e-06, C 1.2e-07, CP 2.5e-06, CP_bl1 4.3e-07, C_bl1 9.0e-08, C_coarse 8.8e-09, C_num 6.8e-08, C_w 5.1e-08, D 6.3e-08, D_AB 8.4e-07, D_bl1 2.1e-07, E_bl1 1.5e-07, F_bl1 7.2e-07, H_bl1 5.2e-07.
 
 params/aero_variants.csv updated from CFD for: none.
 

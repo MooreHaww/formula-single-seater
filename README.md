@@ -150,7 +150,9 @@ Every film below is a simulation or a CAD model. Nothing in them was built or te
 
 ### Car build-up
 
-media\showcase\car_buildup.mp4
+
+https://github.com/user-attachments/assets/e47ae17a-36b9-46d6-aa46-5714b42f49ec
+
 
 The as-built car (CP) assembled stage by stage in SolidWorks, from the frame tubes to the rear wing (CAD model, from a fixed camera).
 
@@ -162,27 +164,31 @@ The front and rear corners through ±30 mm of wheel travel, then the front corne
 
 ### Aerodynamics: A-B-C-D comparison
 
-media\cfd\vis\compare_ABCD.mp4
+https://github.com/user-attachments/assets/ba47a421-25e1-4267-8622-a06a7c22719d
 
 The four aero variants side by side: A, B, C (the chosen car's run, CP) and D, from half-car CFD (Ansys Fluent simulation).
 
 ### Aerodynamics: smoke tunnel A-B-D side by side
 
-media\cfd\vis\smoke_ABD.mp4
+https://github.com/user-attachments/assets/eac0df49-c4b6-4f87-930a-9f305555b851
 
 Simulated smoke streaks past variants A, B and D, side by side (CFD simulation).
 
 ### Aerodynamics: smoke tunnel of the chosen car
 
-media\cfd\vis\smoke_C.mp4
+https://github.com/user-attachments/assets/30718f1d-2759-4b36-a5e1-756d0a409edb
 
 Simulated smoke streaks past the chosen car, CP (C's wings on the as-built bodywork; labelled C in the film), from half-car CFD (simulation).
 
 ### Lap-time simulation
 
-media\showcase\lap_autocross.mp4
 
-media\showcase\lap_fast_circuit.mp4
+
+https://github.com/user-attachments/assets/4eaeda68-8c1b-4781-bf8a-4aa6db40e209
+
+
+https://github.com/user-attachments/assets/28090279-5a15-492d-81df-d57c260b1b90
+
 
 The as-built car (CP) round the autocross and the fast circuit in real time, with speed, lateral and longitudinal g and the lap clock (MATLAB lap-time simulation, four-wheel model).
 

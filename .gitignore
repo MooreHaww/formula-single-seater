@@ -51,7 +51,9 @@ fluent-*.out.bak
 
 # ---- Generated large media we re-make (keep the PNGs that go in the README) ----
 media/wake/*_u.png
-media/views/
+media/views/*
+# the one view README.md embeds stays in git (0.24 MB)
+!media/views/formula_single_seater_Default_iso.png
 # CFD films, remade by: .venv/Scripts/python cfd/visualise.py all (the PNGs stay in git)
 media/cfd/vis/*.mp4
 media/cfd/vis/*.gif

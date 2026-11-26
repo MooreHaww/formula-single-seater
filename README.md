@@ -26,6 +26,8 @@ Then:
 python tools/sw_run.py rebuild
 ```
 
+The CAD files (SolidWorks parts and assemblies, STEP files) are stored with Git LFS. If cloning them fails (for example because the LFS quota is used up), the whole CAD can be regenerated with `python tools/sw_run.py rebuild`. Two sets are not part of the rebuild: the fused analysis frame (`python tools/sw_run.py FrameAnalysis`) and the CFD STEP files in `cad/step/cfd/` (`.venv/Scripts/python cad/generate/cfd_variants.py`).
+
 The command:
 - closes SolidWorks without saving and starts it fresh;
 - builds the chassis weldment from `cad/frame/*.csv` (123 tubes), trims every tube end and checks the result;
@@ -134,7 +136,7 @@ The diagonals were chosen by `matlab/stress/frame_diagonal_search.m`: the lighte
 
 | File | What |
 |---|---|
-| `media/views/*_iso.png` and the other five views | SolidWorks standard views of the chassis, the assembly, the master layout, the suspension (corners and frame only) and the fused analysis frame (re-saved on 2026-11-25 from the 123-tube analysis part). `media/views/` is git-ignored: these files are local only |
+| `media/views/*_iso.png` and the other five views | SolidWorks standard views of the chassis, the assembly, the master layout, the suspension (corners and frame only) and the fused analysis frame (re-saved on 2026-11-25 from the 123-tube analysis part). `media/views/` is git-ignored except `formula_single_seater_Default_iso.png` (the picture at the top): the other views are local only |
 | `media/suspension_bump_steer.gif` | front and rear corner through ±30 mm of travel, then the front corner lock to lock (MATLAB kinematics) |
 | `media/frame_stress_cases.png`, `frame_stress_bump.png`, `frame_torsion_diagonals.png`, `frame_fe.png` | frame stress per load case, the bump case on the frame, stiffness by diagonal family, deformed shapes |
 | `media/mass_table.md`, `media/lap_time_table.md`, `media/results_table.md` | mass budget, lap times, aero before/after CFD |
@@ -249,4 +251,4 @@ media/      figures, GIF, tables, SolidWorks views
 
 ## Licence
 
-MIT for the scripts and macros (`LICENSE`), CC BY 4.0 for the CAD and renders (`LICENSE-CAD`).
+MIT for the source code: Python, MATLAB, C#, VBA macros and Fluent journals (`LICENSE`). CC BY 4.0 (`LICENSE-CAD`) for the CAD files (`cad/`, including the CFD geometry in `cad/step/cfd/`), the renders and images (`media/`), `params/`, `sim/`, `cfd/results/`, `docs/`, and the data files anywhere in the repository (CSV, JSON, Markdown, PDF).

@@ -42,6 +42,7 @@ cfd/cases/
 *.trn
 *.log
 cleanup-fluent*
+pyfluent_watchdog.err
 *.wbpj
 *_files/
 .workbench_lock
@@ -54,6 +55,8 @@ media/views/
 # CFD films, remade by: .venv/Scripts/python cfd/visualise.py all (the PNGs stay in git)
 media/cfd/vis/*.mp4
 media/cfd/vis/*.gif
+# the one CFD GIF embedded at the top of README.md stays in git
+!media/cfd/vis/compare_ABCD.gif
 # old B and D pictures (simplified CFD bodywork), kept locally after B and D moved to the as-built bodywork (2026-11-25)
 media/cfd/vis_old_simplified/
 
@@ -94,5 +97,7 @@ media/showcase/frames_build/
 media/showcase/frames_lap/
 media/showcase/*.mp4
 media/showcase/*.gif
+# the build-up GIF embedded at the top of README.md stays in git
+!media/showcase/car_buildup.gif
 # ground plate for the build-up film, remade on every run
 cad/showcase/

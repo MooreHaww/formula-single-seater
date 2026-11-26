@@ -205,7 +205,11 @@ These are the things the numbers above depend on that were not measured, or were
   - The ranking itself is not robust where two variants are closer than the measured layer and mesh effect: CP's own 1-layer run moved ClA by +2.2 %, more than D's lead over CP.
   - Variant A's downforce did not converge.
   - B and D were re-solved on the as-built bodywork (runs B_AB, D_AB). **D's diffuser there is 12°, not D's 14°:** at 14° the diffuser roof grazes the as-built hull, and the two fixes tried failed to mesh. D_AB has 1 prism layer instead of 2 (cell limit). A and C stay on the older CFD bodywork.
-  - **Rear-wing supports.** The CAD has no rear-wing supports (pylons or struts): the wing floats in the model, as visible in the build-up film, and mounting it is not designed. The CFD model is different: `cad/generate/cfd_variants.py` adds one flat pylon each side (16 mm thick, 260 mm chord, at 150 mm from the centreline, from 300 mm above the ground up into the main element), fused to the car and counted in the rear-wing force zone. So the aero results include the drag and interference of that idealised pylon only, not of a designed mount; a real mount would differ.
+  - **Wing supports (front and rear).** The CAD has no supports on either wing (no pylons or struts). Both wings float in the model, as the build-up film shows. The front wing's nearest gap to the nose is about 38 mm (flap 2), and mounting is not designed for either wing. The CFD model is different. `cad/generate/cfd_variants.py` adds idealised pylons to both wings, fused into the one car solid:
+    - front wing: one flat plate each side, 16 mm thick (Y 60 to 76 mm), running from the main element's middle line (72 to 93 % of its chord) up to Z 230 mm, into the nose. It is counted in the front-wing force zone.
+    - rear wing: one flat plate each side, 16 mm thick, 260 mm chord, 150 mm from the centreline, running from 300 mm above the ground up into the main element. It is counted in the rear-wing force zone.
+
+    So the aero results include the drag and interference of these idealised pylons only, not of a designed mount; real mounts would differ.
   - The front/rear aero split is an estimate. The balance target used for trimming (0.40 front) is a target, not a result.
 - **CFD mesh limit.** The Ansys Student licence stops at 1,048,576 cells (measured: above that, Fluent Meshing exits without writing a mesh). The meshes are 0.27 to 1.04 M cells, so the near-wall resolution and the far wake are coarse.
 - **Roll centres** are static: computed at ride height and held fixed with roll in the cornering model.
@@ -235,7 +239,16 @@ These are the things the numbers above depend on that were not measured, or were
 
 ## Future work
 
-- **Design the rear-wing mounting.** The CAD has no rear-wing supports (pylons or struts); the wing floats in the model, as visible in the build-up film. Mounting it is not designed, and the CFD's idealised pylons are not a design.
+- **Design the wing mountings (front and rear).** The CAD has no supports on either wing (no pylons or struts). Both wings float in the model, as the build-up film shows. Mounting is not designed. The CFD has idealised flat pylons on both wings: front, one each side from the main element into the nose; rear, one each side from 300 mm above the ground into the main element. These are not a design.
+- **Wing supports: planned concept (an idea: not designed, modelled or simulated).**
+  - **Shape.** Two supports per wing. Seen from above, each support has a lens-shaped section, pointed at the front and back along the airflow. Seen from the side, it is a tall, slightly tapered plate with curved ridges (strakes) across its faces, rising towards the back, so that the air meeting them is turned upwards.
+  - **Expected effect.** Turning air upwards pushes the support down, so the ridges could add a little downforce. The upturned air would also raise the wake behind the car (more upwash), which fits the dirty-air goal. It could also change the flow into the wing, helping or hurting it.
+  - **Next steps.** Model it in CAD, then compare three versions in CFD against the current idealised pylons:
+    - a plain lens support;
+    - a lens support with ridges;
+    - a version with a rounded front edge (a sharp front edge can separate the flow when the air arrives at an angle).
+
+    Judge them on downforce, drag and the wake.
 - Make the SolidWorks Simulation beam studies on the production weldment solve, so the frame stress has a second source.
 - Decide the frame material in the CAD (AISI 1020 now) against the 4130 the stress model assumes.
 - Reach the motion study's ±30 mm of bump (it stops at +23 / +14 mm).

@@ -254,8 +254,16 @@ These are the things the numbers above depend on that were not measured, or were
     - The aero balance moves rearward, from 43 % to about 40 % front.
     - No support makes downforce itself.
   - **Would build:** F (lens, 5 mm front-edge radius).
+  - **Lap time and balance with F: a sensitivity result for the next version, not the released car.** The CAD has no wing supports, and CP stays the default everywhere. Method:
+    - aero row `CPF` in `params/aero_variants.csv` (run F_bl1, marked CFD only);
+    - compared with CP_bl1 (same 1-layer mesh settings), with the same car, tyres and lap-sim settings (`matlab/lapsim/support_sensitivity.m`, `media/support_sensitivity.md`);
+    - a difference counts only if it is larger than the effect of CP's 2.2 % aero spread on that result.
+
+    Results:
+    - F's extra rear downforce (ClA +4.5 %, front share 0.431 to 0.393) makes the car faster on the skidpad (-0.01 s point-mass, -0.03 s four-wheel) and the autocross (-0.32 s / -0.61 s). Both are larger than the spread (0.005 s and 0.13 s).
+    - It moves the 45 m cornering balance from -6.2 % (rear axle at its limit first) to +0.4 % (front first, nearly neutral), and the 45 m grip speed from 113.8 to 117.9 km/h. Both are larger than the spread (1.5 points of balance).
+    - On the fast circuit it is slower (+0.20 s / +0.13 s). That comes from its CdA +1.3 % and is inside the spread (0.51 s), so it is not claimed.
   - **Not done yet:**
-    - lap time and balance with these forces;
     - 2 prism layers;
     - yaw;
     - structure;

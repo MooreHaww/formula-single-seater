@@ -8,7 +8,9 @@ function out = cornering_balance_study(opts)
 %                                        ([45 100]), opts.wd (front weight
 %                                        fractions), opts.aero (front aero
 %                                        fractions), opts.variant ('CP', the as-built car),
-%                                        opts.driver_forward_mm (100)
+%                                        opts.driver_forward_mm (100),
+%                                        opts.aero_source ('table'; or a file or table,
+%                                        passed to car_from_params)
 %   cornering_balance_study('--selftest')
 %
 %   Grid: front weight fraction x front aero fraction x corner radius. The
@@ -36,11 +38,12 @@ if ~isfield(opts, 'write'), opts.write = true; end
 if ~isfield(opts, 'radii'), opts.radii = [45 100]; end
 if ~isfield(opts, 'wd'), opts.wd = [0.35 NaN 0.47]; end   % NaN = the file's own value, filled below
 if ~isfield(opts, 'variant'), opts.variant = 'CP'; end
+if ~isfield(opts, 'aero_source'), opts.aero_source = 'table'; end   % as car_from_params: 'table', a file or a table
 if ~isfield(opts, 'driver_forward_mm'), opts.driver_forward_mm = 100; end
 if ~isfield(opts, 'laps'), opts.laps = true; end
 p = read_car_params();
 opts.wd(isnan(opts.wd)) = p.weight_dist_front;
-base = car_from_params(opts.variant, p);
+base = car_from_params(opts.variant, p, opts.aero_source);
 % aero reference = the car's own front share (variant table or parameter
 % file); target = aero_balance_target (ESTIMATE/target in car_params.txt)
 aeroRef = base.aero_front; aeroTarget = base.aero_front_target;

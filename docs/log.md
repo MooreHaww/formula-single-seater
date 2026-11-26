@@ -1525,3 +1525,9 @@ Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-u
   - Also updated: `cfd/README.md`, `cfd/geometry_notes.md`, `media/cfd/cfd_results.md` (regenerated).
 - **Not checked:** see the results file. Lap time and balance were not re-run; there are no 2-layer runs, no yaw, no structure and no CAD.
 
+
+- **Later the same day: lap-time and balance sensitivity of F.**
+  - New aero row `CPF` in `params/aero_variants.csv` (F_bl1, marked CFD only). CPF is now allowed in `read_aero_variants`/`car_from_params`. `cornering_balance_study` has an `aero_source` option. CP is still the default and its row is unchanged.
+  - `matlab/lapsim/support_sensitivity.m` compares CP_bl1 (built in memory) with CPF. Self-test PASS; added to `run_all`. Output: `media/support_sensitivity.md`, `.csv`.
+  - Results: skidpad -0.01 / -0.03 s and autocross -0.32 / -0.61 s (point-mass / four-wheel), beyond the 2.2 % band. Fast circuit +0.20 / +0.13 s, inside the band (drag). 45 m balance -6.2 % (rear limit) to +0.4 % (front, near neutral).
+  - README Future work has a paragraph on this.

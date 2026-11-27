@@ -8,8 +8,9 @@ function V = read_aero_variants(file)
 %   row per variant: A, B, C, D (the like-for-like comparison, CFD on the
 %   older bodywork) and CP (C's wings on the SolidWorks bodywork: the
 %   as-built car, the default of car_from_params):
-%     variant      A, B, C, D, CP or CPF (CP with the F rear-wing supports of
-%                  docs/wing_supports_plan.md: CFD only, the CAD has no supports)
+%     variant      A, B, C, D, CP, CPF (CP with the F rear-wing supports of
+%                  docs/wing_supports_plan.md) or CPFF (CPF plus J front-wing
+%                  supports): CFD only, the CAD has no supports
 %     ClA          m2, positive = downforce
 %     CdA          m2
 %     aero_front   fraction of the aero load on the front axle, including the
@@ -54,7 +55,7 @@ end
 if ~isnumeric(V.ClA) || ~isnumeric(V.CdA) || ~isnumeric(V.aero_front)
     error('read_aero_variants:numeric', '%s: ClA, CdA and aero_front must be numbers', file);
 end
-bad = ~ismember(V.variant, ["A", "B", "C", "D", "CP", "CPF"]);   % CPF: CP with the F rear-wing supports (CFD only, 2026-11-26)
+bad = ~ismember(V.variant, ["A", "B", "C", "D", "CP", "CPF", "CPFF"]);   % CPF, CPFF: CP with wing supports (CFD only, 2026-11-26/27)
 if any(bad), error('read_aero_variants:variant', '%s: unknown variant %s', file, strjoin(V.variant(bad), ', ')); end
 if numel(unique(V.variant)) < height(V), error('read_aero_variants:duplicate', '%s: a variant appears twice', file); end
 if any(isnan(V.ClA) | isnan(V.CdA) | isnan(V.aero_front)) || any(V.CdA <= 0)

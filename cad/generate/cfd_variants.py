@@ -55,11 +55,11 @@ from OCP.BRep import BRep_Tool  # noqa: E402
 OVER = 20.0          # overshoot across Y = 0 and below Z = 0 so the cuts are clean
 PLINTH = 5.0         # height of the vertical step where a tyre meets the ground
 ZONES = ["inlet", "outlet", "symmetry", "side", "top", "ground", "wheel_front", "wheel_rear",
-         "car_body", "car_floor", "car_fw", "car_rw", "car_rws"]   # car_rws: rear-wing supports, variants E-H only
+         "car_body", "car_floor", "car_fw", "car_rw", "car_rws", "car_fws"]   # car_rws / car_fws: rear / front-wing supports (E-H, J, K, CPFF)
 COLOURS = {"inlet": (0.2, 0.6, 1.0), "outlet": (1.0, 0.4, 0.2), "symmetry": (0.8, 0.8, 0.8), "side": (0.7, 0.7, 0.7),
            "top": (0.6, 0.6, 0.6), "ground": (0.4, 0.3, 0.2), "wheel_front": (0.1, 0.1, 0.1), "wheel_rear": (0.25, 0.25, 0.25),
            "car_body": (0.9, 0.1, 0.1), "car_floor": (0.5, 0.5, 0.1), "car_fw": (0.1, 0.7, 0.2), "car_rw": (0.1, 0.3, 0.9),
-           "car_rws": (0.6, 0.1, 0.8)}
+           "car_rws": (0.6, 0.1, 0.8), "car_fws": (0.1, 0.8, 0.7)}
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +117,22 @@ VARIANT_DEFS = {
     "F": {"base": "C", "body": "parts", "rw_support": "round"},
     "G": {"base": "C", "body": "parts", "rw_support": "ridges"},
     "H": {"base": "C", "body": "parts", "rw_support": "flare"},
+    # J, K (2026-11-27): front-wing support designs, docs/wing_supports_plan.md (front-wing round). CP with only its
+    # front pylon (a flat 16 mm plate each side, Y 60-76, 72-93 % of the main element's chord, from the element's
+    # middle line up to Z 230 in the nose) replaced by a support in the same envelope; own force zone car_fws. The
+    # rear keeps CP's flat pylon. J: the rear round's F section (lens, RWS_NOSE_R round front edge); K: E's (lens).
+    "J": {"base": "C", "body": "parts", "fw_support": "round"},
+    # K mesh try 1 failed at rear flap 2 ("front could not be closed", X 2215 Y 264 Z 1359, the known slot fragility);
+    # try 2, symmetry face split at Z 1050 (topology only, as B_AB), failed at rear flap 2 again (X 2216 Y 451 Z 1360);
+    # try 3 (the last, 2026-11-27): the simplified section "diamond" (straight sides, same pointed 3 mm front edge,
+    # chord and 16 mm mid-chord thickness), without the symmetry split. It failed too ("failed to project front-edges"
+    # at the front flap's inner end, X -590 Y 300 Z 151): K NOT RUN (3-attempt rule)
+    "K": {"base": "C", "body": "parts", "fw_support": "diamond"},
+    # CPFF: the front support of J or K with the lower support drag, plus F's rear supports. K did not mesh in 3
+    # tries, so the front support is J's (2026-11-27). Mesh try 1 failed at the front flap's inner end ("failed to
+    # project front-edges", X -590 Y 300 Z 151, as K try 3); try 2, symmetry face split at Z 1050 (topology only),
+    # meshed: 989,695 cells
+    "CPFF": {"base": "C", "body": "parts", "fw_support": "round", "rw_support": "round", "sym_split_z": 1050.0},
 }
 
 
@@ -503,18 +519,28 @@ def strakes(p, ep: dict, count: int):
     return out
 
 
+FWP_Y = (60.0, 76.0)    # mm: CP's front pylon, Y extent (16 mm plate, centre 68)
+FWP_Z_TOP = 230.0       # mm: top of CP's front pylon (inside the nose from X -650 back; ahead of the nose tip it is exposed)
+
+
 def build_front_wing(p, variant: str):
     solids, geo = wing_stack(p, "fw", variant)
     ep, epi = endplate(p, "fw", geo)
     # pylon from the nose down into the rear of the main element (bottom edge on the section's middle line)
     m = geo["fw_main"]; pts = m["points"]
     xa = m["le"][0] + 0.72 * m["chord"]; xb = m["le"][0] + 0.93 * m["chord"]
-    pyl = prism_xz([(xa, mid_z_at(pts, xa)), (xb, mid_z_at(pts, xb)), (xb, 230.0), (xa, 230.0)], 60.0, 76.0)
+    pyl = prism_xz([(xa, mid_z_at(pts, xa)), (xb, mid_z_at(pts, xb)), (xb, FWP_Z_TOP), (xa, FWP_Z_TOP)], *FWP_Y)
     parts = {"endplate": ep}; parts.update(solids)          # the endplate is what joins the three elements
     if kind(variant) == "D":
         parts.update({f"fw {k}": v for k, v in strakes(p, epi, p["vg_count_fw"]).items()})
     wing = fuse_all(parts, "front wing")
-    return wing, pyl, {"geo": geo, "endplate": epi, "pylon_x": (xa, xb), "no_pylon": wing}
+    info = {"geo": geo, "endplate": epi, "pylon_x": (xa, xb), "no_pylon": wing}
+    sk = VARIANT_DEFS.get(variant, {}).get("fw_support")
+    if sk:                                   # J, K, CPFF: the support replaces the pylon and is returned on its own (zone car_fws)
+        info["support"] = build_fw_support(sk, xa, xb, mid_z_at(pts, xa), mid_z_at(pts, xb), RWS_EDGE_T)
+        info["support_kind"] = sk
+        pyl = None
+    return wing, pyl, info
 
 
 def build_rear_wing(p, variant: str):
@@ -551,7 +577,8 @@ def _arc_radius(h, half_len):
 
 def rws_section(kind_: str, xa: float, xb: float, yc: float, t: float, e: float = 0.0):
     """Plan-view section (X-Y plane, Z = 0) of a support from X xa to xb, centred on Y yc,
-    t thick at mid-chord. lens: two circular arcs, sharp front and back edges. round: the
+    t thick at mid-chord. diamond (K's simplified try): straight sides, full thickness at mid-chord.
+    lens: two circular arcs, sharp front and back edges. round: the
     rear half as lens; the front edge is a circle of RWS_NOSE_R tangent to a front arc that
     still reaches full thickness with zero slope at mid-chord (chord kept). flare: the front
     half as lens, the rear half curving outwards to a flat base RWS_FLARE_T wide at xb.
@@ -574,7 +601,10 @@ def rws_section(kind_: str, xa: float, xb: float, yc: float, t: float, e: float 
     front_lo = ThreePointArc(V(xm, yc - h), V(q3, yc - yl(q3)), V(xa, yc - e / 2))
     rear = [rear_up] + ([Line(V(xb, yc + er / 2), V(xb, yc - er / 2))] if e > 0 else []) + [rear_lo]
     front_close = [Line(V(xa, yc - e / 2), V(xa, yc + e / 2))] if e > 0 else []
-    if kind_ in ("lens", "ridges"):
+    if kind_ == "diamond":                                                # K's simplified section: straight sides (four planes)
+        edges = [Line(V(xa, yc + e / 2), V(xm, yc + h)), Line(V(xm, yc + h), V(xb, yc + e / 2)), Line(V(xb, yc + e / 2), V(xb, yc - e / 2)),
+                 Line(V(xb, yc - e / 2), V(xm, yc - h)), Line(V(xm, yc - h), V(xa, yc - e / 2))] + front_close
+    elif kind_ in ("lens", "ridges"):
         edges = [front_up] + rear + [front_lo] + front_close
     elif kind_ == "round":
         r = RWS_NOSE_R
@@ -648,6 +678,19 @@ def build_rw_support(p, kind_: str, xa: float, xb: float, z_top_a: float, z_top_
         sup = fuse_all({"support": sup, **{f"ridge {k + 1}": r_ for k, r_ in enumerate(rws_ridges(xa, xb, yc, t, e))}},
                        "support with ridges")
     return sup
+
+
+def build_fw_support(kind_: str, xa: float, xb: float, z_bot_a: float, z_bot_b: float, e: float = 0.0):
+    """One front-wing support (half model) in CP's front-pylon envelope: rws_section (the rear
+    round's sections) from X xa to xb, centred on Y 68, 16 mm thick at mid-chord, extruded in Z
+    and cut to CP's front-pylon side outline (bottom on the main element's middle line, top Z 230)."""
+    yc, t = (FWP_Y[0] + FWP_Y[1]) / 2, FWP_Y[1] - FWP_Y[0]
+    sec = extrude(rws_section(kind_, xa, xb, yc, t, e), amount=2000.0, dir=(0, 0, 1))
+    slope = (z_bot_b - z_bot_a) / (xb - xa)
+    xa_, xb_ = xa - 10.0, xb + 10.0                                       # outline a little longer: no coplanar faces at xa, xb
+    side = prism_xz([(xa_, z_bot_a - slope * 10.0), (xb_, z_bot_b + slope * 10.0), (xb_, FWP_Z_TOP), (xa_, FWP_Z_TOP)],
+                    yc - 40.0, yc + 40.0)
+    return one_solid(sec & side, f"front support {kind_}")
 
 
 def build_wheel(p, x_axle: float, half_track: float):
@@ -953,7 +996,11 @@ def build_variant(p, variant: str, out: Path, log, dom_fixed=None):
             log(f"  clearance body+floor to {nm} (no pylon): {gapmm:.1f} mm")
             if gapmm < 15.0:
                 raise RuntimeError(f"variant {variant}: only {gapmm:.1f} mm between the body and the {nm}")
-        fw = one_solid(fw + fw_pylon, "front wing + pylon")
+        if "support" in fwi:                                   # J, K, CPFF: front-wing support, its own zone; joins the nose before the wing
+            fsup = fwi.pop("support")
+            comps["car_fws"] = fsup; parts["front wing support"] = fsup
+        else:
+            fw = one_solid(fw + fw_pylon, "front wing + pylon")
         comps.update({"car_fw": fw, "car_rw": rw}); parts["front wing"] = fw
         if "support" in rwi:                                   # E-H: rear-wing support, its own zone; joins the body before the wing
             sup = rwi.pop("support")
@@ -1025,7 +1072,8 @@ def build_variant(p, variant: str, out: Path, log, dom_fixed=None):
     results[-1]["wetted_check_mm2"] = {k: (round(wet_got[k]), round(wet_expect[k])) for k in wet_expect}
     zones = sorted({r_["zone"] for r_ in rows})
     need = [z for z in ZONES if not (kind(variant) == "A" and z in ("car_fw", "car_rw"))
-            and not (z == "car_rws" and not VARIANT_DEFS[variant].get("rw_support"))]
+            and not (z == "car_rws" and not VARIANT_DEFS[variant].get("rw_support"))
+            and not (z == "car_fws" and not VARIANT_DEFS[variant].get("fw_support"))]
     if sorted(need) != zones:
         results[-1]["ok"] = False; results[-1]["problems"].append(f"zones {zones}, expected {sorted(need)}")
 

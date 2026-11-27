@@ -1,0 +1,72 @@
+{
+ "run": "CPFF_bl1",
+ "note": "half car, N; snapshot of the saved iteration; downforce = -Fz",
+ "zones": {
+  "car_rw": {
+   "faces": 36612,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 271.7313870904032,
+   "sum_drag_N": 85.84862805373216,
+   "fluent_downforce_N_last": 271.731387089871,
+   "fluent_drag_N_last": 85.84862805401818,
+   "mean200_downforce_N": 271.69635013829054,
+   "mean200_drag_N": 85.85765910682795,
+   "check_downforce_rel": 1.9584343681242763e-12,
+   "check_drag_rel": -3.3316999856176896e-12,
+   "check_pass": true
+  },
+  "car_rws": {
+   "faces": 9010,
+   "shear_sign": 1.0,
+   "sum_downforce_N": -0.053853045549902945,
+   "sum_drag_N": 0.43400788417391123,
+   "fluent_downforce_N_last": -0.05385304554959246,
+   "fluent_drag_N_last": 0.4340078841691975,
+   "mean200_downforce_N": -0.05386068933013723,
+   "mean200_drag_N": 0.4334404950733638,
+   "check_downforce_rel": -3.1048774662423284e-13,
+   "check_drag_rel": 4.713729406802258e-12,
+   "check_pass": true,
+   "support": {
+    "faces": 9010,
+    "area_m2": 0.3041833446957042,
+    "downforce_N": -0.053853045549902945,
+    "drag_N": 0.43400788417391123,
+    "side_N": -14.818316354902981
+   }
+  },
+  "car_fw": {
+   "faces": 33043,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 235.191106166703,
+   "sum_drag_N": 57.68912153274929,
+   "fluent_downforce_N_last": 235.1911061673236,
+   "fluent_drag_N_last": 57.68912153243168,
+   "mean200_downforce_N": 235.62125250534314,
+   "mean200_drag_N": 57.79042760987811,
+   "check_downforce_rel": -2.6386543076648586e-12,
+   "check_drag_rel": 5.505589172582725e-12,
+   "check_pass": true
+  },
+  "car_fws": {
+   "faces": 1160,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 0.028346065852299217,
+   "sum_drag_N": 0.15057858459613305,
+   "fluent_downforce_N_last": 0.02834606585200534,
+   "fluent_drag_N_last": 0.1505785845965143,
+   "mean200_downforce_N": 0.028347511845114352,
+   "mean200_drag_N": 0.15075100759530652,
+   "check_downforce_rel": 2.9387603461827894e-13,
+   "check_drag_rel": -3.8125058665627876e-13,
+   "check_pass": true,
+   "support": {
+    "faces": 1160,
+    "area_m2": 0.014465519631436748,
+    "downforce_N": 0.028346065852299217,
+    "drag_N": 0.15057858459613305,
+    "side_N": 0.5575871086948211
+   }
+  }
+ }
+}

@@ -3,6 +3,33 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-27 (CFD session): front-wing supports J, K, CPFF and a CP_bl1 repeat
+
+**Status: finished, no commits.** Plan and record: `docs/wing_supports_plan.md` (front-wing round). Results: `media/cfd/supports/wing_supports_results.md` (front-wing section).
+- **Runs** (1 prism layer, CP's solver settings, reference CP_bl1):
+  - J_bl1: CP with only the front pylons replaced by F's lens section (5 mm round front edge).
+  - CPFF_bl1: J's front supports plus F's rear supports.
+  - CP_bl1r: a repeat of CP_bl1 with the near-car refinement box at 39 mm instead of 40.
+  - All are force-converged. Mass imbalance is under 1e-6, and the part forces add up to the total.
+  - **K (pointed lens) failed to mesh 3 times**, all at the wing slots or the front flap's inner end, so it was not run. That is why CPFF uses J.
+- **Results:**
+
+| | CP_bl1 | CP_bl1r | J_bl1 | CPF (F_bl1) | CPFF_bl1 |
+|---|---|---|---|---|---|
+| front support down / drag, half car (N) | 0.04 / 0.45 | 0.04 / 0.45 | 0.03 / 0.15 | 0.03 / 0.45 | 0.03 / 0.15 |
+| ClA / CdA | 3.977 / 1.667 | 3.941 / 1.655 | 3.931 / 1.650 | 4.154 / 1.687 | 4.133 / 1.684 |
+| front share | 0.431 | 0.433 | 0.435 | 0.393 | 0.397 |
+| q-ratio 1 / 2 / 3 L | 0.65 / 0.91 / 0.97 | 0.65 / 0.91 / 0.97 | 0.64 / 0.91 / 0.97 | 0.66 / 0.92 / 0.97 | 0.66 / 0.91 / 0.97 |
+
+- **What it means:**
+  - J's lens cuts the front support's own drag by two thirds (0.45 to 0.15 N, half car). The front pylon is small, though (0.2 % of the car's drag), and the front wing does not gain from it as the rear wing did.
+  - J's totals are inside CP's 2.2 % spread. They are also close to the repeat's own change (ClA -0.9 %, CdA -0.7 %), a second noise estimate.
+  - CPFF is CPF within the noise. Only the rear supports' ClA gain (+3.9 %) is beyond the spread.
+  - Lap sim: CPFF vs CPF is inside the band on every track; the 45 m balance is -0.3 % vs +0.4 %.
+  - **Would build J at the front** (for its own drag, not a measured car effect) **and F at the rear.**
+  - A single run per variant is a weak result.
+- **Not changed:** the default car, CP's row and data, A-H data, SOLIDWORKS files. Added: row CPFF (CFD only) in `params/aero_variants.csv`.
+
 ## Summary, 2026-11-26 (CFD session): rear-wing support designs E-H in CFD
 
 **Status: finished, no commits.** Plan and record: `docs/wing_supports_plan.md`. Results: `media/cfd/supports/wing_supports_results.md`.
@@ -1531,3 +1558,50 @@ Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-u
   - `matlab/lapsim/support_sensitivity.m` compares CP_bl1 (built in memory) with CPF. Self-test PASS; added to `run_all`. Output: `media/support_sensitivity.md`, `.csv`.
   - Results: skidpad -0.01 / -0.03 s and autocross -0.32 / -0.61 s (point-mass / four-wheel), beyond the 2.2 % band. Fast circuit +0.20 / +0.13 s, inside the band (drag). 45 m balance -6.2 % (rear limit) to +0.4 % (front, near neutral).
   - README Future work has a paragraph on this.
+
+
+## 2026-11-27, CFD session: front-wing supports J, K, CPFF and a CP_bl1 repeat (detail)
+
+- **Brief read as:**
+  - only the front pylon's section changes, in CP's envelope;
+  - the rear stays CP's flat pylon in J and K;
+  - CPFF = the better of J and K plus F at the rear;
+  - the repeat is CP_bl1 with a tiny mesh setting change (no random seed exists).
+  - Written in the plan before any run.
+- **Front pylon checked:**
+  - It is where the brief says: Y 60-76, X -672 to -588, from the main element's middle line to Z 230 inside the nose.
+  - 60-100 mm of it is exposed.
+- **New code:**
+  - `cad/generate/cfd_variants.py`: variant keys `fw_support` and `build_fw_support`, zone `car_fws`, variants J, K, CPFF, and a `diamond` section in `rws_section` (K's try 3).
+  - `cfd/fluent_halfcar.py`: `car_fws` as a wall with the wing face size.
+  - `cfd/support_forces.py`: front pylon mask, `--zones`, and pylon extraction for any wing zone without its support zone. Self-test PASS. Re-summing the five rear-round runs reproduced their JSONs byte for byte.
+  - `cfd/support_flow.py --front`.
+  - New `cfd/support_table.py` (comparison table; self-test PASS).
+  - `matlab/lapsim/support_sensitivity.m` now takes CP_bl1, CPF and CPFF (CPFF only if its row exists) and prints CPFF - CPF. Self-test PASS.
+  - CPFF allowed in `read_aero_variants`, `car_from_params`.
+- **Meshing record:**
+  - J meshed first try (921,687 cells).
+  - K failed 3 times (logs `cfd/cases/mesh_front_try1..3/`):
+    1. rear flap 2;
+    2. rear flap 2 again, with the symmetry split at Z 1050;
+    3. the front flap's inner end, with the simplified "diamond" section.
+  - CP_bl1r:
+    - curvature 17.5 deg: self-intersections;
+    - volume growth 1.33: a mesh identical to CP_bl1, so not solved and deleted;
+    - near-car box 39 mm: meshed, 917,716 cells.
+  - CPFF:
+    - try 1 failed at the front flap's inner end;
+    - try 2, with the symmetry split at Z 1050, meshed (989,695 cells).
+- **Solves:** J 10:11-11:15, CP_bl1r 11:29-12:35, CPFF 12:48-14:01. One Fluent session at a time (the Student licence refused a second).
+- **Face exports:**
+  - `car_fw` of CP_bl1, F_bl1 and CP_bl1r, and all zones of J_bl1 and CPFF_bl1.
+  - The zone sums match Fluent to 3e-12.
+  - Flat front pylon: 0.45 N drag, 0.0164 m² (hand estimate 0.0169 m²).
+  - These added a `car_fw` block to `cfd/results/runs/CP_bl1/support_forces.json` and `F_bl1/support_forces.json`. Their existing entries are unchanged.
+- **Postprocess:** `--no-plots`. The result tables only gained rows, plus two `car_fws` columns in `cfd_summary.csv`. Every old row was checked unchanged.
+- **Lap sim:** row CPFF in `params/aero_variants.csv`, then `support_sensitivity()` and `run_all('test')`: 28 of 28 PASS.
+- **Docs:**
+  - results file (front-wing section and the new picture `support_flow_front.png`);
+  - plan;
+  - README Future work.
+- **Not checked:** see the results file (K, J vs K, mesh independence at the front support, yaw, structure, CAD).

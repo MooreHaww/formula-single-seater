@@ -1,0 +1,6 @@
+run,cells,converged,ClA,CdA,L_over_D,aero_front,fws_down_N_half,fws_drag_N_half,fws_source,rws_down_N_half,rws_drag_N_half,rws_source,fw_down_with_support_N,fw_down_wing_only_N,ClA_fw_with_support,q_ratio_1L,q_ratio_2L,q_ratio_3L,d_ClA_pct,d_CdA_pct,d_L_over_D_pct,d_fw_down_with_support_N_pct,d_aero_front,beyond_spread
+CP_bl1,918527,True,3.9768,1.6672,2.3854,0.43075,0.035623,0.4518,"face export, snapshot",-0.12102,4.3439,"face export, snapshot",470.54,470.47,1.9606,0.6486,0.91208,0.97167,0,0,0,0,0,none
+CP_bl1r,917716,True,3.9414,1.6553,2.3811,0.43286,0.035113,0.45213,"face export, snapshot",-0.11649,4.3053,"face export, snapshot",468.84,468.77,1.9535,0.64533,0.91363,0.97234,-0.88906,-0.71164,-0.17869,-0.36236,0.0021093,none
+F_bl1,987878,True,4.1545,1.6875,2.4619,0.39349,0.034751,0.45356,"face export, snapshot",-0.048027,0.40783,"zone, 200-it mean",470.28,470.21,1.9595,0.66271,0.91575,0.9724,4.4674,1.22,3.2082,-0.054439,-0.037261,ClA
+J_bl1,921687,True,3.9308,1.6504,2.3817,0.43493,0.028263,0.15222,"zone, 200-it mean",-0.10256,4.3007,"face export, snapshot",468.13,468.07,1.9505,0.63741,0.9074,0.9706,-1.1571,-1.0051,-0.15353,-0.51289,0.0041742,none
+CPFF_bl1,989695,True,4.133,1.684,2.4543,0.39731,0.028348,0.15075,"zone, 200-it mean",-0.053861,0.43344,"zone, 200-it mean",471.3,471.24,1.9637,0.6605,0.91461,0.97099,3.9274,1.0073,2.8909,0.16126,-0.033439,ClA

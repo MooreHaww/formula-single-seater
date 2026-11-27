@@ -60,16 +60,16 @@ CELL_TARGET = (800_000, 1_000_000)
 # mesh sizes in mm at --scale 1 (multiplied by --scale, except the wing faces and the minimum: --wing-scale)
 SIZES = {
     "min": 2.5, "max": 640.0, "growth": 1.2, "curvature_angle": 18.0,
-    "face": {"car_fw": 12.0, "car_rw": 12.0, "car_rws": 12.0, "wheel_front": 14.0, "wheel_rear": 14.0, "car_floor": 18.0, "car_body": 24.0, "ground": 160.0},
+    "face": {"car_fw": 12.0, "car_rw": 12.0, "car_rws": 12.0, "car_fws": 12.0, "wheel_front": 14.0, "wheel_rear": 14.0, "car_floor": 18.0, "car_body": 24.0, "ground": 160.0},
     "boi_near": 40.0, "boi_wake": 70.0,
     "vol_growth": 1.35, "cells_per_gap": 1.0, "proximity_to": "edges",
     "bl_layers": 2, "bl_rate": 1.2, "bl_transition": 0.272,
 }
 BOUNDARY_TYPES = {"inlet": "velocity-inlet", "outlet": "pressure-outlet", "symmetry": "symmetry", "side": "symmetry", "top": "symmetry"}
-WALLS_STATIONARY = ["car_body", "car_floor", "car_fw", "car_rw", "car_rws"]   # car_rws: rear-wing supports, variants E-H only (CP: pylon inside car_rw)
+WALLS_STATIONARY = ["car_body", "car_floor", "car_fw", "car_rw", "car_rws", "car_fws"]   # car_rws / car_fws: rear / front-wing supports (E-H, J, K, CPFF; CP: pylons inside car_rw / car_fw)
 # --scale coarsens everything except these face sizes and the minimum size (--wing-scale):
 # at 1.2 x the wing faces the slots and the rear flap at Y = 0 fail the surface mesh ("breakout detected")
-WING_ZONES = ("car_fw", "car_rw", "car_rws")
+WING_ZONES = ("car_fw", "car_rw", "car_rws", "car_fws")
 
 
 def log(*a):

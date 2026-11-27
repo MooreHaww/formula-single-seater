@@ -1,0 +1,59 @@
+{
+ "run": "J_bl1",
+ "note": "half car, N; snapshot of the saved iteration; downforce = -Fz",
+ "zones": {
+  "car_rw": {
+   "faces": 39452,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 246.16261064436776,
+   "sum_drag_N": 84.7025769898541,
+   "fluent_downforce_N_last": 246.162610644785,
+   "fluent_drag_N_last": 84.70257699009791,
+   "mean200_downforce_N": 246.0489817551935,
+   "mean200_drag_N": 84.70609076186928,
+   "check_downforce_rel": -1.694939346578505e-12,
+   "check_drag_rel": -2.8784913400831224e-12,
+   "check_pass": true,
+   "pylon": {
+    "faces": 2948,
+    "area_m2": 0.31895169236390897,
+    "downforce_N": -0.1025597855977118,
+    "drag_N": 4.300725979245331,
+    "side_N": -9.165086819528039
+   }
+  },
+  "car_fw": {
+   "faces": 32607,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 233.87091356847,
+   "sum_drag_N": 57.24818454861828,
+   "fluent_downforce_N_last": 233.8709135682717,
+   "fluent_drag_N_last": 57.24818454845992,
+   "mean200_downforce_N": 234.03527678840183,
+   "mean200_drag_N": 57.28643382084612,
+   "check_downforce_rel": 8.478962333126622e-13,
+   "check_drag_rel": 2.7663019569145703e-12,
+   "check_pass": true
+  },
+  "car_fws": {
+   "faces": 1145,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 0.028259458627385377,
+   "sum_drag_N": 0.1521391297800479,
+   "fluent_downforce_N_last": 0.02825945862546163,
+   "fluent_drag_N_last": 0.152139129780677,
+   "mean200_downforce_N": 0.02826301499711263,
+   "mean200_drag_N": 0.15222442616517814,
+   "check_downforce_rel": 1.923745884813144e-12,
+   "check_drag_rel": -6.29107876903845e-13,
+   "check_pass": true,
+   "support": {
+    "faces": 1145,
+    "area_m2": 0.014465520515002491,
+    "downforce_N": 0.028259458627385377,
+    "drag_N": 0.1521391297800479,
+    "side_N": 0.5539169075061037
+   }
+  }
+ }
+}

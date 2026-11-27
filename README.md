@@ -267,9 +267,26 @@ These are the things the numbers above depend on that were not measured, or were
     - 2 prism layers;
     - yaw;
     - structure;
-    - CAD;
-    - the front-wing supports.
+    - CAD.
   - **Details:** `media/cfd/supports/wing_supports_results.md` and `docs/wing_supports_plan.md`.
+- **Wing supports: front wing, second CFD round (2026-11-27; CFD only, not in CAD).**
+  - **Limits:**
+    - The CAD and the released v1.0.0 have no supports on either wing.
+    - These are CFD results with one run per variant.
+    - The runs are steady RANS, so only the ranking is trustworthy.
+  - **What was run.** CP's flat front pylons (16 mm plates, 84 mm chord, only 60-100 mm exposed between the wing and the nose) were replaced in the same envelope by:
+    - J: F's lens with a round front edge;
+    - CPFF: J at the front plus F at the rear.
+    - A pointed lens (K) failed to mesh in three attempts, at the wing slots and not at the support, so it was not run.
+    - A repeat of CP_bl1 with a 1 mm change in a mesh refinement box moved ClA by 0.9 % and CdA by 0.7 %: a second noise estimate, inside CP's 2.2 % spread.
+  - **Found:**
+    - J cuts the front support's own drag by two thirds (0.45 to 0.15 N, half car). The front pylon is a small part, though: 0.2 % of the car's drag.
+    - Unlike at the rear, the front wing does not gain downforce, and no total (ClA, CdA, balance, wake) changes beyond the noise.
+    - CPFF cannot be told apart from CPF in the CFD or in the lap sim: every lap-time difference is inside the 2.2 % band. The 45 m balance is -0.3 % vs +0.4 %, inside its band of 1.5 points.
+    - Row `CPFF` in `params/aero_variants.csv` is CFD only; CP stays the default.
+  - **Would build:** J at the front, for its own lower drag rather than a measured gain, and F at the rear.
+  - **Not done:** K, a rounded flat plate, 2 prism layers, yaw, structure (the front supports carry the front wing), CAD.
+  - **Details:** the front-wing section of `media/cfd/supports/wing_supports_results.md`, with the flow picture `support_flow_front.png`.
 - Make the SolidWorks Simulation beam studies on the production weldment solve, so the frame stress has a second source.
 - Decide the frame material in the CAD (AISI 1020 now) against the 4130 the stress model assumes.
 - Reach the motion study's ±30 mm of bump (it stops at +23 / +14 mm).

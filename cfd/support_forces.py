@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Force on the rear-wing supports from a saved solution, by summing per-face pressure
-and wall shear (docs/wing_supports_plan.md).
+"""Force on the rear- and front-wing supports from a saved solution, by summing per-face
+pressure and wall shear (docs/wing_supports_plan.md).
 
     .venv/Scripts/python cfd/support_forces.py export CP        # Fluent: reads halfcar_CP.cas.h5/.dat.h5, writes face CSVs (no case is saved)
+    .venv/Scripts/python cfd/support_forces.py export CP_bl1 --zones car_fw   # only these zones
     .venv/Scripts/python cfd/support_forces.py sum CP           # no Fluent: sums the CSVs, checks them, prints and writes JSON
     .venv/Scripts/python cfd/support_forces.py --selftest
 
@@ -11,6 +12,11 @@ wing and pylon together. The variants E-H have the support in its own zone (car_
 For CP and CP_bl1 the pylon faces are picked out of car_rw by position and normal:
     centre within the pylon's box (X 1666-1896 mm, Y 141.5-158.5 mm, Z below 1135 mm,
     i.e. under the wing's lower surface) and a nearly horizontal normal (|n_z| < 0.5).
+The front pylon (flat plate, every run without a front support zone car_fws) is in car_fw
+the same way (front-wing round, 2026-11-27): centre within X -672.5 to -587.5 mm, Y 59.5 to
+76.5 mm and either a nearly horizontal normal (|n_z| < 0.5: its sides, front and back) or a
+centre above Z 200 mm (its exposed top at Z 230 ahead of the nose tip; the wing's own
+surface there is below Z 135). The rear pylon is picked out only when the run has no car_rws.
 Force on the wall from the faces: F = sum(p * A_vec) + sum(tau * |A|), with p the gauge
 pressure (Fluent's reports use the same, reference pressure 0) and A_vec the face area
 vector Fluent exports for boundary faces. The method is checked on whole zones: the
@@ -41,17 +47,19 @@ RUNS = ROOT / "cfd" / "results" / "runs"
 FACES = CASES / "support_faces"
 QUANT = ["pressure", "x-wall-shear", "y-wall-shear", "z-wall-shear", "x-face-area", "y-face-area", "z-face-area"]
 PYLON_BOX = {"x": (1666.0, 1896.0), "y": (141.5, 158.5), "z_max": 1135.0, "nz_max": 0.5}     # mm, CP's rear pylon
+FPYLON_BOX = {"x": (-672.5, -587.5), "y": (59.5, 76.5), "z_top": 200.0, "nz_max": 0.5}       # mm, CP's front pylon
+ZONES = ("car_rw", "car_rws", "car_fw", "car_fws")
 CHECK_TOL = 0.01                                                                          # 1 % of the zone's downforce
 
 
-def export(run: str, cores: int = 4) -> int:
+def export(run: str, cores: int = 4, only=None) -> int:
     import fluent_halfcar as fh
     FACES.mkdir(parents=True, exist_ok=True)
     s = fh.launch("solver", cores, False, CASES)
     try:
         s.settings.file.read_case_data(file_name=fh.fwd(CASES / f"halfcar_{run}.cas.h5"))
         walls = list(s.settings.setup.boundary_conditions.wall.get_object_names())
-        zones = [z for z in ("car_rw", "car_rws") if z in walls]
+        zones = [z for z in (only or ZONES) if z in walls]
         for z in zones:
             f = FACES / f"{run}_{z}.csv"
             fh.set_aside(f)
@@ -103,11 +111,18 @@ def pylon_mask(d: dict, A: np.ndarray, Am: np.ndarray) -> np.ndarray:
     return (x > b["x"][0]) & (x < b["x"][1]) & (y > b["y"][0]) & (y < b["y"][1]) & (z < b["z_max"]) & (nz < b["nz_max"])
 
 
+def front_pylon_mask(d: dict, A: np.ndarray, Am: np.ndarray) -> np.ndarray:
+    x, y, z = (col(d, c) * 1000.0 for c in ("x-coordinate", "y-coordinate", "z-coordinate"))
+    nz = np.abs(A[:, 2]) / np.maximum(Am, 1e-30)
+    b = FPYLON_BOX
+    return (x > b["x"][0]) & (x < b["x"][1]) & (y > b["y"][0]) & (y < b["y"][1]) & ((nz < b["nz_max"]) | (z > b["z_top"]))
+
+
 def summarise(run: str) -> dict:
     last, hist = last_row(run)
     out = {"run": run, "note": "half car, N; snapshot of the saved iteration; downforce = -Fz", "zones": {}}
     import postprocess as pp
-    for z in ("car_rw", "car_rws"):
+    for z in ZONES:
         f = FACES / f"{run}_{z}.csv"
         if not f.exists():
             continue
@@ -129,12 +144,13 @@ def summarise(run: str) -> dict:
         zr["check_downforce_rel"] = (zr["sum_downforce_N"] - zr["fluent_downforce_N_last"]) / max(abs(zr["fluent_downforce_N_last"]), 1.0)
         zr["check_drag_rel"] = (zr["sum_drag_N"] - zr["fluent_drag_N_last"]) / max(abs(zr["fluent_drag_N_last"]), 1.0)
         zr["check_pass"] = abs(zr["check_downforce_rel"]) < CHECK_TOL and abs(zr["check_drag_rel"]) < CHECK_TOL
-        if z == "car_rw" and run.startswith("CP"):
-            m = pylon_mask(d, A, Am)
+        pm = {"car_rw": pylon_mask, "car_fw": front_pylon_mask}.get(z)
+        if pm is not None and f"downforce_{z}s" not in last:          # flat pylon inside the wing zone (no support zone)
+            m = pm(d, A, Am)
             Fp = Fv[m].sum(axis=0)
             zr["pylon"] = {"faces": int(m.sum()), "area_m2": float(Am[m].sum()),
                            "downforce_N": float(-Fp[2]), "drag_N": float(Fp[0]), "side_N": float(Fp[1])}
-        if z == "car_rws":
+        if z in ("car_rws", "car_fws"):
             zr["support"] = {"faces": int(len(Am)), "area_m2": float(Am.sum()), "downforce_N": float(-tot[2]),
                              "drag_N": float(tot[0]), "side_N": float(tot[1])}
         out["zones"][z] = zr
@@ -157,8 +173,18 @@ def selftest() -> int:
     d2 = {h: np.array([v]) for h, v in zip(hdr, [0, 0, 0, 3.0, 0, 0, 0, 0, 0, -2.0])}
     Fv2, _, _ = face_forces(d2)
     ok2 = abs(-Fv2.sum(axis=0)[2] - 6.0) < 1e-12
-    print(f"selftest closed cube net force zero: {'PASS' if ok1 else 'FAIL'}; plate downforce 6 N: {'PASS' if ok2 else 'FAIL'}")
-    return 0 if ok1 and ok2 else 1
+    # front pylon mask: a side face (Y 60, normal -y) and the exposed top (Z 230, normal +z) are in; the wing's
+    # upper surface under it (Z 125, normal +z) and a side face outside the box (Y 90) are out -> [1, 1, 0, 0]
+    pts = [(-0.630, 0.060, 0.160, 0, -1, 0), (-0.660, 0.068, 0.230, 0, 0, 1), (-0.630, 0.068, 0.125, 0, 0, 1), (-0.630, 0.090, 0.160, 0, 1, 0)]
+    d3 = {h: np.array([q[k] if k < 3 else 0.0 for q in pts]) for k, h in enumerate(hdr[:3])}
+    for k, h in enumerate(("x-face-area", "y-face-area", "z-face-area")):
+        d3[h] = np.array([q[3 + k] * 1e-4 for q in pts])
+    A3 = np.column_stack([d3["x-face-area"], d3["y-face-area"], d3["z-face-area"]])
+    m3 = front_pylon_mask(d3, A3, np.linalg.norm(A3, axis=1))
+    ok3 = m3.tolist() == [True, True, False, False]
+    print(f"selftest closed cube net force zero: {'PASS' if ok1 else 'FAIL'}; plate downforce 6 N: {'PASS' if ok2 else 'FAIL'}; "
+          f"front pylon mask [1 1 0 0]: {'PASS' if ok3 else 'FAIL'}")
+    return 0 if ok1 and ok2 and ok3 else 1
 
 
 def main() -> int:
@@ -166,11 +192,12 @@ def main() -> int:
     ap.add_argument("action", nargs="?", choices=["export", "sum"])
     ap.add_argument("run", nargs="?")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--zones", default="", help="export only these zones (comma list), e.g. car_fw")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
     if a.action == "export":
-        return export(a.run)
+        return export(a.run, only=[z for z in a.zones.split(",") if z] or None)
     r = summarise(a.run)
     print(json.dumps(r, indent=1))
     return 0 if all(z["check_pass"] for z in r["zones"].values()) else 1

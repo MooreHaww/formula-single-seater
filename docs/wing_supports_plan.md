@@ -70,3 +70,69 @@
 - 2026-11-26 16:00: **step 10 done.** `support_forces.py` export + sum on CP, CP_bl1, E_bl1, H_bl1, F_bl1: whole-zone face sums match Fluent's reports to 1e-11 on all five (shear sign +1). Pylon: CP -0.10 / 4.57 N, CP_bl1 -0.12 / 4.34 N (2,939 faces, 0.319 m2, matches the plate's exposed area). Supports: E -0.06 / 0.81, H -0.06 / 2.80, F -0.05 / 0.41 (same as the zone reports).
 - **Step 12 done:** `cfd/support_flow.py` -> `media/cfd/supports/support_flow.png`, `cfd/results/support_flow.csv`; postprocess re-run (wake tables, cfd_results.md).
 - **Step 13 done:** `media/cfd/supports/wing_supports_results.md` (table, findings, what I would build: F, what was not checked); log, README Future work, cfd README updated. **Round finished.** Next round (not started): front wing supports; G again with a mesh that survives (e.g. slot fixes) if wanted.
+
+---
+
+# Front-wing round: variants J, K, CPFF and a CP_bl1 repeat (started 2026-11-27)
+
+**Resume rule as above.** The newest status line is at the bottom of "Front-wing status".
+
+## How I read the brief (written 2026-11-27, before any run)
+
+- **Base and reference.** Every run is CP with 1 prism layer, compared against **CP_bl1**. Same solver settings (`fluent_halfcar.py solve`, defaults: 1200 iterations, force stop), same meshing settings (`--scale 2`, `--set bl_layers=1`), same cell limit.
+- **What the current front pylon is (checked in `build_front_wing`, matches the brief):** one flat 16 mm plate each side, Y 60-76 mm (centre 68), X -672 to -588 mm (72-93 % of the 400 mm main-element chord, so an 84 mm chord), bottom edge on the main element's middle line (Z 107 at the front, 128 at the back), top at Z 230. From X -650 back the top is inside the nose (nose underside at Z 188-215 there); **the front 22 mm (X -672 to -650) is ahead of the nose tip, so its top face at Z 230 is exposed**. The exposed height between the wing's upper surface (Z 121-132) and the nose is only about 60-100 mm, against about 650 mm on the rear. Counted in `car_fw`.
+- **J and K:** only the front pylon's cross-section changes; the envelope above is kept (same X range, Y centre, 16 mm maximum thickness, same side outline, same nose and wing attachment). Built with the rear round's section function `rws_section` and its mesher-forced rules:
+  - **J:** F's section: lens with a 5 mm round front edge (`RWS_NOSE_R`), rear edge cut square 3 mm.
+  - **K:** E's section: lens, front edge 3 mm square, rear edge 3.05 mm (`RWS_EDGE_DIFF`, keeps the side faces split).
+  - The rear keeps CP's flat pylon in J and K.
+  - Own force zone `car_fws` (face size 12 mm as the wing). `car_fw` is then the wing without its support.
+- **CPFF:** J or K on the front (whichever has the lower `car_fws` drag; if they are equal to the reported digits, J, the shape that won on the rear), plus F's rear supports (`car_rws`). Built after J and K are solved.
+- **CP_bl1 repeat (second noise estimate):** Fluent Meshing has no random seed, so the "tiny mesh change" is **the curvature normal angle 17.5 deg instead of 18 deg** (`--set curvature_angle=17.5`), run **CP_bl1r**; geometry `fluid_CP.step` unchanged. This changes the surface mesh on every curved face, which is how the variants also move the mesh (the global size field), so it estimates the noise the comparison actually sees. It is slightly finer, so a small systematic part cannot be separated from the noise. Fallback if it does not mesh or goes over the limit: volume growth 1.33 instead of 1.35.
+- **Measures for every run:** support drag (half car, N), ClA, CdA, L/D, front share, front-wing downforce on its own (J, K, CPFF: `car_fw` + `car_fws` and each alone; CP_bl1 and F_bl1: `car_fw`, and its pylon picked out by face export), wake q-ratio at 1, 2, 3 L. Differences in totals under 2.2 % are not claimed; the repeat gives a second spread.
+- **Meshing failures:** up to 3 tries per variant: 3 mm square edges (already in), symmetry-face split, then one simplified section. Then stop on that variant.
+- **Lap sim (only if CPFF solves):** row CPFF in `params/aero_variants.csv` (CFD only); `support_sensitivity.m` extended to compare CP_bl1, CPF and CPFF with the same 2.2 % band. CP and its row unchanged.
+- **Not changed:** CP, A-D, E-H data, the CP row, SOLIDWORKS files. No .msh/.cas/.dat/.h5 outside `cfd/cases/`.
+
+## Front-wing variants
+
+| Run | Front section | Rear | Status | Cells |
+|---|---|---|---|---|
+| CP_bl1 | flat 16 mm plate | flat plate | reference, existing run | 918,527 |
+| CP_bl1r | flat plate | flat plate | repeat; meshed on try 3, near-car box 39 mm instead of 40 (curvature 17.5 deg failed; volume growth 1.33 gave CP_bl1's mesh) | 917,716 |
+| J_bl1 | lens, 5 mm round front edge | flat plate | solved, first mesh try | 921,687 |
+| K_bl1 | lens, 3 mm square edges | flat plate | **not run**: 3 mesh tries failed, all away from the support | - |
+| CPFF_bl1 | J (K did not mesh) | F | solved, mesh try 2 (symmetry face split at Z 1050) | 989,695 |
+
+## Front-wing steps
+
+- [x] F1. Front pylon checked against the brief (above).
+- [x] F2. Code: `fw_support`, `build_fw_support`, zone `car_fws` in `cad/generate/cfd_variants.py`; `car_fws` in `cfd/fluent_halfcar.py` (wall, wing face size). CP's code path unchanged.
+- [x] F3. Geometry J, K built: 19 of 19 checks pass. `car_fw` 30 -> 25 faces (CP's 5 pylon faces leave), `car_fws` 7 faces, body 122 -> 121 faces (CP's plate cuts a 207 mm2 sliver off the nose's lower corner face inboard of it, X -650 to -610, Y 50-60; the lens, narrower at the front, leaves that face whole), all other zones as CP. Shared domain/BOI STEP files restored (only STEP occurrence counters differed).
+- [x] F4. Mesh J, K, CP_bl1r (K not meshed in 3 tries) (chain `cfd/cases/chain_JK.sh`, progress `chain_JK.out`).
+- [x] F5. Solve J, CP_bl1r (K not run); per-solve checks (force convergence, mass balance, y+, parts sum to the total).
+- [x] F6. CPFF: geometry, mesh, solve, checks.
+- [x] F7. Face export: front pylon force of CP_bl1, CP_bl1r, F_bl1 (`support_forces.py`), checked against the zone reports.
+- [x] F8. Flow picture near the front support (`support_flow.py --front`), wake table.
+- [x] F9. Lap sim and balance: CP_bl1, CPF, CPFF (CPFF solved).
+- [x] F10. Write-up: results file (front-wing section), this plan, log, README Future work.
+
+## Front-wing status
+
+- 2026-11-27: F1-F3 done. Chain started: mesh J, K, CP_bl1r, then solve each that meshed.
+- 2026-11-27 10:06: **J meshed first try, 921,687 cells** (CP_bl1 918,527; min orthogonal quality 0.140 vs 0.144; support 2,073 surface faces). J_bl1 solving from 10:11.
+- **K, mesh try 1 failed** (10:09): "Breakout detected / Front could not be closed" at X 2215, Y 264, Z 1359, the rear-wing flap 2 slot (the same place F failed in the rear round), not at the front support. Logs in `cfd/cases/mesh_front_try1/`. **Try 2:** symmetry face split at Z 1050 (`sym_split_z`, topology only, as B_AB); rebuilt, 11 of 11 checks.
+- **CP_bl1r, mesh try 1 failed** (curvature 17.5 deg): "Breakout detected", then 26 self-intersections (no location given). **Try 2 = the planned fallback: volume growth 1.33 instead of 1.35** (`--set vol_growth=1.33`, curvature back to 18). This leaves the surface mesh as CP_bl1's, so it measures only the volume-mesh part of the noise.
+- A second Fluent session cannot start while one runs (Student licence: 4 launch attempts refused at 10:13-10:16; J_bl1 carried on unaffected). Chain 2 (mesh K, CP_bl1r; solve both) starts when J_bl1 ends.
+- 2026-11-27 11:15: **J_bl1 solved** (1200 it, force-converged: drift 0.005 / 0.001 %, band 0.71 / 0.31 %), mass imbalance 7.4e-7, y+ area-average 35 on the front support, 81-147 elsewhere.
+- 11:17: **K try 2 failed** at rear flap 2 again (X 2216, Y 451, Z 1360). Logs `cfd/cases/mesh_front_try2/`.
+- 11:21: **CP_bl1r try 2 (volume growth 1.33) gave a mesh IDENTICAL to CP_bl1**: 918,527 cells, same surface faces per zone, same orthogonal quality to 16 digits, same file size. The growth setting has no effect on this poly-hexcore mesh, so a solve would only repeat CP_bl1. Its solve was stopped before Fluent started (licence wait) and the mesh deleted. **Try 3 (the last):** near-car refinement box 39 mm instead of 40 (`--set boi_near=39`, 78 instead of 80 mm at scale 2).
+- 11:24: **K try 3 (simplified "diamond" section: straight sides, same pointed 3 mm front edge, chord and thickness; no symmetry split) failed**: "Failed to project front-edges" at X -590, Y 300, Z 151, the front flap's inner end (the same failure as G's last try), not at the support. **K is not run (3-attempt rule).** Logs `cfd/cases/mesh_front_try3/`. The diamond definition stays in the code as the record of try 3.
+- 11:28: **CP_bl1r meshed, 917,716 cells** (CP_bl1 918,527): surface faces differ in every zone (car_fw 59,300 vs 59,322, car_rw 70,371 vs 70,451, ground 23,126 vs 23,068), so the change reaches the surface mesh through the size field. Solving.
+- **CPFF = J's front support (K did not mesh) + F's rear supports.** Built, 11 of 11 checks; its car_fws faces are identical to J's and its car_rws / car_rw faces to F's. Chain `cfd/cases/chain_CPFF.sh` (mesh CPFF, face exports of CP_bl1, F_bl1, CP_bl1r, J_bl1, solve CPFF, export CPFF) starts after CP_bl1r.
+- 12:35: **CP_bl1r solved** (1200 it, force-converged), mass imbalance 9.9e-7, y+ area-average 82-147. ClA 3.941 (-0.9 % vs CP_bl1), CdA 1.655 (-0.7 %), front share 0.433 (+0.002): **second noise estimate about 0.9 % (ClA) / 0.7 % (CdA)**, inside CP's 2.2 %.
+- 12:38: **CPFF mesh try 1 failed**: "Failed to project front-edges" at X -590, Y 300, Z 151, the front flap's inner end (as K try 3), not at a support. Log `cfd/cases/mesh_CPFF_bl1_try1.log`. **Try 2:** symmetry face split at Z 1050 (`sym_split_z`, topology only, as B_AB; the 3 mm square edges are already in). Rebuilt, 11 of 11 checks, shared STEP files restored.
+- 12:40-12:44: face exports of `car_fw` (CP_bl1, F_bl1, CP_bl1r) and all zones of J_bl1 (`support_forces.py`): zone sums match Fluent's report to 3e-12. **CP's flat front pylon: 0.45 N drag, 0.04 N downforce (half car), 0.0164 m2 wetted** (hand check of the plate's exposed faces: about 0.0169 m2). J's support: 0.15 N drag, 0.03 N downforce, 0.0145 m2.
+- 12:48: **CPFF try 2 meshed, 989,695 cells** (min orthogonal quality 0.101, CP_bl1 0.144). Solving.
+- 14:01: **CPFF_bl1 solved** (1200 it, force-converged: drift 0.01 / 0.00 %, band 0.89 / 0.21 %), mass imbalance 7.3e-7, y+ area-average 35 on the front support, 87 on the rear supports, 84-148 elsewhere. All zone sums match Fluent to 1e-11 or better; the part forces add up to the total. ClA 4.133 (+3.9 % vs CP_bl1), CdA 1.684 (+1.0 %), front share 0.397; against CPF (F_bl1): ClA -0.5 %, CdA -0.2 %, front +0.004, all inside the spread.
+- After the solve: postprocess (`--no-plots`; only rows added to the result tables, plus two `car_fws` columns in `cfd_summary.csv`; old rows unchanged), `support_flow.py --front CP_bl1 J_bl1 CPFF_bl1` (`media/cfd/supports/support_flow_front.png`), `support_table.py` (`cfd/results/support_table.csv`). Row CPFF in `params/aero_variants.csv` (CFD only), CPFF allowed in `read_aero_variants` / `car_from_params`, `support_sensitivity.m` run (`media/support_sensitivity.md`): CPFF - CPF inside the band everywhere. `run_all('test')`: 28 of 28 PASS.
+- **Done.** Results: `media/cfd/supports/wing_supports_results.md`, section "Front-wing supports".

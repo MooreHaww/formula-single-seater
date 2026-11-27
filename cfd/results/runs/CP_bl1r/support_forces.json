@@ -1,0 +1,46 @@
+{
+ "run": "CP_bl1r",
+ "note": "half car, N; snapshot of the saved iteration; downforce = -Fz",
+ "zones": {
+  "car_rw": {
+   "faces": 39559,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 248.0253550875124,
+   "sum_drag_N": 84.89588447493418,
+   "fluent_downforce_N_last": 248.0253550877671,
+   "fluent_drag_N_last": 84.89588447481952,
+   "mean200_downforce_N": 248.3349561107737,
+   "mean200_drag_N": 84.95510567570732,
+   "check_downforce_rel": -1.0269730682379075e-12,
+   "check_drag_rel": 1.3505151227472796e-12,
+   "check_pass": true,
+   "pylon": {
+    "faces": 2940,
+    "area_m2": 0.31895239252595997,
+    "downforce_N": -0.11649264187974105,
+    "drag_N": 4.305254860366625,
+    "side_N": -11.531348919282998
+   }
+  },
+  "car_fw": {
+   "faces": 33582,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 234.58527142836488,
+   "sum_drag_N": 58.233314661538394,
+   "fluent_downforce_N_last": 234.5852714285647,
+   "fluent_drag_N_last": 58.23331466136283,
+   "mean200_downforce_N": 234.41768765229492,
+   "mean200_drag_N": 58.18066764746874,
+   "check_downforce_rel": -8.518567162730982e-13,
+   "check_drag_rel": 3.0147845811718543e-12,
+   "check_pass": true,
+   "pylon": {
+    "faces": 424,
+    "area_m2": 0.0163963425738041,
+    "downforce_N": 0.035113464316034244,
+    "drag_N": 0.4521305152200127,
+    "side_N": 0.8150227141562768
+   }
+  }
+ }
+}

@@ -2,6 +2,7 @@
 """Picture and numbers of the air next to the rear-wing supports (docs/wing_supports_plan.md).
 
     .venv/Scripts/python cfd/support_flow.py CP E G H F        # runs to compare, the first is the reference
+    .venv/Scripts/python cfd/support_flow.py --front CP_bl1 J_bl1 K_bl1 CPFF_bl1   # front-wing support
     .venv/Scripts/python cfd/support_flow.py --selftest
 
 Reads the saved Fluent case + data with VTK (cfd/visualise.py read_case, no licence) and
@@ -17,6 +18,14 @@ Numbers (cfd/results/support_flow.csv), from the side plane and a box behind the
   - deficit_behind: mean 1 - u/U in the same box (the support's own wake).
 The picture is media/cfd/supports/support_flow.png. Steady RANS: only the ranking of the
 variants is trustworthy.
+
+--front (front-wing round, 2026-11-27): the same for the front-wing support (X -672..-588,
+Y 60..76, exposed between the wing's upper surface, Z 121-132, and the nose, Z 188-215; its
+front 22 mm is ahead of the nose tip, up to Z 230):
+  - plan  : Z = 165 mm, X -720..-450, Y 20..130 mm;
+  - side  : Y = 90 mm, 14 mm outboard of the support's face, X -720..-400, Z 60..260 mm;
+  - upwash_side over X -672..-588, Z 135..185; box behind X -583..-533, Y 56..80, Z 140..175.
+  Outputs media/cfd/supports/support_flow_front.png, cfd/results/support_flow_front.csv.
 """
 from __future__ import annotations
 
@@ -36,6 +45,15 @@ PLAN = {"z": 0.760, "x": (1.600, 2.150), "y": (0.080, 0.230)}
 SIDE = {"y": 0.172, "x": (1.600, 2.300), "z": (0.450, 1.250)}
 CHORD = (1.667, 1.895)
 BOX = {"x": (1.900, 2.000), "y": (0.120, 0.180), "z": (0.600, 1.100)}
+SIDE_ZBAND = (0.600, 1.100)                                         # m, side-plane band for upwash_side
+TXT = {"what": "rear-wing support", "plan_z": "Z 760 mm", "side_y": "Y 172 mm", "fig": (6.8, (0.5, 1.9))}
+FRONT = {"PLAN": {"z": 0.165, "x": (-0.720, -0.450), "y": (0.020, 0.130)},
+         "SIDE": {"y": 0.090, "x": (-0.720, -0.400), "z": (0.060, 0.260)},
+         "CHORD": (-0.672, -0.588), "BOX": {"x": (-0.583, -0.533), "y": (0.056, 0.080), "z": (0.140, 0.175)},
+         "SIDE_ZBAND": (0.135, 0.185),
+         "OUT_PNG": ROOT / "media" / "cfd" / "supports" / "support_flow_front.png",
+         "OUT_CSV": ROOT / "cfd" / "results" / "support_flow_front.csv",
+         "TXT": {"what": "front-wing support", "plan_z": "Z 165 mm", "side_y": "Y 90 mm", "fig": (5.6, (0.9, 1.0))}}
 
 
 def grid_plane(axis_fixed: str, val: float, r1, r2):
@@ -77,7 +95,7 @@ def analyse(run: str):
     Us, vs = sample(ug, gs, shs)
     xs = SIDE["x"][0] + H * np.arange(shs[0]); zs = SIDE["z"][0] + H * np.arange(shs[1])
     X, Z = np.meshgrid(xs, zs)
-    m = (X >= CHORD[0]) & (X <= CHORD[1]) & (Z >= 0.600) & (Z <= 1.100) & vs
+    m = (X >= CHORD[0]) & (X <= CHORD[1]) & (Z >= SIDE_ZBAND[0]) & (Z <= SIDE_ZBAND[1]) & vs
     up_side = float(np.nanmean(Us[..., 2][m]) / U_INF)
     up_b, def_b, nb = box_stats(ug)
     return {"run": run, "upwash_side": up_side, "upwash_behind": up_b, "deficit_behind": def_b, "box_points": nb,
@@ -89,7 +107,7 @@ def picture(res):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     n = len(res)
-    fig, ax = plt.subplots(2, n, figsize=(3.4 * n + 1.2, 6.8), gridspec_kw={"height_ratios": [0.5, 1.9]}, constrained_layout=True)
+    fig, ax = plt.subplots(2, n, figsize=(3.4 * n + 1.2, TXT["fig"][0]), gridspec_kw={"height_ratios": list(TXT["fig"][1])}, constrained_layout=True)
     ax = np.atleast_2d(ax).reshape(2, n)
     for k, r in enumerate(res):
         a = ax[0, k]
@@ -102,14 +120,15 @@ def picture(res):
         im2 = b.imshow(r["_side"], origin="lower", extent=[1000 * SIDE["x"][0], 1000 * SIDE["x"][1], 1000 * SIDE["z"][0], 1000 * SIDE["z"][1]],
                        cmap="RdBu_r", vmin=-0.25, vmax=0.25, aspect="equal")
         b.axvline(1000 * CHORD[0], color="k", lw=0.5, ls=":"); b.axvline(1000 * CHORD[1], color="k", lw=0.5, ls=":")
-        b.set_title(f"{r['run']}: w / U at Y 172 mm\nmean beside the support {r['upwash_side']:+.3f}", fontsize=9)
+        b.set_title(f"{r['run']}: w / U at {TXT['side_y']}\nmean beside the support {r['upwash_side']:+.3f}", fontsize=9)
         b.set_xlabel("X, mm", fontsize=8); b.tick_params(labelsize=7)
         if k == 0:
             b.set_ylabel("Z, mm", fontsize=8)
     fig.colorbar(im1, ax=ax[0, :].tolist(), shrink=0.8, label="speed / U")
     fig.colorbar(im2, ax=ax[1, :].tolist(), shrink=0.6, label="w / U (red: up)")
-    fig.suptitle("Air next to the rear-wing support (half car, 20 m/s). Steady RANS: only the ranking of the variants is trustworthy.\n"
-                 "Top: plan view at Z 760 mm (white: inside the support). Bottom: side view 14 mm outboard of the support (dotted: its chord; white at the top: the wing).",
+    where = ("white at the top: the wing" if TXT["what"].startswith("rear") else "white: the wing below, the nose above")
+    fig.suptitle(f"Air next to the {TXT['what']} (half car, 20 m/s). Steady RANS: only the ranking of the variants is trustworthy.\n"
+                 f"Top: plan view at {TXT['plan_z']} (white: inside the support or the nose). Bottom: side view 14 mm outboard of the support (dotted: its chord; {where}).",
                  fontsize=9)
     OUT_PNG.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_PNG, dpi=115); plt.close(fig)
@@ -129,6 +148,9 @@ def selftest() -> int:
 def main(argv) -> int:
     if "--selftest" in argv:
         return selftest()
+    if "--front" in argv:
+        globals().update(FRONT)
+        argv = [a for a in argv if a != "--front"]
     runs = argv or ["CP", "E", "G", "H", "F"]
     res = []
     for r in runs:

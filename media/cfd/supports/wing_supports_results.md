@@ -103,7 +103,7 @@ Notes:
 ## What was NOT checked
 
 - **G (ridged support):** not meshed, so not solved. The ridge idea (downforce on the support, more upwash) is untested.
-- **The front wing's supports:** out of scope. CP's front flat pylon stays in every run.
+- **The front wing's supports:** out of scope in this round; CP's front flat pylon stays in every run. Done in the next round: see the front-wing section below.
 - **2 prism layers:** E, F and H were run with 1 layer only. CP vs CP_bl1 suggests the layer count moves ClA by about 2 %.
 - **Truly sharp edges:** the edges are 3 mm square, because sharp edges did not mesh.
 - **Other support positions, chords or thicknesses.** The envelope is CP's pylon.
@@ -113,3 +113,133 @@ Notes:
 - **Structure:** stiffness, strength, flutter of a 16 mm lens over 650 mm, and attachment to the frame and the wing.
 - **The SOLIDWORKS model:** this round is CFD only, so there is no CAD of the supports.
 - **The CP comparison point is a snapshot:** CP's pylon force is from the saved last iteration, not a 200-iteration mean. For CP_bl1 the zone's snapshot and mean differ by under 0.1 %, so the pylon value should be close.
+
+---
+
+# Front-wing supports J, K and CPFF: CFD results (2026-11-27)
+
+Plan, interpretation of the brief and the step-by-step record: `docs/wing_supports_plan.md` (section "Front-wing round").
+
+**Read this first.**
+- Same method as the rear round: half-car steady RANS (k-omega SST), Student mesh, 1 prism layer, CP's solver settings. **Only the ranking is trustworthy.**
+- **One run per variant is a weak result.** A difference in total ClA or CdA smaller than CP's 2.2 % spread is not claimed. A repeat of CP_bl1 with a tiny mesh change (below) moved ClA by 0.9 % and CdA by 0.7 %: a second, smaller estimate of the same noise.
+- The force on the support itself is the least noisy measure.
+
+## What was compared
+
+**How I read the brief:**
+- **CP's front pylon** is where the brief says:
+  - one flat 16 mm plate each side of the nose, Y 60-76 mm;
+  - 84 mm chord (X -672 to -588, 72-93 % of the main element's chord);
+  - from the main element's middle line up into the nose (top at Z 230 mm).
+  - Only 60-100 mm of it is exposed between the wing and the nose, against about 650 mm for the rear pylon.
+- **J and K change only the plate's cross-section.**
+  - The envelope is kept: X range, Y centre, 16 mm maximum thickness, side outline, and the attachment to the wing and the nose.
+  - The rear keeps CP's flat pylon.
+- **Force zones.** The supports get their own force zone (`car_fws`), so `car_fw` is the wing alone.
+  - For CP_bl1, CP_bl1r and F_bl1, the flat front pylon was picked out of `car_fw` by the per-face export (`cfd/support_forces.py`).
+  - Each zone sum matches Fluent's own report to 1e-11 or better.
+
+| Run | Front support | Rear support | Cells | Status |
+|---|---|---|---|---|
+| CP_bl1 | CP's flat 16 mm plate | CP's flat plate | 918,527 | reference (existing run) |
+| CP_bl1r | flat plate | flat plate | 917,716 | repeat of CP_bl1, near-car refinement box 39 mm instead of 40 |
+| J_bl1 | lens, 5 mm round front edge (F's section) | flat plate | 921,687 | solved |
+| K_bl1 | lens, 3 mm square front edge (E's section) | flat plate | - | **not run**: failed to mesh in 3 tries |
+| F_bl1 (= CPF) | flat plate | F | 987,878 | existing run, for comparison |
+| CPFF_bl1 | J (K did not mesh) | F | 989,695 | solved |
+
+**K's three mesh failures** were all away from the support, at the model's known fragile spots:
+1. Try 1: the rear-wing flap 2 slot (X 2215, Y 264, Z 1359).
+2. Try 2, with the symmetry face split at Z 1050: the same slot (X 2216, Y 451, Z 1360).
+3. Try 3, with a simplified "diamond" section (straight sides; same pointed edge, chord and thickness): the front flap's inner end (X -590, Y 300, Z 151).
+
+**CPFF uses J** because K was not run. CPFF itself failed once at the same front-flap spot. It meshed on the second try, with the symmetry face split at Z 1050 (topology only; it does not move the car).
+
+**The CP_bl1 repeat.** Fluent Meshing has no random seed, so the "tiny mesh change" had to be a setting:
+- Curvature angle 17.5 deg instead of 18: did not mesh (self-intersections).
+- Volume growth 1.33 instead of 1.35: gave a mesh **identical** to CP_bl1's (same cells and faces). Not solved.
+- Near-car refinement box size 39 mm instead of 40 (78 instead of 80 mm at scale 2): meshed. The surface faces differ in every zone, so this changes the mesh through the size field, as the variants do.
+
+## Results (full car unless marked; 20 m/s)
+
+| | CP_bl1 (flat front, flat rear) | CP_bl1r (repeat) | J_bl1 (J front, flat rear) | F_bl1 / CPF (flat front, F rear) | CPFF_bl1 (J front, F rear) |
+|---|---|---|---|---|---|
+| **Front support, half car (N): downforce / drag** | 0.04 / 0.45 | 0.04 / 0.45 | 0.03 / **0.15** | 0.03 / 0.45 | 0.03 / **0.15** |
+| Front support drag vs CP_bl1's front pylon | 1 | 1.00 | **0.34** | 1.00 | **0.33** |
+| Rear support, half car (N): downforce / drag | -0.12 / 4.34 | -0.12 / 4.31 | -0.10 / 4.30 | -0.05 / 0.41 | -0.05 / 0.43 |
+| Front-wing downforce with its support (N) | 470.5 | 468.8 (-0.4 %) | 468.1 (-0.5 %) | 470.3 (-0.1 %) | 471.3 (+0.2 %) |
+| Rear wing without its support, half car (N) | 249.6 | 248.4 | 246.1 | 273.0 | 271.7 |
+| ClA (m²) | 3.977 | 3.941 (-0.9 %) | 3.931 (-1.2 %) | 4.154 (**+4.5 %**) | 4.133 (**+3.9 %**) |
+| CdA (m²) | 1.667 | 1.655 (-0.7 %) | 1.650 (-1.0 %) | 1.687 (+1.2 %) | 1.684 (+1.0 %) |
+| L/D | 2.385 | 2.381 | 2.382 | 2.462 | 2.454 |
+| Front share of the aero load | 0.431 | 0.433 | 0.435 | 0.393 | 0.397 |
+| Wake q-ratio in the follower's window, 1 / 2 / 3 L | 0.65 / 0.91 / 0.97 | 0.65 / 0.91 / 0.97 | 0.64 / 0.91 / 0.97 | 0.66 / 0.92 / 0.97 | 0.66 / 0.91 / 0.97 |
+| Upwash w/U beside the front support (mean, 14 mm outboard) | +0.019 | - | +0.011 | - | +0.010 |
+| Mean 1 - u/U in a box just behind the front support | 0.37 | - | 0.10 | - | 0.10 |
+
+**Beyond CP's 2.2 % spread:**
+- Only the ClA of F_bl1 (+4.5 %) and of CPFF_bl1 (+3.9 %) against CP_bl1. Both come from the rear supports.
+- Every other total difference in the table is inside the spread. That includes every difference between J and CP_bl1, and between CPFF and CPF (ClA -0.5 %, CdA -0.2 %, front share +0.004).
+
+Where the numbers come from:
+- **Front support, J_bl1 and CPFF_bl1:** zone `car_fws` (200-iteration mean).
+- **Flat pylon (CP_bl1, CP_bl1r, F_bl1):** from the face export, a snapshot of the saved iteration.
+  - Its wetted area is 0.0164 m² per side.
+  - A hand estimate of the plate's exposed faces gives about 0.0169 m².
+- **Totals and front share:** `cfd/postprocess.py`.
+- **Table:** `cfd/support_table.py`, written to `cfd/results/support_table.csv`.
+- **Wake:** `cfd/results/wake_cfd.csv`.
+- **Last two rows:** `cfd/results/support_flow_front.csv`.
+- **Picture:** `support_flow_front.png`.
+
+## What was found
+
+1. **The front pylon is a small part.**
+   - CP's flat plate costs 0.45 N of drag per half car, against 4.3 N for the rear plate.
+   - Across the whole car it is about 0.9 N out of 400 N of drag (0.2 %).
+2. **J's lens section cuts the front support's drag by two thirds**, from 0.45 N to 0.15 N (half car), in J_bl1 and again in CPFF_bl1.
+   - The flat plate's flow separates at its square front corners and leaves a slow wake behind it (mean 1 - u/U 0.37 just behind it).
+   - Behind J's lens the flow stays attached and the wake is thin (0.10). See `support_flow_front.png`.
+3. **Unlike at the rear, the front wing does not gain from it.**
+   - The front wing's downforce changes by -0.5 % (J) and +0.2 % (CPFF). The repeat alone moves it by 0.4 %, so this is noise.
+   - The plate is exposed for only 60-100 mm, and its separated wake runs into the nose rather than the wing. So it does not spoil the wing as the rear plate does.
+4. **The totals do not change measurably.**
+   - J vs CP_bl1: ClA -1.2 %, CdA -1.0 %, front share +0.004. All are inside the 2.2 % spread and close to the repeat's own change (-0.9 % / -0.7 %).
+   - The 0.6 N of drag saved (full car) is 0.15 % of the total, far below what one run can resolve.
+5. **CPFF behaves like CPF.**
+   - The rear F supports give their known gain again: ClA +3.9 % over CP_bl1 (beyond the spread), with the balance moving rearward (front share 0.397).
+   - The front supports add nothing measurable on top (CPFF vs CPF: ClA -0.5 %, CdA -0.2 %).
+6. **The wake behind the car is unchanged.** The follower's window q-ratio moves by 0.01 at most, as in the rear round.
+7. **Lap time and balance** (`media/support_sensitivity.md`, same 2.2 % band as for CPF):
+   - **CPFF against CP_bl1:**
+     - faster on the skidpad (-0.009 s point-mass / -0.024 s four-wheel) and the autocross (-0.28 s / -0.55 s), beyond the band, as CPF was;
+     - the fast circuit is +0.16 / +0.08 s, inside the band.
+   - **CPFF against CPF:** inside the band on every track (largest +0.066 s, autocross four-wheel, band 0.13 s).
+   - **Cornering balance at 45 m:** CP_bl1 -6.2 %, CPF +0.4 %, CPFF -0.3 % (band 1.5 points). CPF and CPFF are both near neutral and cannot be told apart.
+
+## What I would build
+
+- **Front: J's section (lens, 5 mm round front edge)**, in CP's pylon envelope: 84 mm chord, 16 mm thick, one each side of the nose.
+  - Choose it because its own drag is one third of the plate's, not for a measured effect on the car. On the totals and the lap time it cannot be told apart from the flat plate.
+  - If a flat plate is much easier to make at the front, it costs about 0.6 N of drag at 20 m/s (full car), which this model cannot even resolve.
+  - A rounded or chamfered front edge on the plate would probably recover most of J's gain, but that was not run.
+- **Rear: F stays the recommendation** from the rear round. That is where the measurable gain is.
+
+## What was NOT checked
+
+- **K (pointed lens) was not run.** It failed to mesh 3 times, at the wing slots and the front flap's inner end, not at the support. So J vs K is untested. On the rear, E and F were within each other's noise on totals.
+- **One run per variant**, steady RANS. The two noise estimates (CP vs CP_bl1, 2.2 %; CP_bl1 vs CP_bl1r, 0.9 %) come from one pair each.
+- **CP_bl1r is not a pure noise test.** Its refinement box is 1 mm smaller, so a small systematic part (a slightly finer mesh near the car) cannot be separated from the noise.
+- **Mesh independence near the front support:**
+  - face size 12 mm, as the wing; no refinement study;
+  - y+ on the front support is about 35 (wall functions);
+  - CPFF's minimum orthogonal quality is 0.101 (CP_bl1 0.144).
+- **The symmetry split in CPFF** (topology only) was not used on CPF, so CPFF vs CPF also has that small difference in the mesh.
+- **The flat pylon's force is a snapshot** of the saved iteration, not a 200-iteration mean. For CP_bl1's front-wing zone, the snapshot and the mean differ by 0.15 %.
+- **Other front designs:** rounded or chamfered flat plates, and other chords, thicknesses or positions.
+- **Yaw, crosswind, unsteady flow, 2 prism layers.**
+- **Structure.** The front supports carry the front wing (about 470 N of downforce at 20 m/s, plus its mass). Their stiffness, strength and attachment to the nose and the frame are not designed.
+- **The SOLIDWORKS model and v1.0.0 have no supports**: this is CFD only.
+  - CPFF is a CFD-only row in `params/aero_variants.csv`.
+  - CP stays the default car, and its data are unchanged.

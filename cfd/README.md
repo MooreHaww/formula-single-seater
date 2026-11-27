@@ -8,7 +8,7 @@ Ring 5 lives here. Ansys Student 2026 R1 (Fluent), driven entirely from Python (
 | `postprocess.py` | Forces and wake planes of every run to tables and plots; `--update-variants` puts the CFD numbers into `params/aero_variants.csv` (the lap sim's aero table). |
 | `visualise.py` | Pictures and films of A, B (= run B_AB), C (= run CP), D (= run D_AB) from the saved case and data files, no Fluent licence needed: `.venv/Scripts/python cfd/visualise.py all` (about 8 min once the export cache exists). Steps `export`, `stills`, `anims`, `compare`, `smoke`; `--selftest`. Writes `../media/cfd/vis/`. |
 | `vis_common.py`, `vis_render.py`, `vis_smoke.py` | Used by `visualise.py`: streamline tracing and captions; stills, orbit / sweep / build-up films and the A-D comparison; the smoke tunnel films. |
-| `support_forces.py`, `support_flow.py` | Rear-wing supports (2026-11-26). `support_forces.py`: force on the supports from a per-face export of a saved run, checked against Fluent's own zone reports (picks CP's pylon out of `car_rw`). `support_flow.py`: planes next to the support, `../media/cfd/supports/support_flow.png`. |
+| `support_forces.py`, `support_flow.py`, `support_table.py` | Wing supports (rear 2026-11-26, front 2026-11-27; `--front`, zone `car_fws`, `support_table.py` for the comparison table). `support_forces.py`: force on the supports from a per-face export of a saved run, checked against Fluent's own zone reports (picks CP's pylon out of `car_rw`). `support_flow.py`: planes next to the support, `../media/cfd/supports/support_flow.png`. |
 | `explore.py` | Opens one result ready to explore: `.venv/Scripts/python cfd/explore.py C` (CFD-Post with car Cp, streamlines, wake planes at 1/2/3 L, symmetry speed) or `... C --fluent` (Fluent window with case and data read). `--test` checks it without a window. |
 | `cases/vis/<run>/` | Cache of `visualise.py export` (car surface, 12.5 mm and 30 mm resampled grids, about 260 MB per run) and the CFD-Post session files. Ignored by git; remade on demand. |
 | `fluent_halfcar_setup.md` | What the scripts do, what has run on this PC, the cell limit, first-run checklist, how to read the results. |
@@ -45,6 +45,13 @@ Ring 5 lives here. Ansys Student 2026 R1 (Fluent), driven entirely from Python (
 - Rear-wing support variants E, F, H (new letters; the old variant E wake test is deleted) were solved as E_bl1, F_bl1 and H_bl1 against CP_bl1.
 - Each support has its own zone `car_rws`. G did not mesh.
 - Results: `../media/cfd/supports/wing_supports_results.md`. Only the ranking is trustworthy.
+
+**Status 2026-11-27:**
+- Front-wing supports: J_bl1 (lens front supports) and CPFF_bl1 (J front plus F rear) were solved against CP_bl1. Each front support has its own zone `car_fws`. K did not mesh.
+- CP_bl1r is a repeat of CP_bl1 with `--set boi_near=39`, as a noise estimate.
+- `support_table.py` writes the comparison table (`results/support_table.csv`).
+- `support_flow.py --front` draws `../media/cfd/supports/support_flow_front.png`.
+- Results: the front-wing section of `../media/cfd/supports/wing_supports_results.md`.
 
 ## forces.csv columns
 

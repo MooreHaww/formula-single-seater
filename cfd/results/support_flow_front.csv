@@ -1,0 +1,4 @@
+run,upwash_side,upwash_behind,deficit_behind,box_points
+CP_bl1,0.0188,-0.2450,0.3650,528
+J_bl1,0.0114,-0.1768,0.0981,528
+CPFF_bl1,0.0097,-0.1767,0.1028,528

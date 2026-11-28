@@ -64,6 +64,13 @@ SIZES = {
     "boi_near": 40.0, "boi_wake": 70.0,
     "vol_growth": 1.35, "cells_per_gap": 1.0, "proximity_to": "edges",
     "bl_layers": 2, "bl_rate": 1.2, "bl_transition": 0.272,
+    # te_size (mm, 0 = off; 2026-11-28 slot study, docs/wing_supports_plan.md): local face size on the wing trailing-edge
+    # strips that are narrower than "min" (flap TEs 1.1 to 1.8 mm wide). Each strip is its own sizing zone during the
+    # surface mesh and goes back into its wing zone afterwards, so the force zones do not change.
+    # te_sel (mm, -1 = te_size): only strips wider than this get the face size; 0 = every strip under "min".
+    # te_growth (0 = "growth"): growth rate away from the strips; a faster one keeps the fine faces near the edge.
+    # te_size2 (mm, 0 = off): face size for the strips narrower than te_sel (the 1.1 mm flap-2 strips).
+    "te_size": 0.0, "te_sel": -1.0, "te_growth": 0.0, "te_size2": 0.0,
 }
 BOUNDARY_TYPES = {"inlet": "velocity-inlet", "outlet": "pressure-outlet", "symmetry": "symmetry", "side": "symmetry", "top": "symmetry"}
 WALLS_STATIONARY = ["car_body", "car_floor", "car_fw", "car_rw", "car_rws", "car_fws"]   # car_rws / car_fws: rear / front-wing supports (E-H, J, K, CPFF; CP: pylons inside car_rw / car_fw)
@@ -166,6 +173,44 @@ def merge_and_rename(mu, groups, prefix=""):
         mu.rename_face_zone(zone_id=keep, new_name=prefix + name)
 
 
+def is_te_strip(v, min_size: float, sel: float = 0.0) -> bool:
+    """A wing trailing-edge strip: long in Y (span), and across it (X, Z) narrower than min_size but
+    wider than sel (sel 1.5 keeps the two flap-1 strips, 1.62 and 1.77 mm, where the surface mesh
+    failed, and leaves the 1.1 mm flap-2 strips; sel 0 keeps all four). v = [xmin, xmax, ymin, ymax, zmin, zmax] in mm."""
+    w = ((v[1] - v[0]) ** 2 + (v[5] - v[4]) ** 2) ** 0.5
+    return (v[3] - v[2]) > 30.0 and sel < w < min_size
+
+
+def te_sel() -> float:
+    return SIZES["te_size"] if SIZES["te_sel"] < 0 else SIZES["te_sel"]
+
+
+def te_strip_size(v) -> float:
+    """Face size of one strip: te_size, or te_size2 for a strip no wider than te_sel when te_size2 is set."""
+    w = ((v[1] - v[0]) ** 2 + (v[5] - v[4]) ** 2) ** 0.5
+    return SIZES["te_size2"] if (SIZES["te_size2"] > 0 and w <= te_sel()) else SIZES["te_size"]
+
+
+def split_te_strips(mu, groups):
+    """Take the wing faces that are trailing-edge strips narrower than SIZES['min'] out of their
+    zone group, one group each (<zone>_te<n>), so a face size can be put on them. After the
+    surface mesh the zones are matched to the CAD faces again and go back into their wing zone."""
+    te = {}
+    for z in WING_ZONES:
+        keep = []
+        for zid in groups.get(z, []):
+            v = zone_bbox(mu, zid)
+            if is_te_strip(v, SIZES["min"], te_sel() if SIZES["te_size2"] <= 0 else 0.0):
+                te[f"{z}_te{len([t for t in te if t.startswith(z)]) + 1}"] = [round(x, 2) for x in v]
+                groups[list(te)[-1]] = [zid]
+            else:
+                keep.append(zid)
+        if z in groups:
+            groups[z] = keep
+    log(f"  trailing-edge strips {te_sel()} to {SIZES['min']} mm wide, face size {SIZES['te_size']} mm: {te}")
+    return te
+
+
 def mesh_zone_ids(mu, object_name: str):
     return list(mu.get_face_zones_of_object(object_name=object_name))
 
@@ -201,6 +246,8 @@ def run_mesh(variant: str, scale: float, tag: str, cores: int, gui: bool, keep_s
         groups = match_zones(mu, mesh_zone_ids(mu, geo_obj), rows, "CAD faces")
         if sorted(groups) != names_expected:
             raise RuntimeError(f"zone names after import {sorted(groups)}, expected {names_expected}")
+        te = split_te_strips(mu, groups) if SIZES["te_size"] > 0 else {}
+        info["te_strips"] = te
         merge_and_rename(mu, groups, prefix="geo-")
 
         # 2. bodies of influence
@@ -235,6 +282,15 @@ def run_mesh(variant: str, scale: float, tag: str, cores: int, gui: bool, keep_s
             ls.boi_face_zone_list.set_state(["geo-" + zname])
             ls.boi_size.set_state(size * (wing_scale if zname in WING_ZONES else k))
             ls.boi_growth_rate.set_state(SIZES["growth"])
+            ls.add_child_and_update()
+        for tname in te:                                     # narrow trailing-edge strips (te_size, never scaled)
+            ls.add_child.set_state("yes")
+            ls.boi_execution.set_state("Face Size")
+            ls.boi_control_name.set_state(f"size_{tname}")
+            ls.boi_zoneor_label.set_state("zone")
+            ls.boi_face_zone_list.set_state(["geo-" + tname])
+            ls.boi_size.set_state(te_strip_size(te[tname]))
+            ls.boi_growth_rate.set_state(SIZES["growth"] if SIZES["te_growth"] <= 0 else SIZES["te_growth"])
             ls.add_child_and_update()
 
         # 4. surface mesh

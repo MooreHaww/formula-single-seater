@@ -136,3 +136,34 @@
 - 14:01: **CPFF_bl1 solved** (1200 it, force-converged: drift 0.01 / 0.00 %, band 0.89 / 0.21 %), mass imbalance 7.3e-7, y+ area-average 35 on the front support, 87 on the rear supports, 84-148 elsewhere. All zone sums match Fluent to 1e-11 or better; the part forces add up to the total. ClA 4.133 (+3.9 % vs CP_bl1), CdA 1.684 (+1.0 %), front share 0.397; against CPF (F_bl1): ClA -0.5 %, CdA -0.2 %, front +0.004, all inside the spread.
 - After the solve: postprocess (`--no-plots`; only rows added to the result tables, plus two `car_fws` columns in `cfd_summary.csv`; old rows unchanged), `support_flow.py --front CP_bl1 J_bl1 CPFF_bl1` (`media/cfd/supports/support_flow_front.png`), `support_table.py` (`cfd/results/support_table.csv`). Row CPFF in `params/aero_variants.csv` (CFD only), CPFF allowed in `read_aero_variants` / `car_from_params`, `support_sensitivity.m` run (`media/support_sensitivity.md`): CPFF - CPF inside the band everywhere. `run_all('test')`: 28 of 28 PASS.
 - **Done.** Results: `media/cfd/supports/wing_supports_results.md`, section "Front-wing supports".
+
+# Finishing round: visuals, G and K again, docs (started 2026-11-28)
+
+## How I read the brief (written 2026-11-28, before any run)
+
+- Visuals only from runs that solved (CP_bl1, E, F, H, J, CPFF), re-exported from the saved `.cas.h5/.dat.h5`; no re-solve for pictures. CP_bl1r is left out of the films: it is the same geometry as CP_bl1, so it only matters as a noise number (it is on the totals chart).
+- The existing 12.5 mm near grid of `visualise.py` is too coarse for a 16 mm support, so the films sample their own small grids around each support (4 mm rear, 2 mm front) with the same reader and particle code.
+- "Same colour scale": one speed scale (0 to 1.4 U, the one `visualise.py` uses) for every panel of a film. "Same camera": one camera per view, shared by all panels.
+- G and K: a time-box of about 3 hours for a root-cause fix. A fix that changes the shared mesh settings needs CP_bl1 re-run on it, and that run is judged against the CP_bl1 / CP_bl1r spread. A fix that does not change CP's mesh at all (a no-op on CP's geometry) would not need it, but the TE-strip fix below does touch CP's wings, so it does.
+- CPFF-style combos only if G or K beats F or J on support drag beyond the noise.
+
+## Finishing steps
+
+- [x] S1. Support films: rear (CP_bl1, E, F, H) and front (CP_bl1, J), side and top views (`cfd/vis_supports.py`); `supports_compare.gif` for the README (9.0 MB); stills.
+- [x] S2. Wake film CP_bl1 vs CPFF (`compare_video` with two columns), 0.31 MB MP4.
+- [x] S3. Charts (`cfd/support_charts.py`): support drag, totals with the 2.2 % band and the repeat-run change, lap time and balance.
+- [x] S4. One-page summary image `supports_summary.png` (`cfd/support_summary.py`).
+- [x] S5. G and K: root cause at the flap slots (trailing-edge strips under the minimum size), local face size added to `fluent_halfcar.py` (off by default), 20 diagnosis meshes. Fix A meshes G and CP; fix B meshes K only; no common setting.
+- [x] S6. CP_bl1ta (CP on fix A): inside the noise. G_bl1ta and K_bl1tb solved; table, charts; lap sim for G (CPG). K: support force only (no reference on fix B). No combinations (G worse than F, K not distinguishable from J).
+- [x] S7. Write-up: results file (finishing-round sections), this plan, log, README, `cfd/README.md`, `cfd/fluent_halfcar_setup.md` (slot study).
+
+## Finishing status
+
+- **Done 2026-11-28, no commits.**
+- **The geometry, CP's data and the default car are unchanged.** `te_size` and the related settings are 0 by default.
+- **New data:**
+  - rows CP_bl1ta, G_bl1ta and K_bl1tb in the CFD result tables (old rows checked unchanged);
+  - row CPG in `params/aero_variants.csv` (CFD only).
+- **Deviations from the brief:**
+  - CP_bl1r is not in the films (it is CP_bl1's geometry again).
+  - K's check run could not be made: no reference meshes on its fix. Instead, K is reported on its support force only, with the mesh effect measured on the unchanged rear plate in the same run.

@@ -1,7 +1,8 @@
 function out = support_sensitivity(opts)
 %SUPPORT_SENSITIVITY Lap times and cornering balance: CP_bl1 against CPF (CP with
-%   the F rear-wing supports) and, when its row exists, CPFF (CPF plus the
-%   front-wing supports of the front-wing round), docs/wing_supports_plan.md.
+%   the F rear-wing supports) and, when their rows exist, CPFF (CPF plus the
+%   front-wing supports of the front-wing round) and CPG (CP with the ridged G
+%   rear-wing supports, finishing round), docs/wing_supports_plan.md.
 %   A sensitivity result for the next version of the car, not the released
 %   car: the CAD has no wing supports, and CP stays the default everywhere.
 %
@@ -16,6 +17,7 @@ function out = support_sensitivity(opts)
 %             CP row of params/aero_variants.csv is not changed)
 %     CPF     row CPF of params/aero_variants.csv (run F_bl1, also 1 layer)
 %     CPFF    row CPFF (run CPFF_bl1, also 1 layer), only if the row exists
+%     CPG     row CPG (run G_bl1ta, 1 layer and mesh fix A), only if the row exists
 %   so the cars are like for like (same mesh settings). CP's own run-to-run
 %   spread in ClA is about 2.2 % (CP vs CP_bl1).
 %   Lap times: lapsim point-mass and four-wheel on skidpad, autocross, fast
@@ -37,8 +39,12 @@ Vb.source(i) = "CFD CP_bl1 (in memory, support_sensitivity.m)";
 names = {'CP_bl1', 'CPF'};
 vars = {'CP', 'CPF'};
 srcs = {Vb, V};
-if any(V.variant == "CPFF")
-    names{end+1} = 'CPFF'; vars{end+1} = 'CPFF'; srcs{end+1} = V;
+runs = {'CP_bl1', 'F_bl1'};                      % the CFD run behind each car, in the order of names
+extra = {'CPFF', 'CPFF_bl1'; 'CPG', 'G_bl1ta'};
+for e = 1:size(extra, 1)
+    if any(V.variant == extra{e, 1})
+        names{end+1} = extra{e, 1}; vars{end+1} = extra{e, 1}; srcs{end+1} = V; runs{end+1} = extra{e, 2}; %#ok<AGROW>
+    end
 end
 nc = numel(names);
 cars = cell(1, nc);
@@ -97,12 +103,11 @@ if opts.write
     md = fullfile(repo_root(), 'media');
     writetable(L, fullfile(md, 'support_sensitivity_laps.csv'));
     writetable(B, fullfile(md, 'support_sensitivity_balance.csv'));
-    runs = {'CP_bl1', 'F_bl1', 'CPFF_bl1'};       % the CFD run behind each car, in the order of names
     fid = fopen(fullfile(md, 'support_sensitivity.md'), 'w');
     fprintf(fid, '# Wing supports: lap-time and balance sensitivity (%s)\n\n', strjoin(names, ' vs '));
     fprintf(fid, 'Written by `matlab/lapsim/support_sensitivity.m`. **A sensitivity result for the next version, not the released car**: the CAD has no wing supports and CP stays the default. ');
-    fprintf(fid, 'CPF = CP with the F rear-wing supports; CPFF = CPF plus the front-wing supports of the front-wing round (both CFD only). ');
-    fprintf(fid, 'All cars come from runs meshed with 1 prism layer (%s); everything else (mass, tyres, roll centres, lap-sim settings) is the same. ', strjoin(runs(1:nc), ', '));
+    fprintf(fid, 'CPF = CP with the F rear-wing supports; CPFF = CPF plus the front-wing supports of the front-wing round; CPG = CP with the ridged G rear-wing supports (run G_bl1ta, also mesh fix A); all CFD only. ');
+    fprintf(fid, 'All cars come from runs meshed with 1 prism layer (%s); everything else (mass, tyres, roll centres, lap-sim settings) is the same. ', strjoin(runs, ', '));
     fprintf(fid, 'CP''s own run-to-run aero spread is about 2.2 %% in ClA; only the ranking of CFD variants is trustworthy. ');
     fprintf(fid, '**Band** = the largest change in that result when CP_bl1''s ClA or CdA is raised, or its front share lowered, by 2.2 %% (one at a time); a difference inside the band is not claimed.\n\n');
     fprintf(fid, '| car | ClA | CdA | front share | ClA vs CP_bl1 | CdA vs CP_bl1 | front share vs CP_bl1 |\n|---|---|---|---|---|---|---|\n');
@@ -122,7 +127,7 @@ if opts.write
         end
         fprintf(fid, ' %.3f |\n', L.band_2p2_s(r));
     end
-    if nc == 3                                   % the front supports alone: CPFF against CPF, same band
+    if any(strcmp(names, 'CPFF'))                % the front supports alone: CPFF against CPF, same band
         dff = L.t_CPFF_s - L.t_CPF_s;
         fprintf(fid, '\nCPFF - CPF (what the front supports add to the rear ones), s:');
         for r = 1:height(L)
@@ -152,9 +157,10 @@ ok = abs(t1 - t0) < 1e-12 && t2 <= t0;
 V = read_aero_variants();
 ok = ok && any(V.variant == "CPF") && strcmp(car_from_params('CPF', p).variant, 'CPF');
 okff = ~any(V.variant == "CPFF") || strcmp(car_from_params('CPFF', p).variant, 'CPFF');
-ok = ok && okff;
-fprintf('support_sensitivity self-test: same aero -> same time %s, +5 %% ClA not slower %s, CPF row read %s, CPFF row read (if present) %s\n', ...
-    tern(abs(t1 - t0) < 1e-12), tern(t2 <= t0), tern(any(V.variant == "CPF")), tern(okff));
+okg = ~any(V.variant == "CPG") || strcmp(car_from_params('CPG', p).variant, 'CPG');
+ok = ok && okff && okg;
+fprintf('support_sensitivity self-test: same aero -> same time %s, +5 %% ClA not slower %s, CPF row read %s, CPFF row read (if present) %s, CPG row read (if present) %s\n', ...
+    tern(abs(t1 - t0) < 1e-12), tern(t2 <= t0), tern(any(V.variant == "CPF")), tern(okff), tern(okg));
 end
 
 function s = tern(b, yes, no)

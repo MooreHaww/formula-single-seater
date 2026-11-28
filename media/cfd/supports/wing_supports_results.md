@@ -243,3 +243,106 @@ Where the numbers come from:
 - **The SOLIDWORKS model and v1.0.0 have no supports**: this is CFD only.
   - CPFF is a CFD-only row in `params/aero_variants.csv`.
   - CP stays the default car, and its data are unchanged.
+
+# Finishing round: pictures, G and K again (2026-11-28)
+
+Plan and the brief as I read it: `docs/wing_supports_plan.md` (section "Finishing round").
+
+## Pictures and films
+
+All are made from the saved solutions (`.cas.h5/.dat.h5`) with no new solve: `cfd/vis_supports.py`, `cfd/support_charts.py`, `cfd/support_summary.py`.
+
+| File | What | Size | In git |
+|---|---|---|---|
+| `supports_rear.mp4` | rear support, CP_bl1 / E / F / H side by side; side view (car cut away outboard of the support) above a top view (car cut to a thin slice at the support's mid height, section outlined in white) | 3.4 MB | no (re-made) |
+| `supports_compare.gif` | the same film as a GIF, for the README | 9.0 MB | yes |
+| `supports_front.mp4` / `.gif` | front support, CP_bl1 / J, same layout | 1.7 / 3.9 MB | no |
+| `supports_rear_still.png`, `supports_front_still.png` | last frame of each film | 0.59 / 0.35 MB | yes |
+| `wake_CP_bl1_CPFF.mp4` / `.gif` | CP_bl1 vs CPFF: underbody Cp, then a wake slice moving back from the rear wing (velocity deficit and k), as `compare_ABCD` | 0.31 / 7.8 MB | no |
+| `chart_support_drag.png` | drag of each support, half car: rear and front | 93 kB | yes |
+| `chart_totals.png` | ClA, CdA and front share against CP_bl1, with the 2.2 % band and the CP_bl1r repeat's change | 91 kB | yes |
+| `chart_lap_balance.png` | lap-time and 45 m / 100 m balance differences, CP_bl1 / CPF / CPFF, with the 2.2 % band | 105 kB | yes |
+| `supports_summary.png` | one page (1200 x 1500): both stills, the key numbers CP_bl1 vs CPFF, the limits | 0.73 MB | yes |
+
+How the films are made:
+- **Particles.** The particles are streaklines of the steady solution: streamlines traced on a regular grid sampled from the Fluent cells (VTK reader, no licence), with particles moving along them at the local speed.
+- **Grids.** 4 mm around the rear support and 2 mm around the front one. The 12.5 mm near grid of `visualise.py` is coarser than the 16 mm support.
+- **Same scale and camera.** Every panel of a film uses the same camera and the same speed scale (0 to 1.4 x free stream, the one `visualise.py` uses).
+- **Seeds.** The seeds are the same for every panel, placed 3 and 10 mm off the support face and spread over its height.
+- **This is not a smoke test.** It is steady RANS: the streaks show the mean flow, not unsteady shedding.
+
+What they show (the same picture as `support_flow.png`):
+- **Rear.** Behind the flat plate, the streaks slow to blue-green in a wide band along its outboard face. Behind E and F they stay fast and close to the surface. H's blunt tail leaves a narrower slow strip behind the base.
+- **Front.** In the top view, the plate's square front corner leaves a slow (blue-green) patch along its inboard side. J's round edge leaves a smaller one. The side views look alike: the front support sits in the slow air under the nose.
+- **Wake film.** It shows no visible difference between CP_bl1 and CPFF, in line with the q-ratio table (0.01 at most).
+
+## G and K again: the mesh fix
+
+The full record is in `cfd/fluent_halfcar_setup.md` (section "Slot study").
+
+**What was tried (time box about 3 h; it took about 1 h of meshing):**
+- **The cause found.** Every G and K failure was next to the flap trailing-edge strips. These are 1.1 to 1.8 mm wide, under the 2.5 mm minimum size, and the same in every variant.
+- **The tool added.** `cfd/fluent_halfcar.py` can put a local face size on those strips (`te_size`, `te_sel`, `te_size2`, `te_growth`). It is off by default, so CP's own mesh is unchanged.
+- **The meshes.** 20 diagnosis meshes in seven settings. All went to the scratchpad and were deleted.
+- **Fix A** (1.5 mm on the two flap-1 strips) meshes G (1,018,541 cells) and CP (965,287).
+- **Fix B** (1.0 mm on all four strips, growth 1.5) meshes K (964,633), but neither CP nor J.
+- **No one setting meshed G, K and CP together.** Each setting moved the failure to another slot spot. The slots are at the edge of what the mesher accepts. The geometry fix (thicker flap-end trailing edges or wider slots for every variant) would change CP's wings, so it was not done.
+
+**Geometry:** unchanged. Only the mesh sizes near the four flap trailing edges change, and only in the runs tagged `ta` / `tb`.
+
+**Runs** (1 prism layer, CP's solver settings, 1200 iterations; all force-converged, mass imbalance 1e-7 to 5e-7):
+
+| Run | What | Mesh | Cells |
+|---|---|---|---|
+| CP_bl1ta | CP again, to check fix A | fix A | 965,287 |
+| G_bl1ta | G: E's lens with two curved ridges per face (14 mm thick, 10 mm proud) | fix A | 1,018,541 |
+| K_bl1tb | K: pointed front lens | fix B | 964,633 |
+
+## G and K: results (full car unless marked; 20 m/s)
+
+| | CP_bl1 | CP_bl1r | **CP_bl1ta** | E_bl1 | F_bl1 | **G_bl1ta** | J_bl1 | **K_bl1tb** |
+|---|---|---|---|---|---|---|---|---|
+| Rear support, half car: down / drag (N) | -0.12 / 4.34 | -0.12 / 4.31 | -0.12 / 4.25 | -0.06 / 0.81 | -0.05 / 0.41 | **-0.06 / 0.91** | (plate) 4.30 | (plate) 4.11 |
+| Front support, half car: down / drag (N) | 0.036 / 0.452 | 0.035 / 0.452 | 0.036 / 0.455 | (plate) 0.456 | (plate) 0.454 | (plate) 0.454 | 0.028 / 0.152 | **0.011 / 0.144** |
+| ClA (vs CP_bl1) | 3.977 | -0.9 % | -0.9 % | +4.2 % | +4.5 % | **+3.9 %** | -1.2 % | (-1.6 %, not compared) |
+| CdA (vs CP_bl1) | 1.667 | -0.7 % | -0.4 % | +1.3 % | +1.2 % | **+1.7 %** | -1.0 % | (-1.3 %, not compared) |
+| Front share | 0.431 | 0.433 | 0.433 | 0.400 | 0.393 | **0.399** | 0.435 | (0.441, not compared) |
+| q-ratio 1 / 2 / 3 L | 0.65 / 0.91 / 0.97 | 0.65 / 0.91 / 0.97 | 0.64 / 0.91 / 0.97 | 0.66 / 0.92 / 0.97 | 0.66 / 0.92 / 0.97 | 0.66 / 0.92 / 0.98 | 0.64 / 0.91 / 0.97 | (0.61 / 0.90 / 0.97) |
+
+Where the numbers come from:
+- **Table and charts.** `cfd/results/support_table.csv` (`cfd/support_table.py`), drawn in `chart_support_drag.png` and `chart_totals.png`.
+- **Support forces.** The lens supports are their own zones (200-iteration means). The flat plates come from per-face exports, which match Fluent's zone reports to 4e-12.
+- **New exports this round.** E_bl1's and H_bl1's front plates now have numbers too (0.456 and 0.455 N drag). They were missing before.
+
+## What was found
+
+- **Fix A does not change CP beyond the noise.**
+  - CP_bl1ta moves ClA -0.95 %, CdA -0.39 % and front share +0.003. The repeat CP_bl1r moved -0.89 %, -0.71 % and +0.002.
+  - CP_bl1ta's plates move -2.1 % (rear) and +0.8 % (front).
+  - So fix A sits inside the same noise, and G can be compared with the CP_bl1 family. Allow about 2 % on a support force for the mesh change.
+- **G (ridges) is worse than F and slightly worse than E.**
+  - Its support drag is 0.91 N (half car), against E's 0.81 (+11 %) and F's 0.41.
+  - The +11 % over E is more than CP's plate moved under the same fix (-2.1 %), so the ridges probably add a little drag. The ridges did not reduce drag.
+  - Totals as E and F: ClA +3.9 % (beyond the 2.2 % band), CdA +1.7 % (inside it), front share -0.031.
+- **G in the lap sim** (`support_sensitivity.m`, car CPG, `chart_lap_balance.png`):
+  - Against CP_bl1, the same picture as CPF: the skidpad (-0.023 s four-wheel) and the autocross (-0.52 s) are beyond the band; the fast circuit (+0.24 s) is inside it.
+  - CPG - CPF on the autocross (four-wheel) is +0.09 s, inside the 0.13 s band: G and F cannot be told apart on lap time. On support drag F is clearly better.
+- **K (pointed lens) cannot be told apart from J.**
+  - Its support drag is 0.144 N against J's 0.152 (-5 %), and its support downforce 0.011 against 0.028 N.
+  - But fix B alone moved the unchanged rear plate in the same run by -5 % (4.11 against CP_bl1's 4.34 N). No reference meshes on fix B to check this.
+  - So the -5 % is the size of the mesh effect, and K vs J is not claimed. Both have about a third of the plate's drag.
+  - K's totals, lap time and balance are not compared: they are on a different mesh with no reference.
+- **No CPFF-style combination was run.** The brief asked for one only if G or K looked better than F and J. G is worse than F, and K cannot be told apart from J.
+
+## What I would build (unchanged)
+
+- **Rear: F** (lens, 5 mm round front edge). G's ridges add drag and nothing else that this model sees.
+- **Front: J.** K might be marginally lower in drag, but this model cannot show it. J's round front edge is also kinder to a slightly yawed flow (not checked).
+
+## What was NOT checked (this round)
+
+- **One run per variant.** G and K have one run each. The fix-A check of CP is one run too.
+- **K has no same-mesh reference.** Neither CP nor J meshes on fix B, so K's totals and lap time are not compared, and K vs J is inside the mesh effect.
+- **A common mesh fix for every variant.** None was found. A geometry change at the flap trailing-edge ends, made in all variants at once, would give one, but it means a new CP reference.
+- **The films.** They show the steady mean flow, not unsteady shedding or the smoke of a real tunnel. The grids are 4 mm and 2 mm, so they are coarser than the boundary layer.
+- **Everything listed in the earlier rounds:** yaw, 2 prism layers, mesh independence at the supports, structure, CAD. **The SOLIDWORKS model and v1.0.0 have no supports.** CPG is a CFD-only row in `params/aero_variants.csv` like CPF and CPFF, and CP stays the default car.

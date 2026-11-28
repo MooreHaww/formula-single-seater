@@ -3,6 +3,28 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-28 (CFD session): wing supports finished: pictures, G and K again
+
+**Status: finished, no commits.** Plan: `docs/wing_supports_plan.md` (finishing round). Results: `media/cfd/supports/wing_supports_results.md` (finishing-round sections).
+- **Pictures** (from the saved solutions, no re-solve), in `media/cfd/supports/`:
+  - support films, rear (CP_bl1 / E / F / H) and front (CP_bl1 / J);
+  - `supports_compare.gif` for the README (9.0 MB);
+  - wake film CP_bl1 vs CPFF;
+  - three charts (support drag, totals with the bands, lap time and balance);
+  - a one-page summary image.
+  - MP4s and other GIFs are git-ignored.
+- **G and K:**
+  - The failures were next to the flap trailing-edge strips, which are 1.1-1.8 mm wide, under the 2.5 mm minimum size.
+  - New, off by default: a local face size on those strips (`fluent_halfcar.py`, `te_size` and related settings).
+  - Fix A meshes G and CP. Fix B meshes only K. No setting meshes all of them.
+- **Runs:** CP_bl1ta (fix A check: ClA -0.95 %, CdA -0.39 %, inside the noise), G_bl1ta, K_bl1tb.
+- **Found:**
+  - G's support drag is 0.91 N (half car), worse than F (0.41) and a little worse than E (0.81).
+  - K is 0.144 N against J's 0.152, inside the -5 % that fix B alone moves a support force, so not claimed.
+  - No combination was run. F (rear) and J (front) stay the recommendation.
+- **Lap sim:** car CPG (CFD-only row); inside the band of CPF.
+- **Unchanged:** CP, its data, the default car and the CAD (no supports).
+
 ## Summary, 2026-11-27 (CFD session): front-wing supports J, K, CPFF and a CP_bl1 repeat
 
 **Status: finished, no commits.** Plan and record: `docs/wing_supports_plan.md` (front-wing round). Results: `media/cfd/supports/wing_supports_results.md` (front-wing section).
@@ -1605,3 +1627,41 @@ Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-u
   - plan;
   - README Future work.
 - **Not checked:** see the results file (K, J vs K, mesh independence at the front support, yaw, structure, CAD).
+
+## 2026-11-28, CFD session: wing supports finished (detail)
+
+- **Brief:**
+  - visuals for every solved support variant;
+  - G and K again (about 3 h time box for a root-cause fix at the flap slots);
+  - docs.
+  - No commits, no questions, one Fluent at a time.
+- **Code:**
+  - New `cfd/vis_supports.py` (export of local grids, support films, wake film; self-test PASS).
+  - New `cfd/support_charts.py` (three PNG charts; self-test PASS).
+  - New `cfd/support_summary.py` (one-page image; self-test PASS).
+  - `cfd/vis_render.compare_video` takes any number of columns, a title and a caption (defaults unchanged, `visualise --selftest` PASS).
+  - `cfd/fluent_halfcar.py`: `te_size`, `te_sel`, `te_size2`, `te_growth` (all off by default; hand checks of the strip selection PASS).
+  - `support_sensitivity.m`, `read_aero_variants.m` and `car_from_params.m` take CPG.
+- **Films:**
+  - The 12.5 mm near grid of `visualise.py` is too coarse for a 16 mm support, so local grids are used: 4 mm rear, 2 mm front.
+  - Top views: the car is cut to a thin slice at the section (a half-space cut filled the background with hull or wing).
+  - Sizes: rear MP4 3.4 MB, front MP4 1.7 MB, `supports_compare.gif` 9.0 MB, wake MP4 0.31 MB.
+- **Slot study:**
+  - 20 diagnosis meshes in seven settings, written to the scratchpad and deleted. The table is in `cfd/fluent_halfcar_setup.md`.
+  - Fix A (1.5 mm on the flap-1 strips): G 1,018,541 and CP 965,287 cells.
+  - Fix B (1.0 mm on all strips, growth 1.5): K 964,633. CP and J fail on it.
+  - About 1 h of the 3 h time box was used. The remaining failures moved around the slots with every setting.
+- **Solves (chain `cfd/cases/chain_slotfix.sh`):**
+  - CP_bl1ta 10:38-11:51, G_bl1ta 11:55-13:08, K_bl1tb 13:12-14:22.
+  - All force-converged, mass imbalance 1.2e-7 to 4.7e-7.
+- **Face exports:**
+  - `car_fw` of E_bl1, H_bl1 and G_bl1ta; `car_rw` of K_bl1tb; all zones of CP_bl1ta.
+  - The zone sums match Fluent to 4e-12.
+- **Postprocess:**
+  - Run with plots by mistake. The two regenerated figures were restored with git and the new wake pictures deleted, as in the last session's `--no-plots`.
+  - The tables only gained rows. Every old row was checked unchanged.
+- **Lap sim:**
+  - Row CPG, then `support_sensitivity()`: the CP_bl1, CPF and CPFF times are unchanged.
+  - CPG - CPF, autocross four-wheel: +0.09 s, inside the 0.13 s band.
+- **Not checked:** see the results file (K vs J, a common mesh fix, one run per variant, yaw, structure, CAD).
+

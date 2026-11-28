@@ -180,6 +180,12 @@ https://github.com/user-attachments/assets/30718f1d-2759-4b36-a5e1-756d0a409edb
 
 Simulated smoke streaks past the chosen car, CP (C's wings on the as-built bodywork; labelled C in the film), from half-car CFD (simulation).
 
+### Aerodynamics: wing supports
+
+![Rear-wing supports in CFD: CP's flat plate against three lens sections](media/cfd/supports/supports_compare.gif)
+
+Simulated particle streaks past the rear-wing support: CP's flat 16 mm plate against three lens sections (E, F, H), seen from the side and in section from above (half-car CFD, steady RANS; CFD only: the CAD and v1.0.0 have no supports). Numbers and limits: `media/cfd/supports/wing_supports_results.md`.
+
 ### Lap-time simulation
 
 
@@ -245,7 +251,7 @@ These are the things the numbers above depend on that were not measured, or were
     - E: lens;
     - F: lens with a rounded front edge;
     - H: lens with a flared blunt tail.
-  - **The ridged support (G) could not be meshed** in three attempts (the failures were at the wing slots), so the ridge idea is untested.
+  - **The ridged support (G) could not be meshed** in three attempts (the failures were at the wing slots). It was meshed and run later with a mesh fix (finishing round below).
   - **Found** (steady RANS, only the ranking is trustworthy):
     - The lens supports keep the flow attached where the flat plate separates.
     - The support's own drag falls from 4.3 N (half car) to 0.8 N (E) and 0.4 N (F); H's blunt tail costs 2.8 N.
@@ -277,7 +283,7 @@ These are the things the numbers above depend on that were not measured, or were
   - **What was run.** CP's flat front pylons (16 mm plates, 84 mm chord, only 60-100 mm exposed between the wing and the nose) were replaced in the same envelope by:
     - J: F's lens with a round front edge;
     - CPFF: J at the front plus F at the rear.
-    - A pointed lens (K) failed to mesh in three attempts, at the wing slots and not at the support, so it was not run.
+    - A pointed lens (K) failed to mesh in three attempts, at the wing slots and not at the support. It was run later with a mesh fix (finishing round below).
     - A repeat of CP_bl1 with a 1 mm change in a mesh refinement box moved ClA by 0.9 % and CdA by 0.7 %: a second noise estimate, inside CP's 2.2 % spread.
   - **Found:**
     - J cuts the front support's own drag by two thirds (0.45 to 0.15 N, half car). The front pylon is a small part, though: 0.2 % of the car's drag.
@@ -285,8 +291,22 @@ These are the things the numbers above depend on that were not measured, or were
     - CPFF cannot be told apart from CPF in the CFD or in the lap sim: every lap-time difference is inside the 2.2 % band. The 45 m balance is -0.3 % vs +0.4 %, inside its band of 1.5 points.
     - Row `CPFF` in `params/aero_variants.csv` is CFD only; CP stays the default.
   - **Would build:** J at the front, for its own lower drag rather than a measured gain, and F at the rear.
-  - **Not done:** K, a rounded flat plate, 2 prism layers, yaw, structure (the front supports carry the front wing), CAD.
+  - **Not done:** K (run later, below), a rounded flat plate, 2 prism layers, yaw, structure (the front supports carry the front wing), CAD.
   - **Details:** the front-wing section of `media/cfd/supports/wing_supports_results.md`, with the flow picture `support_flow_front.png`.
+- **Wing supports: finishing round (2026-11-28; CFD only, not in CAD).**
+  - **Limits:** CFD only, steady RANS, one run per variant. The CAD and the released v1.0.0 have no supports.
+  - **G and K meshed after all**, with a local face size on the flap trailing edges (1.1-1.8 mm wide, under the 2.5 mm minimum size; `cfd/fluent_halfcar_setup.md`).
+    - The fix that meshes G also meshes CP, and CP on it moved by less than the noise (ClA -0.9 %).
+    - K needed a different fix that no reference meshes on.
+  - **Found:**
+    - G's ridges do not help: its support drags 0.91 N (half car), against F's 0.41 and E's 0.81.
+    - K's 0.144 N against J's 0.152 is inside the mesh effect, so not claimed.
+    - F (rear) and J (front) stay the recommendation; no combination was run.
+  - **Pictures:**
+    - films of the air past each support (`supports_compare.gif` above);
+    - a wake film CP_bl1 vs CPFF;
+    - charts of support drag, totals and lap time with the 2.2 % band;
+    - a one-page summary (`media/cfd/supports/supports_summary.png`).
 - Make the SolidWorks Simulation beam studies on the production weldment solve, so the frame stress has a second source.
 - Decide the frame material in the CAD (AISI 1020 now) against the 4130 the stress model assumes.
 - Reach the motion study's ±30 mm of bump (it stops at +23 / +14 mm).

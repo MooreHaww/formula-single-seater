@@ -34,6 +34,26 @@
     "drag_N": 2.801815666081302,
     "side_N": -19.033611196692462
    }
+  },
+  "car_fw": {
+   "faces": 33352,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 235.64211626263034,
+   "sum_drag_N": 58.625721967414805,
+   "fluent_downforce_N_last": 235.6421162621049,
+   "fluent_drag_N_last": 58.62572196723471,
+   "mean200_downforce_N": 235.4829647357951,
+   "mean200_drag_N": 58.571400330351196,
+   "check_downforce_rel": 2.229788760068002e-12,
+   "check_drag_rel": 3.071930814027462e-12,
+   "check_pass": true,
+   "pylon": {
+    "faces": 415,
+    "area_m2": 0.01639633554861,
+    "downforce_N": 0.0354725313665356,
+    "drag_N": 0.45474419662623333,
+    "side_N": 0.8158650743231606
+   }
   }
  }
 }

@@ -1,0 +1,96 @@
+{
+ "variant": "G",
+ "tag": "_bl1ta",
+ "started": "2026-11-28 13:08:17",
+ "wake_files": [
+  "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\results\\wake\\G_bl1ta_0.5L.csv",
+  "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\results\\wake\\G_bl1ta_1L.csv",
+  "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\results\\wake\\G_bl1ta_2L.csv",
+  "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\results\\wake\\G_bl1ta_3L.csv"
+ ],
+ "wake_boxes": [
+  {
+   "L": 1.0,
+   "x_centre_m": 4.5,
+   "offsets_m": [
+    -0.3,
+    -0.15,
+    0.0,
+    0.15,
+    0.3
+   ],
+   "file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\wake_boxes\\G_bl1ta_box_1L.csv"
+  },
+  {
+   "L": 2.0,
+   "x_centre_m": 7.45,
+   "offsets_m": [
+    -0.3,
+    -0.15,
+    0.0,
+    0.15,
+    0.3
+   ],
+   "file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\wake_boxes\\G_bl1ta_box_2L.csv"
+  },
+  {
+   "L": 3.0,
+   "x_centre_m": 10.4,
+   "offsets_m": [
+    -0.3,
+    -0.15,
+    0.0,
+    0.15,
+    0.3
+   ],
+   "file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\wake_boxes\\G_bl1ta_box_3L.csv"
+  }
+ ],
+ "yplus": {
+  "car_rws": {
+   "area_avg": 76.99623775780061,
+   "max": 181.6280822753906,
+   "min": 0.957207441329956,
+   "face_file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\yplus\\G_bl1ta_car_rws.csv"
+  },
+  "car_floor": {
+   "area_avg": 90.95240680210543,
+   "max": 305.6095581054688,
+   "min": 0.2943837940692902,
+   "face_file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\yplus\\G_bl1ta_car_floor.csv"
+  },
+  "car_body": {
+   "area_avg": 137.2515753411212,
+   "max": 462.87451171875,
+   "min": 0.2267193049192429,
+   "face_file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\yplus\\G_bl1ta_car_body.csv"
+  },
+  "car_fw": {
+   "area_avg": 88.16296601695304,
+   "max": 235.5514831542969,
+   "min": 0.4855152368545532,
+   "face_file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\yplus\\G_bl1ta_car_fw.csv"
+  },
+  "car_rw": {
+   "area_avg": 83.78500374886487,
+   "max": 197.8026885986328,
+   "min": 0.4128832519054413,
+   "face_file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\yplus\\G_bl1ta_car_rw.csv"
+  },
+  "wheel_front": {
+   "area_avg": 149.6907704946083,
+   "max": 366.1425476074219,
+   "min": 5.177154541015625,
+   "face_file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\yplus\\G_bl1ta_wheel_front.csv"
+  },
+  "wheel_rear": {
+   "area_avg": 144.579308155025,
+   "max": 348.6095886230469,
+   "min": 8.730363845825195,
+   "face_file": "C:\\Users\\mhaww\\Desktop\\OnWorkPro\\formula-single-seater\\cfd\\cases\\yplus\\G_bl1ta_wheel_rear.csv"
+  }
+ },
+ "mass_flow_in_kg_s": 959.7600000000002,
+ "mass_imbalance_rel": 4.493212601612005e-07,
+ "finished": "2026-11-28 13:08:50"
+}

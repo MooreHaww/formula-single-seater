@@ -1,0 +1,26 @@
+{
+ "run": "K_bl1tb",
+ "note": "half car, N; snapshot of the saved iteration; downforce = -Fz",
+ "zones": {
+  "car_rw": {
+   "faces": 44136,
+   "shear_sign": 1.0,
+   "sum_downforce_N": 244.2567019932129,
+   "sum_drag_N": 82.61689792761942,
+   "fluent_downforce_N_last": 244.256701992629,
+   "fluent_drag_N_last": 82.61689792793558,
+   "mean200_downforce_N": 244.28685993059545,
+   "mean200_drag_N": 82.6305228324249,
+   "check_downforce_rel": 2.3906161652230596e-12,
+   "check_drag_rel": -3.82685750292385e-12,
+   "check_pass": true,
+   "pylon": {
+    "faces": 2950,
+    "area_m2": 0.31895426631533397,
+    "downforce_N": -0.10279531338571359,
+    "drag_N": 4.113956457863675,
+    "side_N": -8.963302374999369
+   }
+  }
+ }
+}

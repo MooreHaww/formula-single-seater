@@ -526,17 +526,22 @@ def compare(datas):
     compare_video(datas, parts)
 
 
-def compare_video(datas, parts, frames=150):
+def compare_video(datas, parts, frames=150, stem=None, title="A, B, C, D: downforce distribution and the wake",
+                  caption_extra="", caption=None):
+    """stem (default media/cfd/vis/compare_ABCD), title and caption_extra let other comparisons reuse
+    the film (cfd/vis_supports.py: CP_bl1 vs CPFF); one column per entry of datas."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     log("   compare video")
-    mv = Movie(OUT / "compare_ABCD", fps=24, gif_width=960)
+    mv = Movie(stem or OUT / "compare_ABCD", fps=24, gif_width=960)
+    nc = len(datas)
     unders = {d["label"]: surface_views(d, size=(700, 300))["underbody"] for d in datas}
     outlines = {d["label"]: car_outline_yz(d) for d in datas}
     xs = np.linspace(2.2, slice_x(3.0), frames)
     for x in xs:
-        fig, axs = plt.subplots(3, 4, figsize=(19.2, 10.0), dpi=100, gridspec_kw={"height_ratios": [0.62, 1, 1]})
+        fig, axs = plt.subplots(3, nc, figsize=(4.8 * nc, 10.0), dpi=100, gridspec_kw={"height_ratios": [0.62, 1, 1]},
+                                squeeze=False)
         for j, d in enumerate(datas):
             by, df, dr = parts[d["label"]]
             axs[0, j].imshow(unders[d["label"]]); axs[0, j].axis("off")
@@ -546,13 +551,13 @@ def compare_video(datas, parts, frames=150):
         n_l = (x - 1.55) / 2.95
         axs[1, 0].set_ylabel("velocity deficit\nZ (m)")
         axs[2, 0].set_ylabel("k (0 to 8 m2/s2)\nZ (m)")
-        fig.suptitle(f"wake slice at X {x:.2f} m = {n_l:.2f} car lengths behind the rear axle "
-                     f"(deficit 0 to 0.6, k 0 to 8 m2/s2, same scales for all)", fontsize=12)
+        fig.suptitle(f"wake slice at X {x:.2f} m = {n_l:.2f} car lengths behind the rear axle"
+                     + (" " if nc > 2 else "\n") + "(deficit 0 to 0.6, k 0 to 8 m2/s2, same scales for all)", fontsize=12)
         fig.subplots_adjust(left=0.05, right=0.99, top=0.88, bottom=0.04, wspace=0.12, hspace=0.25)
         img = fig_to_img(fig)
         plt.close(fig)
-        mv.add(frame_with_text(img, "A, B, C, D: downforce distribution and the wake",
+        mv.add(frame_with_text(img, title,
                                "Top: surface pressure under the car (blue = suction, Cp -3 to +1). Middle and bottom: a "
-                               "wake slice moving back from the rear wing. " + CAPTION))
+                               "wake slice moving back from the rear wing. " + caption_extra + (CAPTION if caption is None else caption)))
     for f in mv.write():
         log("   wrote", f.relative_to(OUT.parents[2]))

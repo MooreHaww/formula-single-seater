@@ -59,6 +59,10 @@ media/cfd/vis/*.mp4
 media/cfd/vis/*.gif
 # the one CFD GIF embedded at the top of README.md stays in git
 !media/cfd/vis/compare_ABCD.gif
+# wing-support films (cfd/vis_supports.py): MP4s and GIFs re-made, one GIF kept for the README
+media/cfd/supports/*.mp4
+media/cfd/supports/*.gif
+!media/cfd/supports/supports_compare.gif
 # old B and D pictures (simplified CFD bodywork), kept locally after B and D moved to the as-built bodywork (2026-11-25)
 media/cfd/vis_old_simplified/
 

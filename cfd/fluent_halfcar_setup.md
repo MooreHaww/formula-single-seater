@@ -162,5 +162,51 @@ The first cell sits in the log layer on most of the car, and the buffer layer on
 ## Fallbacks
 
 - Surface mesh fails: the message gives a coordinate; compare it with `cad/step/cfd/check_report.txt` (wing slots, flap ends, trailing edges are the usual places). Widen the gap or blunt the edge in `cad/generate/cfd_variants.py`, not the mesh sizes.
+  - A local face size on the narrow trailing-edge strips (`--set te_size=...`, off by default) is a second tool, but a fragile one; see the slot study below.
 - Over the limit: fewer prism layers or coarser non-wing faces; the wing faces cannot go above 12 mm with the current slots.
 - Diverges: start with first order for 200 iterations, or lower the Courant number of the coupled solver.
+
+## Slot study: trailing-edge face size (2026-11-28)
+
+**Why.** G (rear support with ridges) and K (pointed front lens) never meshed. All their failures, and CPFF's and F's first ones, were at two places:
+- front flap 1's inner end (X -590, Y 300, Z 151);
+- rear flap 1's trailing edge (X 2215, Z 1359).
+
+Both are next to the flap trailing-edge strips, which are narrower than the 2.5 mm minimum size. These are the blunt 97 %-chord trailing edges in `cad/generate/cfd_variants.py`, identical in every variant:
+
+| Strip | Width |
+|---|---|
+| front flap 1 | 1.62 mm |
+| rear flap 1 | 1.77 mm |
+| front flap 2 | 1.07 mm |
+| rear flap 2 | 1.13 mm |
+
+**The tool.** `fluent_halfcar.py` can put its own face size on these strips:
+- Each strip is its own sizing zone during the surface mesh. The zones are matched back into the wing zone afterwards, so the force zones do not change.
+- Settings:
+  - `te_size` (mm, 0 = off, the default);
+  - `te_sel` (refine only strips wider than this; the default is `te_size`, and 0 means all four);
+  - `te_size2` (size for the narrower strips);
+  - `te_growth` (growth away from the strips; the default is the global 1.2).
+- With all of them off (the default), the mesh is CP's, unchanged.
+
+**What happened.** One bl_layers=1 mesh per cell, each a few minutes. The meshes are deterministic, so a cell is a fact, not luck.
+
+| Setting | G | K | CP | J |
+|---|---|---|---|---|
+| 1.0 mm on all four, growth 1.2 | meshes, 1,130,790 (over) | meshes, 1,079,030 (over) | | |
+| **A:** 1.5 mm on the flap-1 strips, growth 1.2 | **meshes, 1,018,541** | fails: front flap 2, inner end | **meshes, 965,287** | |
+| 1.5 mm on all four, growth 1.2 | fails: rear slot at Y 0 (X 2026) | same | same | |
+| **B:** 1.0 mm on all four, growth 1.5 | fails: front flap 1 TE | **meshes, 964,633** | fails: front flap 1 TE | fails: 22 self-intersections |
+| 1.0 mm on all four, growth 1.4 | meshes, 1,024,935 | fails: 32 self-intersections | fails: rear flap 1 TE | |
+| 1.0 mm on all four, growth 1.3 | | fails: rear slot at Y 0 | fails: front flap 2, inner end | |
+| 1.5 mm flap 1 + 1.0 mm flap 2, growth 1.2 | fails: front flap 2 TE | fails: rear slot at Y 0 | fails: front flap 1, inner end | |
+
+**What it means.**
+- The narrow strips are part of the cause: refining them made G and K mesh for the first time.
+- They are not the whole cause. Each setting moves the failure to another slot spot (both flap-1 and flap-2 ends, the rear slot on the symmetry plane), and no setting meshed G, K and CP together.
+- The slots are at the edge of what this surface mesher accepts at a 2.5 mm minimum size. The real fix is in the geometry: thicker trailing edges only on the flap ends, or wider slots, for all variants at once. That changes CP's wings, so it means a new CP reference, and it was not done.
+
+**What was used.**
+- **Fix A for G and for the check run CP_bl1ta.**
+- **Fix B for K only.** Neither CP nor J meshes on B, so K has no same-mesh reference. Only K's own support force is compared, and the totals are not claimed.

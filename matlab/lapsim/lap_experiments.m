@@ -6,9 +6,11 @@ function out = lap_experiments(opts)
 %   lap_experiments('--selftest')
 %
 %   1. Lap time for variants A to D (A and C on the older CFD bodywork; B and D
-%      on CP's as-built bodywork since 2026-11-25) and CP (the as-built car: C's wings on the SolidWorks
-%      bodywork, the reference for 3. and 4.) on skidpad, acceleration,
-%      autocross and the fast circuit. Speed-versus-distance plots per track.
+%      on CP's as-built bodywork since 2026-11-25), CP (C's wings on the SolidWorks
+%      bodywork, the default car until 2026-11-28) and FINAL (CP with the F rear and
+%      J front wing supports, CFD run FINAL_bl1; default_car() since 2026-11-28, the
+%      reference for 2., 3. and 4.) on skidpad, acceleration, autocross and the
+%      fast circuit. Speed-versus-distance plots per track.
 %   2. Sweep of ClA against CdA: contour of lap time on each track with the
 %      variants marked.
 %   3. Following-car penalty: downforce scaled by the dirty-air dynamic
@@ -22,9 +24,10 @@ function out = lap_experiments(opts)
 %      later; edit that one file to change what the lap sim uses), point-mass
 %      and four-wheel corner limit, plus the lap-time span of the table's
 %      ClA / CdA range.
-%   6. B, D, CP and the old (simplified-bodywork) B and D: point-mass and
-%      four-wheel on skidpad, autocross and fast circuit, following-car penalty
-%      with each variant's own wake. Writes media/lap_as_built_BD.csv.
+%   6. B, D, CP, CP_bl1 (CP's 1-layer run, the fair aero reference for FINAL),
+%      FINAL and the old (simplified-bodywork) B and D: point-mass and four-wheel
+%      on skidpad, autocross and fast circuit, following-car penalty with each
+%      variant's own wake. Writes media/lap_as_built_BD.csv.
 %   Writes media/lap_times.csv, media/lap_aero_before_after.csv and
 %   media/results_table.md.
 
@@ -36,8 +39,9 @@ if nargin < 1, opts = struct(); end
 if ~isfield(opts, 'quick'), opts.quick = false; end
 if ~isfield(opts, 'plot'), opts.plot = true; end
 p = read_car_params();
-variants = {'A', 'B', 'C', 'D', 'CP'};
-iRef = 5;                                       % CP, the as-built reference
+variants = {'A', 'B', 'C', 'D', 'CP', 'FINAL'};
+[refVar, refWake, refAero] = default_car();     % FINAL, its wake run FINAL_bl1, the CP_bl1 reference
+iRef = find(strcmp(variants, refVar));          % the default car: reference for 2. to 4.
 trackNames = {'skidpad', 'accel_75m', 'autocross', 'fast_circuit'};
 tracks = cellfun(@load_track, trackNames);
 mediaDir = fullfile(repo_root(), 'media');
@@ -66,7 +70,7 @@ if opts.plot
                 sprintf('%s: %.2f s (ClA %.1f, CdA %.2f)', variants{k}, lapT(i, k), runs{i, k}.car.ClA, runs{i, k}.car.CdA));
         end
         grid on; ylabel('Speed (km/h)'); legend('Location', 'best');
-        title(sprintf('%s (%.0f m): speed against distance, variants A-D and CP (as built)', strrep(trackNames{i}, '_', ' '), tracks(i).total_m));
+        title(sprintf('%s (%.0f m): speed against distance, variants A-D, CP and %s (the car)', strrep(trackNames{i}, '_', ' '), tracks(i).total_m, refVar));
         subplot(3, 1, 3);
         plot(runs{i, 3}.x, runs{i, 3}.y, 'k-', 'LineWidth', 1); axis equal; grid on
         xlabel('x (m)'); ylabel('y (m)'); title('Centreline (from the segment list)');
@@ -82,7 +86,7 @@ for i = 3:4
     Z = zeros(nG, nG);
     for a = 1:nG
         for d = 1:nG
-            car = car_from_params('CP', p); car.ClA = ClA_g(a); car.CdA = CdA_g(d);
+            car = car_from_params(refVar, p); car.ClA = ClA_g(a); car.CdA = CdA_g(d);
             Z(d, a) = lapsim(car, tracks(i), struct('ds', 1)).t_lap;
         end
     end
@@ -110,7 +114,7 @@ cfdWake = fullfile(repo_root(), 'cfd', 'results', 'wake_cfd.csv');      % cfd/po
 wakeFile = fullfile(repo_root(), 'cfd', 'results', 'wake_summary.csv');  % matlab/cfd/wake_postprocess.m
 if isfile(cfdWake)
     W = readtable(cfdWake, 'TextType', 'string');
-    for wr = ["CP", "C"]                          % the as-built car's own wake, else C's (run name = variant name)
+    for wr = [string(refWake), "CP", "C"]         % the default car's own wake (FINAL_bl1), else CP's, else C's
         sel = W.plane_L == 1 & W.run == wr;
         if any(sel)
             qratio = mean(W.q_ratio(sel)); qsrc = sprintf('CFD, cfd/results/wake_cfd.csv, run %s at 1 L', wr);
@@ -127,7 +131,7 @@ if strcmp(qsrc, 'assumed (no CFD yet)') && isfile(wakeFile)
 end
 follow = zeros(2, 1);
 for i = 3:4
-    car = car_from_params('CP', p); car.ClA = car.ClA * qratio;
+    car = car_from_params(refVar, p); car.ClA = car.ClA * qratio;
     follow(i - 2) = lapsim(car, tracks(i)).t_lap - lapT(i, iRef);
 end
 out.following = table(trackNames(3:4).', follow, 'VariableNames', {'track', 'penalty_s'});
@@ -139,7 +143,7 @@ names = {'mass', 'power', 'grip'};
 for i = 3:4
     for jp = 1:3
         for sgn = 1:2
-            car = car_from_params('CP', p);
+            car = car_from_params(refVar, p);
             fac = 1 + (sgn * 2 - 3) * 0.10;
             switch jp
                 case 1, car.m = car.m * fac;
@@ -199,10 +203,10 @@ out.aero_source = srcNote;
 % the fast circuit, and the following-car penalty with each car's OWN wake: the car behind is
 % the same variant, its downforce scaled by the q-ratio of that variant's wake at 1 L.
 oldFile = fullfile(repo_root(), 'params', 'aero_variants_simplified_BD.csv');
-abNames = {'B', 'D', 'CP', 'B old', 'D old'};
-abVar = {'B', 'D', 'CP', 'B', 'D'};
-abSrc = {'table', 'table', 'table', oldFile, oldFile};
-abWake = ["B_AB", "D_AB", "CP", "B", "D"];       % run whose wake planes give the q-ratio
+abNames = {'B', 'D', 'CP', 'CP_bl1', refVar, 'B old', 'D old'};
+abVar = {'B', 'D', 'CP', 'CP', refVar, 'B', 'D'};
+abSrc = {'table', 'table', 'table', refAero.table, 'table', oldFile, oldFile};
+abWake = ["B_AB", "D_AB", "CP", "CP_bl1", string(refWake), "B", "D"];   % run whose wake planes give the q-ratio
 abTr = [1 3 4];                                  % skidpad, autocross, fast circuit
 abRows = {};
 if isfile(oldFile)
@@ -233,16 +237,16 @@ end
 if opts.plot
     fid = fopen(fullfile(mediaDir, 'results_table.md'), 'w');
     fprintf(fid, '# Lap simulation results\n\nGenerated by `matlab/lapsim/lap_experiments.m` on %s from `params/car_params.txt`.\n', datestr(now, 'yyyy-mm-dd HH:MM'));
-    fprintf(fid, 'Aero values come from `params/aero_variants.csv` (A: %s; B: %s; C: %s; D: %s; CP: %s). Nothing in that table is measured unless its source says CFD.\n\n', srcNote);
-    fprintf(fid, 'Since 2026-11-25 B and D are on the same as-built bodywork as CP (runs B_AB, D_AB); A and C are still on the older CFD bodywork. CP is the as-built car (C''s wings on the SolidWorks nose, sidepods and floor plate) and the reference for the following-car penalty, the sensitivity and the rest of the repo.\n\n');
+    fprintf(fid, 'Aero values come from `params/aero_variants.csv` (A: %s; B: %s; C: %s; D: %s; CP: %s; FINAL: %s). Nothing in that table is measured unless its source says CFD.\n\n', srcNote);
+    fprintf(fid, 'Since 2026-11-25 B and D are on the same as-built bodywork as CP (runs B_AB, D_AB); A and C are still on the older CFD bodywork. **%s is the car since 2026-11-28** (CP''s bodywork and wings with the F rear and J front wing supports, CFD run FINAL_bl1) and the reference for the following-car penalty, the sensitivity and the rest of the repo; CP (C''s wings on the SolidWorks nose, sidepods and floor plate) was the car before. FINAL_bl1 has 1 prism layer, so its fair aero reference is CP_bl1 (CP with 1 layer, ClA %.3f, CdA %.3f, front %.3f), not the 2-layer CP row; CP vs CP_bl1 differ by 2.2 %% in ClA.\n\n', refVar, refAero.ClA, refAero.CdA, refAero.aero_front);
     writetable(out.before_after, fullfile(mediaDir, 'lap_aero_before_after.csv'));
-    fprintf(fid, '| Track | A (no wings) | B (moderate, as built) | C (max) | D (wake-tuned, as built) | **CP (as built)** | Wings worth (A-C) |\n|---|---|---|---|---|---|---|\n');
+    fprintf(fid, '| Track | A (no wings) | B (moderate, as built) | C (max) | D (wake-tuned, as built) | CP (2-layer row) | **FINAL (the car)** | Wings worth (A-C) |\n|---|---|---|---|---|---|---|---|\n');
     for i = 1:numel(trackNames)
-        fprintf(fid, '| %s | %.2f s | %.2f s | %.2f s | %.2f s | **%.2f s** | %.2f s |\n', strrep(trackNames{i}, '_', ' '), lapT(i, :), lapT(i, 1) - lapT(i, 3));
+        fprintf(fid, '| %s | %.2f s | %.2f s | %.2f s | %.2f s | %.2f s | **%.2f s** | %.2f s |\n', strrep(trackNames{i}, '_', ' '), lapT(i, :), lapT(i, 1) - lapT(i, 3));
     end
-    fprintf(fid, '\n**Following-car penalty** (CP with downforce scaled by q-ratio %.2f, %s): autocross +%.2f s, fast circuit +%.2f s.\n\n', ...
-        qratio, qsrc, follow(1), follow(2));
-    fprintf(fid, '**Sensitivity of CP** (lap time change for -10 %% / +10 %%):\n\n| Parameter | Autocross | Fast circuit |\n|---|---|---|\n');
+    fprintf(fid, '\n**Following-car penalty** (%s with downforce scaled by q-ratio %.3f, %s): autocross +%.2f s, fast circuit +%.2f s.\n\n', ...
+        refVar, qratio, qsrc, follow(1), follow(2));
+    fprintf(fid, '**Sensitivity of %s** (lap time change for -10 %% / +10 %%):\n\n| Parameter | Autocross | Fast circuit |\n|---|---|---|\n', refVar);
     for jp = 1:3
         fprintf(fid, '| %s | %+.2f / %+.2f s | %+.2f / %+.2f s |\n', names{jp}, sens(jp, 1, 1), sens(jp, 2, 1), sens(jp, 1, 2), sens(jp, 2, 2));
     end
@@ -257,7 +261,7 @@ if opts.plot
     if isfield(out, 'as_built')
         AB = out.as_built;
         writetable(AB, fullfile(mediaDir, 'lap_as_built_BD.csv'));
-        fprintf(fid, '\n## B, D and CP on the same as-built bodywork\n\nSince 2026-11-25 B and D are CFD runs B_AB and D_AB: B''s and D''s wing packages on CP''s as-built bodywork (same hull, sidepods, 10 mm floor plate, wheels and mesh recipe). "old" = the earlier runs on the simplified CFD bodywork (`params/aero_variants_simplified_BD.csv`). Following-car penalty: the car behind is the same variant with its downforce scaled by the q-ratio of that variant''s own wake at 1 L (window average, `cfd/results/wake_cfd.csv`); not computed on the skidpad. CFD is steady RANS on a Student mesh: only the ranking is trustworthy.\n\n');
+        fprintf(fid, '\n## B, D, CP, CP_bl1 and FINAL on the same as-built bodywork\n\nSince 2026-11-25 B and D are CFD runs B_AB and D_AB: B''s and D''s wing packages on CP''s as-built bodywork (same hull, sidepods, 10 mm floor plate, wheels and mesh recipe). CP_bl1 = CP meshed with 1 prism layer, like FINAL_bl1 and D_AB: the fair aero reference for FINAL. "old" = the earlier runs on the simplified CFD bodywork (`params/aero_variants_simplified_BD.csv`). Following-car penalty: the car behind is the same variant with its downforce scaled by the q-ratio of that variant''s own wake at 1 L (window average, `cfd/results/wake_cfd.csv`); not computed on the skidpad. CFD is steady RANS on a Student mesh: only the ranking is trustworthy.\n\n');
         fprintf(fid, '| Car | Track | ClA / CdA / front | point-mass (s) | four-wheel (s) | q-ratio own wake 1 L | following penalty (s) |\n|---|---|---|---|---|---|---|\n');
         for r = 1:height(AB)
             fprintf(fid, '| %s | %s | %.2f / %.2f / %.2f | %.2f | %.2f | %.2f | %+.2f |\n', AB.car{r}, strrep(AB.track{r}, '_', ' '), AB.ClA(r), AB.CdA(r), AB.aero_front(r), ...

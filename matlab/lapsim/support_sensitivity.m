@@ -3,8 +3,10 @@ function out = support_sensitivity(opts)
 %   the F rear-wing supports) and, when their rows exist, CPFF (CPF plus the
 %   front-wing supports of the front-wing round) and CPG (CP with the ridged G
 %   rear-wing supports, finishing round), docs/wing_supports_plan.md.
-%   A sensitivity result for the next version of the car, not the released
-%   car: the CAD has no wing supports, and CP stays the default everywhere.
+%   Written as a sensitivity study (2026-11-26 to 28). Since 2026-11-28 the CAD
+%   has the F and J supports and FINAL (= CPFF's geometry, run FINAL_bl1) is the
+%   default car (default_car()); this study keeps its own cars and compares them
+%   at the parameter file's current mass and CG.
 %
 %   out = support_sensitivity()        writes media/support_sensitivity.md and .csv
 %   out = support_sensitivity(opts)    opts.write (true)
@@ -105,7 +107,7 @@ if opts.write
     writetable(B, fullfile(md, 'support_sensitivity_balance.csv'));
     fid = fopen(fullfile(md, 'support_sensitivity.md'), 'w');
     fprintf(fid, '# Wing supports: lap-time and balance sensitivity (%s)\n\n', strjoin(names, ' vs '));
-    fprintf(fid, 'Written by `matlab/lapsim/support_sensitivity.m`. **A sensitivity result for the next version, not the released car**: the CAD has no wing supports and CP stays the default. ');
+    fprintf(fid, 'Written by `matlab/lapsim/support_sensitivity.m` on %s, at the current mass and CG of `params/car_params.txt`. Written as a sensitivity study; since 2026-11-28 the CAD has the F and J supports and **FINAL (= CPFF''s geometry, run FINAL_bl1) is the default car**, so the CPFF column is the car. ', datestr(now, 'yyyy-mm-dd')); %#ok<TNOW1,DATST>
     fprintf(fid, 'CPF = CP with the F rear-wing supports; CPFF = CPF plus the front-wing supports of the front-wing round; CPG = CP with the ridged G rear-wing supports (run G_bl1ta, also mesh fix A); all CFD only. ');
     fprintf(fid, 'All cars come from runs meshed with 1 prism layer (%s); everything else (mass, tyres, roll centres, lap-sim settings) is the same. ', strjoin(runs, ', '));
     fprintf(fid, 'CP''s own run-to-run aero spread is about 2.2 %% in ClA; only the ranking of CFD variants is trustworthy. ');

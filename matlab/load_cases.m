@@ -1,7 +1,8 @@
 function T = load_cases(opts)
 %LOAD_CASES Ring 4: tyre contact-patch forces for the stress studies.
 %   T = load_cases()           prints the table, writes sim/stress/load_cases.csv
-%   T = load_cases(opts)       opts.variant ('CP', the as-built car), opts.plot/write (true)
+%   T = load_cases(opts)       opts.variant (default_car(): 'FINAL', the final car; was 'CP'), opts.p,
+%                              opts.aero_source (as car_from_params; default 'table'), opts.plot/write (true)
 %   load_cases('--selftest')
 %
 %   Cases (per wheel, N, at the contact patch, car axes: Fx forward,
@@ -28,11 +29,12 @@ if nargin >= 1 && ischar(opts) && strcmp(opts, '--selftest')
     return
 end
 if nargin < 1, opts = struct(); end
-if ~isfield(opts, 'variant'), opts.variant = 'CP'; end
+if ~isfield(opts, 'variant'), opts.variant = default_car(); end
 if ~isfield(opts, 'write'), opts.write = true; end
 if ~isfield(opts, 'p'), opts.p = read_car_params(); end
 p = opts.p;
-car = car_from_params(opts.variant, p);
+if ~isfield(opts, 'aero_source'), opts.aero_source = 'table'; end
+car = car_from_params(opts.variant, p, opts.aero_source);
 g = car.g; m = car.m; h = car.h_cg; L = car.L;
 tf = car.track_f; tr = car.track_r; wd = car.wd_front;
 

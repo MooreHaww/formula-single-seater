@@ -1,13 +1,14 @@
 function out = cornering_balance_study(opts)
 %CORNERING_BALANCE_STUDY Weight distribution and aero balance against the
-%   four-wheel cornering limit (cornering_balance.m), variant CP (as built) by default.
+%   four-wheel cornering limit (cornering_balance.m), the default car (default_car(): FINAL) by default.
 %   out = cornering_balance_study()      writes media/cornering_balance.png,
 %                                        media/cornering_balance_table.csv and
 %                                        media/cornering_balance.md
 %   out = cornering_balance_study(opts)  opts.plot, opts.write, opts.radii
 %                                        ([45 100]), opts.wd (front weight
 %                                        fractions), opts.aero (front aero
-%                                        fractions), opts.variant ('CP', the as-built car),
+%                                        fractions), opts.variant (default_car(), 'FINAL'),
+%                                        opts.p (parameter struct; default the repo file),
 %                                        opts.driver_forward_mm (100),
 %                                        opts.aero_source ('table'; or a file or table,
 %                                        passed to car_from_params)
@@ -37,11 +38,11 @@ if ~isfield(opts, 'plot'), opts.plot = true; end
 if ~isfield(opts, 'write'), opts.write = true; end
 if ~isfield(opts, 'radii'), opts.radii = [45 100]; end
 if ~isfield(opts, 'wd'), opts.wd = [0.35 NaN 0.47]; end   % NaN = the file's own value, filled below
-if ~isfield(opts, 'variant'), opts.variant = 'CP'; end
+if ~isfield(opts, 'variant'), opts.variant = default_car(); end
 if ~isfield(opts, 'aero_source'), opts.aero_source = 'table'; end   % as car_from_params: 'table', a file or a table
 if ~isfield(opts, 'driver_forward_mm'), opts.driver_forward_mm = 100; end
 if ~isfield(opts, 'laps'), opts.laps = true; end
-p = read_car_params();
+if isfield(opts, 'p'), p = opts.p; else, p = read_car_params(); end
 opts.wd(isnan(opts.wd)) = p.weight_dist_front;
 base = car_from_params(opts.variant, p, opts.aero_source);
 % aero reference = the car's own front share (variant table or parameter
@@ -147,7 +148,7 @@ out.assumptions = {
     sprintf('cg_height %.0f mm from the mass budget (%.0f %% of the mass is a GUESS)', p.cg_height, 100 * mb0.guess_fraction)
     sprintf('roll-centre heights %.0f / %.0f mm (%s), held fixed with roll', 1000 * base.h_rc_f, 1000 * base.h_rc_r, rcSource)
     sprintf('roll stiffness split %.0f %% front from ride frequencies %.1f / %.1f Hz; no anti-roll bars, tyre stiffness ignored', 100 * out.roll_stiff_front, p.ride_frequency_front, p.ride_frequency_rear)
-    sprintf('aero: ClA %.2f, CdA %.2f, balance %.2f front as filed, target %.2f (ESTIMATE/target), no CFD yet; downforce adds load without lateral transfer', base.ClA, base.CdA, aeroRef, aeroTarget)
+    sprintf('aero (%s): ClA %.3f, CdA %.3f, balance %.3f front as filed, target %.2f (ESTIMATE/target); downforce adds load without lateral transfer', base.aero_source, base.ClA, base.CdA, aeroRef, aeroTarget)
     'steady state only: no yaw moment, no slip angles, no camber, no transient, no driver'
     'unsprung mass 22.2 kg per axle at wheel-centre height (all GUESS lines)'
     };
@@ -309,7 +310,7 @@ ok = ok && height(o.driver.T) == 4 && o.driver.wd(2) > o.driver.wd(1);
 %       balance falls as the front share rises, the balance at the target
 %       must have the sign of (neutral - target).
 g = o.target.T; g = g(g.radius_m == 45, :);
-c = car_from_params('CP'); c.h_rc_f = o.h_rc(1); c.h_rc_r = o.h_rc(2); c.aero_front = g.aero_front_neutral;
+c = car_from_params(o.variant); c.h_rc_f = o.h_rc(1); c.h_rc_r = o.h_rc(2); c.aero_front = g.aero_front_neutral;
 bN = cornering_balance(c, 45).balance_pct;
 ok = ok && abs(bN) < 0.01 && (sign(g.balance_target_pct) == sign(g.aero_front_neutral - g.aero_front_target) || abs(g.balance_target_pct) < 0.01);
 if ok

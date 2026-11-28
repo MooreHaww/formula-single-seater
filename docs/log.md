@@ -3,6 +3,29 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-28 (lap sim session): FINAL is the default car; everything that depends on mass or aero re-run
+
+**Status: finished, no commits.** cad/* not touched. README text not rewritten: its stale lines are listed in `docs/readme_stale_list.md` (line, old value, new value).
+
+How I read the brief:
+- The car to re-run is FINAL (aero row FINAL, CFD run FINAL_bl1) at the current `params/car_params.txt`: 302.56 kg (unchanged), CG with driver 894.9 / 319.9 mm, 42.26 % front (was 901.5 / 308.9 mm, 41.84 %).
+- "The previous default" = CP's 2-layer row at the pre-reconciliation CG (the a6caef60 state, rebuilt in memory). The README's CP numbers are at the v1.0.0 CG (311.3 mm); they differ from it by 0.01 s at most.
+- Three effects, each the difference of two neighbours so they add up: CG effect = CP at the new CG minus old; layer term = CP_bl1 minus CP (CP's own 2.2 % spread); aero effect = FINAL minus CP_bl1 (FINAL is a 1-layer run, so CP_bl1 is its fair reference). The supports' mass effect is zero: the 1.73 kg came off the wing lines.
+- Noise: band = the largest change of a result when CP_bl1's ClA or CdA is raised, or its front share lowered, by 2.2 % (and 0.9 %), one at a time.
+
+- **Default switched:** `default_car()` (new) returns FINAL; `car_from_params()`, `load_cases`, `frame_fe`, `cornering_balance_study`, `lap_experiments`, `make_media` and `make_lap_video` use it. CP stays by name; every variant still works.
+- **Results, old -> FINAL** (`media/final_car_comparison.md`):
+  - autocross 61.13 / 62.11 s -> 60.75 / 61.46 s (point-mass / four-wheel); fast circuit 82.97 / 83.08 -> 83.14 / 83.16 s;
+  - skidpad 4.89 / 5.01 -> 4.88 / 4.99 s; 75 m 4.35 -> 4.35 s; 0-100 km/h 3.47 -> 3.46 s; Simulink 4.3476 s = MATLAB;
+  - 45 m corner: 112.9 km/h, rear limits, balance -6.4 % -> 117.4 km/h, **front limits**, +0.6 % (nearly neutral);
+  - lowest frame FoS 2.65 -> 2.67 (bump, no aero: CG effect only); following penalty +2.14 / +1.21 -> +2.14 / +1.15 s (FINAL's own wake, q 0.661);
+  - ride: springs for 3.2 / 3.5 Hz move to 21.36 / 36.87 N/mm (was 21.10 / 37.18); roll split 38.2 -> 38.7 % front.
+- **Which effect:** the aero effect is beyond the 2.2 % band on the skidpad, autocross, 75 m, 0-100, 45 m speed and balance, the cornering wheel load and the cornering and braking FoS. It is inside it on the fast circuit (+0.15 / +0.09 s against 0.51 s) and on the autocross following penalty. The CG effect is small: at most +0.05 s per lap, +0.02 s on 0-100, +0.75 points of balance.
+- **Not changed by the mass:** frame torsion, 1476.27 Nm/deg at both CGs, identical to the last bit (checked, not assumed).
+- **Lap films** remade for FINAL: autocross 61.46 s (1.07 MB), fast circuit 83.16 s (1.00 MB), both git-ignored.
+- **Tests:** `run_all('test')` 30 / 30.
+- **Not checked:** the README's embedded video links still show CP's films; FINAL's wake beyond 1 car length; anything needing SolidWorks or Fluent (nothing was run there).
+
 ## Summary, 2026-11-28 (CAD session 3): mass budget positions reconciled with the CAD
 
 **Status: finished, no commits.** cfd/* not touched. The packaging clashes were not fixed and did not change (22 static). No CAD file changed, so the CAD was not rebuilt.
@@ -1871,3 +1894,47 @@ The SolidWorks assembly mass (323.3 kg) is not the car's: the non-envelope bodie
 - the T4.3.1 helmet clearance lines;
 - the frame against the FS template;
 - the lap sim and load cases at the new CG (42.3 % front, 320 mm): these results are now stale.
+
+## 2026-11-28, lap sim session: FINAL is the default car, re-runs at the reconciled CG (detail)
+
+**Brief.** Make FINAL the default car and re-run everything that depends on mass or aero, at the mass and CG the CAD session left in `params/car_params.txt`. Compare with the previous default (CP) and with CP_bl1, so the aero effect and the CG effect are separate. No commits; cad/* not touched; README text not rewritten.
+
+**Inputs read from `params/car_params.txt`.** Car 232.56 kg, driver 70 kg, 302.56 kg in all (unchanged). CG with driver x 894.9 mm from the front axle, z 319.9 mm, 42.26 % front. Before the reconciliation (commit a6caef60): 901.5 / 308.9 mm, 41.84 %.
+
+**Default car.**
+- New `matlab/common/default_car.m`: returns 'FINAL', its wake run 'FINAL_bl1', and the CP_bl1 reference (ClA 3.977, CdA 1.667, front 0.431, as an in-memory copy of the variant table with CP's row replaced; the CSV is not changed). Self-test: hand values.
+- `car_from_params()` without a variant gives FINAL; 'CP' by name reads the CP row. Self-test updated: no FINAL row gives C's parameter-file guess; a FINAL row wins.
+- `load_cases` and `frame_fe` take `opts.aero_source`; `frame_fe` takes `opts.loads` (a load table in memory instead of `sim/stress/load_cases.csv`). `cornering_balance_study` takes `opts.p`.
+- `lap_experiments`: variants A, B, C, D, CP, FINAL; the following penalty, contours and sensitivity use FINAL; the as-built table adds CP_bl1 and FINAL. `make_media`: lap table with CP (2-layer row) and FINAL; the diagonals before/after is FINAL. `make_lap_video`: FINAL, caption says so. `support_sensitivity`: wording only (the CPFF column is the car). `run_all`: two self-tests added (29 plus Simulink).
+
+**The comparison** (`matlab/lapsim/final_car_comparison.m`, writes `media/final_car_comparison.md` and `.csv`).
+- Four cars, all 302.56 kg: old (CP's row at the old CG), CP (CP's row at the new CG), CP_bl1 (new CG), FINAL (new CG).
+- The old CG is the current file with the 18 positions of the reconciliation set back (its `OLD_POS` list). Self-test: the CG shift equals sum(m dx) / M (-6.60 mm in x, +11.00 mm in z), and the rebuilt file gives 41.84 % and 308.9 mm.
+- Each car gets its own loads (`load_cases` in memory) and its own frame stress (lumped masses at that file's positions).
+- Results (FINAL column, total change from old in brackets): ClA 4.133, CdA 1.684, front 0.397; skidpad 4.880 / 4.986 s (-0.014 / -0.026); 75 m 4.349 s (-0.003); autocross 60.754 / 61.462 s (-0.373 / -0.646); fast circuit 83.139 / 83.156 s (+0.167 / +0.080); 0-100 3.460 s (-0.013); 45 m 117.4 km/h, balance +0.63 % (+7.05 points), neutral front aero 0.400; 100 m 147.3 km/h power-capped (-0.75), balance +1.26 %; lowest FoS 2.672 bump (+0.020); FoS cornering 3.95 (-0.20), braking 4.56 (-0.39), corner+brake 4.35 (+0.08); largest wheel loads cornering 2099 N (+86), braking 1797 N (+3), bump 2571 N (-19); following +2.141 / +1.149 s (-0.002 / -0.066).
+- CG effect (CP new minus old): autocross +0.037 / +0.047 s, 75 m +0.013 s, 0-100 +0.020 s, 45 m balance +0.75 points, neutral front aero +0.005, FoS bump +0.020, cornering -0.041, braking +0.085. The forward, higher CG puts more load on the front and transfers more; the rear traction falls slightly.
+- Layer term (CP_bl1 minus CP): autocross -0.13 / -0.14 s, ClA +0.085: about the size of the 2.2 % band, as it should be.
+- Aero effect (FINAL minus CP_bl1): autocross -0.28 / -0.55 s (band 0.13), skidpad -0.009 / -0.024 s (band 0.005), 45 m +3.4 km/h and +6.0 points (bands 0.85 km/h, 1.6 points), fast circuit +0.15 / +0.09 s (band 0.51: not claimed).
+
+**Re-runs** (files written): `load_cases()` -> `sim/stress/load_cases.csv`; `frame_fe()` -> `sim/stress/frame_fe_report.txt`, `frame_torsion_loads.csv`, `media/frame_fe.png`; `cornering_balance_study()` -> `media/cornering_balance.*`; `lap_experiments()` -> `media/lap_times.csv`, `results_table.md`, `lap_as_built_BD.csv`, `lap_aero_before_after.csv`, speed and contour charts, `sensitivity.png`; `support_sensitivity()` -> `media/support_sensitivity*`; `make_media()` -> stress pictures, `mass_table.md`, `lap_time_table.md`, `mass_budget.png`; `accel_test('FINAL')` -> `media/accel_test_FINAL.png`; `run_accel_simulink('FINAL')`; `make_lap_video()` -> `media/showcase/lap_video_report.txt` and the git-ignored films.
+
+**Deviations and findings.**
+- The point-mass lap sim is not blind to the CG: its traction limit uses the static rear weight share (`long_forces`). The effect is small (75 m +0.013 s).
+- `frame_fe`'s self-test failed before the loads were regenerated: the old `load_cases.csv` (old CG) against the lumped masses at the new positions left an unbalanced pitch (braking 5.5 %). With the loads regenerated all four cases balance to 0.0 %.
+- Roll centres: the balance uses the kinematic 60 / 79 mm (as the study); the four-wheel lap times use the lap sim's defaults (as `lap_experiments`). The study's own four-wheel autocross with 60 / 79 mm is 61.48 s against 61.46 s.
+- Grip speed at 100 m (303 to 343 km/h) is above the top speed: the 100 m corner is power-capped, so "corner speed (power cap)" is the one that counts.
+- Ride: the model sizes the springs for the target frequencies at the current sprung masses, so the frequencies stay 3.2 / 3.5 Hz. The springs sized for the old CG would give 3.18 / 3.51 Hz on the new car.
+- `frame_torsion_loads.csv` changed its stiffness column from 1476.270 to 1476.269. Old and new CG give identical bits (1476.269023), so the change is not from the mass; not chased.
+- `cornering_balance_study`'s assumption line said "no CFD yet" for the aero; it now names the aero source.
+- From CP to FINAL the cornering balance changes sign: FINAL is front-limited at 45 and 100 m, by 0.3 points of aero balance (0.397 against neutral 0.400). The README says "rear axle limits first" at lines 76 and 213.
+
+**Checks.** `run_all('test')`: 30 / 30 (29 plus Simulink). `frame_fe` balance: 0.0 % in all four cases. Simulink FINAL 4.3476 s against MATLAB 4.3476 s. Lap film: last clock 61.46 / 83.16 s equals the lap sim's t_lap; one frame looked at, caption names FINAL. The comparison's FINAL column equals the generators' outputs (laps, following, FoS, balance).
+
+**Not checked:**
+- Python self-tests (no Python changed);
+- FINAL's wake q-ratio at 2 and 3 car lengths;
+- the README's embedded lap videos (GitHub links to CP's films; re-upload needed);
+- `docs/stress_frame.md`'s hand-written table (listed in `docs/readme_stale_list.md`, not edited);
+- anything needing SolidWorks or Fluent: nothing was run there.
+
+**Next step.** Rewrite the README from `docs/readme_stale_list.md` (separate job).

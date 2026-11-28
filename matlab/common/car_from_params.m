@@ -1,9 +1,12 @@
 function car = car_from_params(variant, p, aeroSource)
 %CAR_FROM_PARAMS Build the SI car struct used by every MATLAB model.
-%   car = car_from_params()             variant 'CP' (the as-built car: C's
-%                                       wings on the SolidWorks bodywork),
-%                                       params from the repo file
-%   car = car_from_params('B')          chosen aero variant (A, B, C, D or CP;
+%   car = car_from_params()             the default car, default_car() = 'FINAL'
+%                                       since 2026-11-28 (CP's bodywork and wings
+%                                       with the F and J wing supports), params
+%                                       from the repo file. CP (C's wings on the
+%                                       SolidWorks bodywork, the default before)
+%                                       stays available by name
+%   car = car_from_params('B')          chosen aero variant (A, B, C, D, CP, FINAL;
 %                                       A to D are the like-for-like CFD
 %                                       comparison on the older bodywork).
 %                                       CP falls back to C's numbers where a
@@ -30,7 +33,7 @@ if nargin >= 1 && strcmp(variant, '--selftest')
     car = selftest();
     return
 end
-if nargin < 1 || isempty(variant), variant = 'CP'; end
+if nargin < 1 || isempty(variant), variant = default_car(); end   % FINAL since 2026-11-28
 if nargin < 2 || isempty(p), p = read_car_params(); end
 if nargin < 3, aeroSource = 'table'; end
 variant = upper(char(variant));
@@ -111,13 +114,20 @@ V = table("C", 4.5, 1.5, 0.42, NaN, NaN, NaN, NaN, "CFD test row", "", ...
 cC = car_from_params('C', p, V); cB = car_from_params('B', p, V);
 ok = ok && cC.ClA == 4.5 && cC.CdA == 1.5 && cC.aero_front == 0.42 && strcmp(cC.aero_source, 'CFD test row') ...
    && cB.ClA == p.ClA_B && cB.CdA == p.CdA_B && cB.aero_front == p.aero_balance_front;
-% CP (the as-built default): a table without a CP row gives C's row; a CP
-% row wins; the parameter-file guess is C's
-cP = car_from_params('CP', p, V); cD = car_from_params([], p, V);
+% CP (the default until 2026-11-28): a table without a CP row gives C's row;
+% a CP row wins; the parameter-file guess is C's
+cP = car_from_params('CP', p, V);
 V2 = [V; table("CP", 3.9, 1.66, 0.43, NaN, NaN, NaN, NaN, "CFD CP row", "", 'VariableNames', V.Properties.VariableNames)];
 cP2 = car_from_params('CP', p, V2); cP3 = car_from_params('CP', p, 'params');
-ok = ok && cP.ClA == 4.5 && strcmp(cP.variant, 'CP') && strcmp(cD.variant, 'CP') && cD.ClA == 4.5 ...
+ok = ok && cP.ClA == 4.5 && strcmp(cP.variant, 'CP') ...
    && cP2.ClA == 3.9 && cP2.CdA == 1.66 && cP2.aero_front == 0.43 && cP3.ClA == p.ClA_C;
+% the default (FINAL since 2026-11-28): no FINAL row -> C's parameter-file
+% guess (not C's table row); a FINAL row wins
+cD = car_from_params([], p, V);
+V3 = [V2; table("FINAL", 4.1, 1.68, 0.40, NaN, NaN, NaN, NaN, "CFD FINAL row", "", 'VariableNames', V.Properties.VariableNames)];
+cD3 = car_from_params([], p, V3);
+ok = ok && strcmp(cD.variant, 'FINAL') && cD.ClA == p.ClA_C && strcmp(cD3.variant, 'FINAL') ...
+   && cD3.ClA == 4.1 && cD3.CdA == 1.68 && cD3.aero_front == 0.40;
 if ok
     fprintf('car_from_params self-test: PASS (m=%.0f kg, F_torque_max=%.1f N, v_rpm_max=%.2f m/s)\n', ...
         car.m, car.F_torque_max, car.v_rpm_max);

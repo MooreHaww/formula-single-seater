@@ -3,7 +3,9 @@ function out = frame_fe(opts)
 %   out = frame_fe()            all load cases, report and figure
 %   out = frame_fe(opts)        opts.write (true): sim/stress/frame_fe_report.txt,
 %                               opts.plot (true): media/frame_fe_*.png,
-%                               opts.p: parameter struct, opts.variant ('CP', the as-built car)
+%                               opts.p: parameter struct, opts.variant (default_car(): 'FINAL'; was 'CP'),
+%                               opts.aero_source (as car_from_params; default 'table'),
+%                               opts.loads: a load_cases table to use instead of sim/stress/load_cases.csv
 %   frame_fe('--selftest')
 %
 %   Model (written out in docs/stress_frame.md):
@@ -50,7 +52,7 @@ end
 if nargin < 1, opts = struct(); end
 if ~isfield(opts, 'write'), opts.write = true; end
 if ~isfield(opts, 'plot'), opts.plot = true; end
-if ~isfield(opts, 'variant'), opts.variant = 'CP'; end
+if ~isfield(opts, 'variant'), opts.variant = default_car(); end
 if ~isfield(opts, 'p'), opts.p = read_car_params(); end
 p = opts.p;
 root = repo_root();
@@ -90,9 +92,12 @@ out.torsion_nodes = torsion_free_case(mdl, fr, pick, lump, 1000);
 out.torsion_held = torsion_case(mdl, fr, pick, 1000);
 
 % --- driving cases -------------------------------------------------------------------------
-LC = readtable(fullfile(root, 'sim', 'stress', 'load_cases.csv'), 'TextType', 'string', 'VariableNamingRule', 'preserve');
+if isfield(opts, 'loads'), LC = opts.loads;     % in memory (final_car_comparison: one load set per car)
+else, LC = readtable(fullfile(root, 'sim', 'stress', 'load_cases.csv'), 'TextType', 'string', 'VariableNamingRule', 'preserve');
+end
 LC.Properties.VariableNames{1} = 'lcase';      % 'case' is a MATLAB keyword
-car = car_from_params(opts.variant, p);
+if ~isfield(opts, 'aero_source'), opts.aero_source = 'table'; end
+car = car_from_params(opts.variant, p, opts.aero_source);
 names = unique(LC.lcase, 'stable');
 names = names(names ~= "static");
 out.cases = struct([]);

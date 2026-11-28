@@ -1,3 +1,3 @@
-make_lap_video report, 2026-11-25 20:22
-autocross     four-wheel t_lap 62.1220 s, last clock shown "lap time   62.12 s", 1940 frames (64.7 s film at 1x), lap_autocross.mp4 1.04 MB (limit 10 MB: yes); lap_autocross.gif 0.98 MB
-fast_circuit  four-wheel t_lap 83.0807 s, last clock shown "lap time   83.08 s", 2569 frames (85.6 s film at 1x), lap_fast_circuit.mp4 0.98 MB (limit 10 MB: yes)
+make_lap_video report, 2026-11-28 19:27
+autocross     four-wheel t_lap 61.4617 s, last clock shown "lap time   61.46 s", 1920 frames (64.0 s film at 1x), lap_autocross.mp4 1.07 MB (limit 10 MB: yes); lap_autocross.gif 0.98 MB
+fast_circuit  four-wheel t_lap 83.1563 s, last clock shown "lap time   83.16 s", 2571 frames (85.7 s film at 1x), lap_fast_circuit.mp4 1.00 MB (limit 10 MB: yes)

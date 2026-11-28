@@ -1,5 +1,5 @@
 function out = make_lap_video(which)
-%MAKE_LAP_VIDEO  Track-lap films from the lap-time simulation (as-built car CP, four-wheel model).
+%MAKE_LAP_VIDEO  Track-lap films from the lap-time simulation (the default car, FINAL since 2026-11-28, four-wheel model).
 %
 %   make_lap_video                 both tracks: autocross and fast circuit
 %   make_lap_video('autocross')    one track
@@ -32,7 +32,7 @@ if strcmp(which, 'selftest'), out = selftest(); return; end
 
 tracks = {'autocross', 'fast_circuit'};
 if ~strcmp(which, 'all'), tracks = {which}; end
-car = car_from_params('CP');
+car = car_from_params();                     % default_car(): FINAL
 sil = car_silhouette(fullfile(repo, 'media', 'views', 'formula_single_seater_Default_top.png'));
 ff = ffmpeg_path(repo);
 outdir = fullfile(repo, 'media', 'showcase');
@@ -80,7 +80,7 @@ end
 
 % ---------------------------------------------------------------------------------------------------
 function [n, clock] = render_frames(r, t, nm, sil, speedup, fdir)
-CAPTION = 'Lap-time simulation, as-built car (CP). Rigid chassis, assumed tyre grip (mu 1.4). Not a physical test.';
+CAPTION = 'Lap-time simulation, final car (FINAL: CP with the F and J wing supports, CFD aero). Rigid chassis, assumed tyre grip (mu 1.4). Not a physical test.';
 fps = 30;
 if exist(fdir, 'dir'), rmdir(fdir, 's'); end
 mkdir(fdir);

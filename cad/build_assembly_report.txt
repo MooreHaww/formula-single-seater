@@ -1,50 +1,200 @@
-ALL PASS   (2026-11-25 10:35, harness swh.exe)  BuildAssembly, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
+ALL PASS (1 warning)   (2026-11-28 18:36, harness swh.exe)  BuildAssembly, C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
 
-INFO  floor_diffuser.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\floor_diffuser_20261125_103410.SLDPRT
+INFO  env_battery_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_battery_L_20261128_183341.SLDPRT
+PASS  env_battery_L: density 1354.2 kg/m3 (packaging envelope: budget line m_battery / volume), SolidWorks mass 22.500 kg vs 22.500 kg in envelopes_mass.csv (within 1 %)
+PASS  env_battery_L.step: imported and saved as cad\body\env_battery_L.SLDPRT
+INFO  env_battery_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_battery_R_20261128_183342.SLDPRT
+PASS  env_battery_R: density 1354.2 kg/m3 (packaging envelope: budget line m_battery / volume), SolidWorks mass 22.500 kg vs 22.500 kg in envelopes_mass.csv (within 1 %)
+PASS  env_battery_R.step: imported and saved as cad\body\env_battery_R.SLDPRT
+INFO  env_brake_FL.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_brake_FL_20261128_183343.SLDPRT
+PASS  env_brake_FL: density 7223.7 kg/m3 (packaging envelope: budget line m_corners_front / volume), SolidWorks mass 1.800 kg vs 1.800 kg in envelopes_mass.csv (within 1 %)
+PASS  env_brake_FL.step: imported and saved as cad\body\env_brake_FL.SLDPRT
+INFO  env_brake_FR.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_brake_FR_20261128_183344.SLDPRT
+PASS  env_brake_FR: density 7223.7 kg/m3 (packaging envelope: budget line m_corners_front / volume), SolidWorks mass 1.800 kg vs 1.800 kg in envelopes_mass.csv (within 1 %)
+PASS  env_brake_FR.step: imported and saved as cad\body\env_brake_FR.SLDPRT
+INFO  env_brake_RL.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_brake_RL_20261128_183346.SLDPRT
+PASS  env_brake_RL: density 7223.7 kg/m3 (packaging envelope: budget line m_corners_rear / volume), SolidWorks mass 1.800 kg vs 1.800 kg in envelopes_mass.csv (within 1 %)
+PASS  env_brake_RL.step: imported and saved as cad\body\env_brake_RL.SLDPRT
+INFO  env_brake_RR.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_brake_RR_20261128_183347.SLDPRT
+PASS  env_brake_RR: density 7223.7 kg/m3 (packaging envelope: budget line m_corners_rear / volume), SolidWorks mass 1.800 kg vs 1.800 kg in envelopes_mass.csv (within 1 %)
+PASS  env_brake_RR.step: imported and saved as cad\body\env_brake_RR.SLDPRT
+INFO  env_chain.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_chain_20261128_183348.SLDPRT
+PASS  env_chain: density 2251.9 kg/m3 (packaging envelope: budget line m_chain_drive / volume), SolidWorks mass 2.300 kg vs 2.300 kg in envelopes_mass.csv (within 1 %)
+PASS  env_chain.step: imported and saved as cad\body\env_chain.SLDPRT
+INFO  env_damper_FL.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_damper_FL_20261128_183349.SLDPRT
+PASS  env_damper_FL: density 1527.9 kg/m3 (packaging envelope: budget line m_susp_links_front / volume), SolidWorks mass 0.600 kg vs 0.600 kg in envelopes_mass.csv (within 1 %)
+PASS  env_damper_FL.step: imported and saved as cad\body\env_damper_FL.SLDPRT
+INFO  env_damper_FR.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_damper_FR_20261128_183350.SLDPRT
+PASS  env_damper_FR: density 1527.9 kg/m3 (packaging envelope: budget line m_susp_links_front / volume), SolidWorks mass 0.600 kg vs 0.600 kg in envelopes_mass.csv (within 1 %)
+PASS  env_damper_FR.step: imported and saved as cad\body\env_damper_FR.SLDPRT
+INFO  env_damper_RL.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_damper_RL_20261128_183351.SLDPRT
+PASS  env_damper_RL: density 1527.9 kg/m3 (packaging envelope: budget line m_susp_links_rear / volume), SolidWorks mass 0.600 kg vs 0.600 kg in envelopes_mass.csv (within 1 %)
+PASS  env_damper_RL.step: imported and saved as cad\body\env_damper_RL.SLDPRT
+INFO  env_damper_RR.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_damper_RR_20261128_183352.SLDPRT
+PASS  env_damper_RR: density 1527.9 kg/m3 (packaging envelope: budget line m_susp_links_rear / volume), SolidWorks mass 0.600 kg vs 0.600 kg in envelopes_mass.csv (within 1 %)
+PASS  env_damper_RR.step: imported and saved as cad\body\env_damper_RR.SLDPRT
+INFO  env_diff.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_diff_20261128_183353.SLDPRT
+PASS  env_diff: density 994.7 kg/m3 (packaging envelope: budget line m_chain_drive / volume), SolidWorks mass 6.000 kg vs 6.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_diff.step: imported and saved as cad\body\env_diff.SLDPRT
+INFO  env_driver_head.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_driver_head_20261128_183354.SLDPRT
+PASS  env_driver_head: density 424.5 kg/m3 (packaging envelope: budget line mass_driver / volume), SolidWorks mass 6.000 kg vs 6.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_driver_head.step: imported and saved as cad\body\env_driver_head.SLDPRT
+INFO  env_driver_legs.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_driver_legs_20261128_183355.SLDPRT
+PASS  env_driver_legs: density 334.5 kg/m3 (packaging envelope: budget line mass_driver / volume), SolidWorks mass 21.000 kg vs 21.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_driver_legs.step: imported and saved as cad\body\env_driver_legs.SLDPRT
+INFO  env_driver_torso.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_driver_torso_20261128_183356.SLDPRT
+PASS  env_driver_torso: density 384.2 kg/m3 (packaging envelope: budget line mass_driver / volume), SolidWorks mass 43.000 kg vs 43.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_driver_torso.step: imported and saved as cad\body\env_driver_torso.SLDPRT
+INFO  env_halfshaft_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_halfshaft_L_20261128_183357.SLDPRT
+PASS  env_halfshaft_L: density 4421.0 kg/m3 (packaging envelope: budget line m_chain_drive / volume), SolidWorks mass 1.000 kg vs 1.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_halfshaft_L.step: imported and saved as cad\body\env_halfshaft_L.SLDPRT
+INFO  env_halfshaft_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_halfshaft_R_20261128_183358.SLDPRT
+PASS  env_halfshaft_R: density 4795.6 kg/m3 (packaging envelope: budget line m_chain_drive / volume), SolidWorks mass 1.000 kg vs 1.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_halfshaft_R.step: imported and saved as cad\body\env_halfshaft_R.SLDPRT
+INFO  env_inverter.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_inverter_20261128_183359.SLDPRT
+PASS  env_inverter: density 1750.7 kg/m3 (packaging envelope: budget line m_inverter_hv / volume), SolidWorks mass 10.000 kg vs 10.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_inverter.step: imported and saved as cad\body\env_inverter.SLDPRT
+INFO  env_lv_electronics.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_lv_electronics_20261128_183400.SLDPRT
+PASS  env_lv_electronics: density 1388.9 kg/m3 (packaging envelope: budget line m_lv_electronics / volume), SolidWorks mass 3.000 kg vs 3.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_lv_electronics.step: imported and saved as cad\body\env_lv_electronics.SLDPRT
+INFO  env_motor.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_motor_20261128_183401.SLDPRT
+PASS  env_motor: density 2691.3 kg/m3 (packaging envelope: budget line m_motor / volume), SolidWorks mass 12.300 kg vs 12.300 kg in envelopes_mass.csv (within 1 %)
+PASS  env_motor.step: imported and saved as cad\body\env_motor.SLDPRT
+INFO  env_rocker_FL.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_rocker_FL_20261128_183403.SLDPRT
+PASS  env_rocker_FL: density 2984.2 kg/m3 (packaging envelope: budget line m_susp_links_front / volume), SolidWorks mass 0.300 kg vs 0.300 kg in envelopes_mass.csv (within 1 %)
+PASS  env_rocker_FL.step: imported and saved as cad\body\env_rocker_FL.SLDPRT
+INFO  env_rocker_FR.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_rocker_FR_20261128_183404.SLDPRT
+PASS  env_rocker_FR: density 2984.2 kg/m3 (packaging envelope: budget line m_susp_links_front / volume), SolidWorks mass 0.300 kg vs 0.300 kg in envelopes_mass.csv (within 1 %)
+PASS  env_rocker_FR.step: imported and saved as cad\body\env_rocker_FR.SLDPRT
+INFO  env_rocker_RL.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_rocker_RL_20261128_183405.SLDPRT
+PASS  env_rocker_RL: density 2984.2 kg/m3 (packaging envelope: budget line m_susp_links_rear / volume), SolidWorks mass 0.300 kg vs 0.300 kg in envelopes_mass.csv (within 1 %)
+PASS  env_rocker_RL.step: imported and saved as cad\body\env_rocker_RL.SLDPRT
+INFO  env_rocker_RR.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_rocker_RR_20261128_183406.SLDPRT
+PASS  env_rocker_RR: density 2984.2 kg/m3 (packaging envelope: budget line m_susp_links_rear / volume), SolidWorks mass 0.300 kg vs 0.300 kg in envelopes_mass.csv (within 1 %)
+PASS  env_rocker_RR.step: imported and saved as cad\body\env_rocker_RR.SLDPRT
+INFO  env_seat.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_seat_20261128_183407.SLDPRT
+PASS  env_seat: density 122.0 kg/m3 (packaging envelope: budget line m_cockpit / volume), SolidWorks mass 1.000 kg vs 1.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_seat.step: imported and saved as cad\body\env_seat.SLDPRT
+INFO  env_steering_column.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_steering_column_20261128_183408.SLDPRT
+PASS  env_steering_column: density 1238.1 kg/m3 (packaging envelope: budget line m_cockpit / volume), SolidWorks mass 0.600 kg vs 0.600 kg in envelopes_mass.csv (within 1 %)
+PASS  env_steering_column.step: imported and saved as cad\body\env_steering_column.SLDPRT
+INFO  env_steering_rack.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_steering_rack_20261128_183409.SLDPRT
+PASS  env_steering_rack: density 2785.2 kg/m3 (packaging envelope: budget line m_cockpit / volume), SolidWorks mass 1.400 kg vs 1.400 kg in envelopes_mass.csv (within 1 %)
+PASS  env_steering_rack.step: imported and saved as cad\body\env_steering_rack.SLDPRT
+INFO  env_steering_wheel.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\env_steering_wheel_20261128_183410.SLDPRT
+PASS  env_steering_wheel: density 627.8 kg/m3 (packaging envelope: budget line m_cockpit / volume), SolidWorks mass 1.000 kg vs 1.000 kg in envelopes_mass.csv (within 1 %)
+PASS  env_steering_wheel.step: imported and saved as cad\body\env_steering_wheel.SLDPRT
+INFO  floor_diffuser.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\floor_diffuser_20261128_183411.SLDPRT
 PASS  floor_diffuser.step: imported and saved as cad\body\floor_diffuser.SLDPRT
-INFO  fw_endplate_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_endplate_L_20261125_103411.SLDPRT
+INFO  fw_endplate_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_endplate_L_20261128_183412.SLDPRT
 PASS  fw_endplate_L.step: imported and saved as cad\body\fw_endplate_L.SLDPRT
-INFO  fw_endplate_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_endplate_R_20261125_103416.SLDPRT
+INFO  fw_endplate_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_endplate_R_20261128_183417.SLDPRT
 PASS  fw_endplate_R.step: imported and saved as cad\body\fw_endplate_R.SLDPRT
-INFO  fw_flap1.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_flap1_20261125_103419.SLDPRT
+INFO  fw_flap1.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_flap1_20261128_183419.SLDPRT
 PASS  fw_flap1.step: imported and saved as cad\body\fw_flap1.SLDPRT
-INFO  fw_flap2.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_flap2_20261125_103421.SLDPRT
+INFO  fw_flap2.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_flap2_20261128_183420.SLDPRT
 PASS  fw_flap2.step: imported and saved as cad\body\fw_flap2.SLDPRT
-INFO  fw_main.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_main_20261125_103422.SLDPRT
+INFO  fw_main.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_main_20261128_183421.SLDPRT
 PASS  fw_main.step: imported and saved as cad\body\fw_main.SLDPRT
-INFO  nose.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\nose_20261125_103423.SLDPRT
+INFO  fw_support_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_support_L_20261128_183422.SLDPRT
+PASS  fw_support_L: density 519.7 kg/m3 (CFRP 1.5 mm skin + PMI foam core, equivalent), SolidWorks mass 0.043 kg vs 0.043 kg in supports_mass.csv (within 1 %)
+PASS  fw_support_L.step: imported and saved as cad\body\fw_support_L.SLDPRT
+INFO  fw_support_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\fw_support_R_20261128_183424.SLDPRT
+PASS  fw_support_R: density 519.7 kg/m3 (CFRP 1.5 mm skin + PMI foam core, equivalent), SolidWorks mass 0.043 kg vs 0.043 kg in supports_mass.csv (within 1 %)
+PASS  fw_support_R.step: imported and saved as cad\body\fw_support_R.SLDPRT
+INFO  nose.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\nose_20261128_183425.SLDPRT
 PASS  nose.step: imported and saved as cad\body\nose.SLDPRT
-INFO  rim_front.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rim_front_20261125_103425.SLDPRT
+INFO  rim_front.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rim_front_20261128_183426.SLDPRT
 PASS  rim_front.step: imported and saved as cad\body\rim_front.SLDPRT
-INFO  rim_rear.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rim_rear_20261125_103428.SLDPRT
+INFO  rim_rear.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rim_rear_20261128_183429.SLDPRT
 PASS  rim_rear.step: imported and saved as cad\body\rim_rear.SLDPRT
-INFO  rw_endplate_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_endplate_L_20261125_103431.SLDPRT
+INFO  rw_endplate_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_endplate_L_20261128_183432.SLDPRT
 PASS  rw_endplate_L.step: imported and saved as cad\body\rw_endplate_L.SLDPRT
-INFO  rw_endplate_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_endplate_R_20261125_103434.SLDPRT
+INFO  rw_endplate_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_endplate_R_20261128_183434.SLDPRT
 PASS  rw_endplate_R.step: imported and saved as cad\body\rw_endplate_R.SLDPRT
-INFO  rw_flap1.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_flap1_20261125_103437.SLDPRT
+INFO  rw_flap1.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_flap1_20261128_183437.SLDPRT
 PASS  rw_flap1.step: imported and saved as cad\body\rw_flap1.SLDPRT
-INFO  rw_flap2.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_flap2_20261125_103438.SLDPRT
+INFO  rw_flap2.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_flap2_20261128_183438.SLDPRT
 PASS  rw_flap2.step: imported and saved as cad\body\rw_flap2.SLDPRT
-INFO  rw_main.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_main_20261125_103439.SLDPRT
+INFO  rw_main.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_main_20261128_183439.SLDPRT
 PASS  rw_main.step: imported and saved as cad\body\rw_main.SLDPRT
-INFO  sidepod_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\sidepod_L_20261125_103440.SLDPRT
+INFO  rw_support_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_support_L_20261128_183440.SLDPRT
+PASS  rw_support_L: density 433.7 kg/m3 (CFRP 1.5 mm skin + PMI foam core, equivalent), SolidWorks mass 0.822 kg vs 0.822 kg in supports_mass.csv (within 1 %)
+PASS  rw_support_L.step: imported and saved as cad\body\rw_support_L.SLDPRT
+INFO  rw_support_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\rw_support_R_20261128_183441.SLDPRT
+PASS  rw_support_R: density 433.7 kg/m3 (CFRP 1.5 mm skin + PMI foam core, equivalent), SolidWorks mass 0.822 kg vs 0.822 kg in supports_mass.csv (within 1 %)
+PASS  rw_support_R.step: imported and saved as cad\body\rw_support_R.SLDPRT
+INFO  sidepod_L.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\sidepod_L_20261128_183442.SLDPRT
 PASS  sidepod_L.step: imported and saved as cad\body\sidepod_L.SLDPRT
-INFO  sidepod_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\sidepod_R_20261125_103442.SLDPRT
+INFO  sidepod_R.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\sidepod_R_20261128_183444.SLDPRT
 PASS  sidepod_R.step: imported and saved as cad\body\sidepod_R.SLDPRT
-INFO  tyre_front.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\tyre_front_20261125_103443.SLDPRT
+INFO  tyre_front.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\tyre_front_20261128_183445.SLDPRT
 PASS  tyre_front.step: imported and saved as cad\body\tyre_front.SLDPRT
-INFO  tyre_rear.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\tyre_rear_20261125_103444.SLDPRT
+INFO  tyre_rear.step is newer than its part: old part moved to C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\body\old\tyre_rear_20261128_183446.SLDPRT
 PASS  tyre_rear.step: imported and saved as cad\body\tyre_rear.SLDPRT
-PASS  parts: chassis + 18 of 18 STEP bodies as cad\body\*.SLDPRT (18 imported in this run)
+PASS  parts: chassis + 50 of 50 STEP bodies as cad\body\*.SLDPRT (50 imported in this run)
 PASS  master_layout: inserted, fixed
-PASS  parts: 19 mated to GROUND/CENTRE/FRONT_AXLE, 0 fixed instead, 0 already there
+PASS  parts: 51 mated to GROUND/CENTRE/FRONT_AXLE, 0 fixed instead, 0 already there
 PASS  left wheels: 4 instances turned 180 deg about the axle's vertical axis, fixed
 PASS  assembly features (mates) with errors: 0
-INFO  components: 24
-INFO  touching only (< 1 mm3, not a clash): rim_front-1 / tyre_front-1, rim_rear-2 / tyre_rear-2, rim_front-2 / tyre_front-2, rim_rear-1 / tyre_rear-1
-PASS  interference: none
-INFO  mass of what is in the assembly: 156.2 kg, CG x 816 / y 0 / z 458 mm (partial car: no driver, battery, motor or suspension yet; imported STEP bodies have no material, so SolidWorks counts them at its default density)
+INFO  components: 56
+INFO  touching only (< 1 mm3, not a clash): rim_rear-1 / tyre_rear-1, rim_front-1 / tyre_front-1, rim_rear-2 / tyre_rear-2, rim_front-2 / tyre_front-2
+WARN  interference: 19 component pair(s) overlap, 1612.4 cm3 in all (bodywork / wings / wheels vs frame: geometry to fix in cad/generate, see the list)
+    env_driver_legs-1 / env_steering_wheel-1: 386773 mm3 in 1 place(s)
+        at (634, 0, 392) 386773 mm3
+    env_driver_legs-1 / env_lv_electronics-1: 360000 mm3 in 1 place(s)
+        at (500, 0, 425) 360000 mm3
+    env_driver_torso-1 / env_motor-1: 268788 mm3 in 1 place(s)
+        at (1238, 0, 270) 268788 mm3
+    env_motor-1 / env_seat-1: 263584 mm3 in 1 place(s)
+        at (1258, 0, 270) 263584 mm3
+    env_driver_legs-1 / env_steering_column-1: 214133 mm3 in 1 place(s)
+        at (359, 0, 364) 214133 mm3
+    env_lv_electronics-1 / env_steering_column-1: 78004 mm3 in 1 place(s)
+        at (500, 0, 450) 78004 mm3
+    chassis-1 / env_rocker_FL-1: 5236 mm3 in 4 place(s)
+        at (0, -260, 422) 1475 mm3
+        at (0, -260, 438) 1475 mm3
+        at (1, -280, 419) 1320 mm3
+        at (-5, -280, 419) 967 mm3
+    chassis-1 / env_rocker_FR-1: 5231 mm3 in 4 place(s)
+        at (0, 260, 438) 1475 mm3
+        at (0, 260, 422) 1475 mm3
+        at (1, 280, 419) 1317 mm3
+        at (-5, 280, 419) 964 mm3
+    chassis-1 / env_rocker_RR-1: 5032 mm3 in 4 place(s)
+        at (1550, 270, 478) 1475 mm3
+        at (1550, 270, 462) 1475 mm3
+        at (1546, 302, 470) 1106 mm3
+        at (1552, 296, 470) 977 mm3
+    chassis-1 / env_rocker_RL-1: 5032 mm3 in 4 place(s)
+        at (1550, -270, 462) 1475 mm3
+        at (1550, -270, 478) 1475 mm3
+        at (1546, -302, 470) 1106 mm3
+        at (1552, -296, 470) 976 mm3
+    env_damper_FL-1 / nose-1: 4137 mm3 in 1 place(s)
+        at (0, -140, 454) 4137 mm3
+    env_damper_FR-1 / nose-1: 4137 mm3 in 1 place(s)
+        at (0, 140, 454) 4137 mm3
+    env_rocker_FR-1 / nose-1: 3649 mm3 in 1 place(s)
+        at (0, 276, 434) 3649 mm3
+    env_rocker_FL-1 / nose-1: 3649 mm3 in 1 place(s)
+        at (0, -276, 434) 3649 mm3
+    chassis-1 / env_chain-1: 3187 mm3 in 2 place(s)
+        at (1490, 165, 307) 2393 mm3
+        at (1488, 165, 143) 795 mm3
+    chassis-1 / env_steering_column-1: 1495 mm3 in 1 place(s)
+        at (140, 0, 276) 1495 mm3
+    chassis-1 / env_steering_rack-1: 228 mm3 in 1 place(s)
+        at (-70, 112, 163) 228 mm3
+    chassis-1 / env_halfshaft_R-1: 50 mm3 in 1 place(s)
+        at (1559, 320, 211) 50 mm3
+    chassis-1 / env_halfshaft_L-1: 50 mm3 in 1 place(s)
+        at (1559, -320, 211) 50 mm3
+INFO  mass of what is in the assembly: 323.3 kg, CG x 908 / y 1 / z 388 mm (SolidWorks' own sum, not the car: the packaging envelopes and wing supports carry their budget masses, the other imported bodies are at SolidWorks' default density and the suspension is added later; cad/generate/cad_cg_report.txt has the CG from the geometry at budget masses)
 PASS  saved C:\Users\mhaww\Desktop\OnWorkPro\formula-single-seater\cad\formula_single_seater.SLDASM
 
 No failures.
+Warnings (do not fail the step):
+- interference: 19 component pair(s) overlap, 1612.4 cm3 in all (bodywork / wings / wheels vs frame: geometry to fix in cad/generate, see the list)
+

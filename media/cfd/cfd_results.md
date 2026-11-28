@@ -6,6 +6,23 @@ Written by `cfd/postprocess.py`. **What these numbers mean:** one mesh per varia
 
 **Dirty air is the goal.** We want the car behind to be disturbed, so a LOWER q-ratio in the following car's window and a BIGGER following penalty mean dirtier air, which is better for us. As built (2026-11-25, wake planes below and `media/lap_as_built_BD.csv`): at 1 car length CP and D_AB disturb a follower most (q-ratio 0.64 / 0.65, autocross penalty +2.14 s each) and B_AB least (0.67, +1.69 s); at 2 and 3 lengths B_AB's wake persists slightly longer (0.89 / 0.95 against 0.92 / 0.98 for CP and D_AB). CP is the chosen car. D_AB's downforce lead over CP_bl1 (ClA +1.3 %) is smaller than the 2.2 % between CP's own two runs (CP and CP_bl1), so D and CP cannot be told apart on downforce.
 
+## Final car (FINAL, 2026-11-28)
+
+FINAL is the final car: CP's bodywork and wings with the F rear and J front wing supports, i.e. the geometry of CPFF (CFD only; the CAD has no supports). **2 prism layers gave 1,082,944 cells, over the Student limit**, so it ran with 1 layer as FINAL_bl1. The like-for-like reference is CP_bl1 (also 1 layer); row CP (2 layers) is shown too. FINAL_bl1 reproduces CPFF_bl1 byte for byte (same mesh, deterministic solver), so it is the same result, not a second sample. Noise: 2.2 % (CP vs CP_bl1, which also differ by the layer count) and 0.9 % (repeat CP_bl1r). Support forces: zone (200-iteration mean) or face-export snapshot of the flat pylons; CP's front pylon was not exported. Table: `cfd/results/final_table.csv` (`cfd/support_table.py`).
+
+| | CP_bl1 | CP | CPFF_bl1 | FINAL_bl1 |
+|---|---|---|---|---|
+| cells | 918,527 | 1,007,086 | 989,695 | 989,695 |
+| ClA (m2), vs CP_bl1 / vs CP | 3.977 (+0.0 / +2.2 %) | 3.892 (-2.1 / +0.0 %) | 4.133 (+3.9 / +6.2 %) | 4.133 (+3.9 / +6.2 %) |
+| CdA (m2), vs CP_bl1 / vs CP | 1.667 (+0.0 / +0.4 %) | 1.661 (-0.4 / +0.0 %) | 1.684 (+1.0 / +1.4 %) | 1.684 (+1.0 / +1.4 %) |
+| L/D, vs CP_bl1 / vs CP | 2.385 (+0.0 / +1.8 %) | 2.344 (-1.7 / +0.0 %) | 2.454 (+2.9 / +4.7 %) | 2.454 (+2.9 / +4.7 %) |
+| front axle share | 0.431 | 0.433 | 0.397 | 0.397 |
+| front support drag, half car (N) | 0.45 | - | 0.15 | 0.15 |
+| rear support drag, half car (N) | 4.34 | 4.57 | 0.43 | 0.43 |
+| wake q-ratio 1 / 2 / 3 L | 0.649 / 0.912 / 0.972 | 0.637 / 0.921 / 0.978 | 0.660 / 0.915 / 0.971 | 0.660 / 0.915 / 0.971 |
+
+Beyond the noise for FINAL: ClA (+3.9 % vs CP_bl1, +6.2 % vs CP), L/D and the rearward move of the front share (-0.033; CP, CP_bl1 and CP_bl1r agree within 0.002), all from the F rear supports. CdA (+1.0 % / +1.4 %) is inside it. The follower's q-ratio at 1 L is 0.012 higher than CP_bl1's and 0.023 higher than CP's (slightly cleaner air behind FINAL, the wrong way for us, since dirty air is the goal); the only q-ratio noise estimates are 0.011 (CP vs CP_bl1) and 0.003 (CP_bl1r), so this is at the edge of what one run resolves. At 2 and 3 L every difference is under 0.01.
+
 ## All runs
 
 | run | cells | iter | ClA (m2) | CdA (m2) | L/D | front axle share | DF drift / band % | drag drift / band % | force-converged |
@@ -28,6 +45,7 @@ Written by `cfd/postprocess.py`. **What these numbers mean:** one mesh per varia
 | D_AB | 1,002,218 | 1200 | 4.03 | 1.76 | 2.29 | 0.39 | 0.00 / 1.04 | 0.01 / 0.25 | yes |
 | D_bl1 | 949,206 | 1200 | 4.19 | 1.75 | 2.40 | 0.40 | 0.00 / 0.09 | 0.00 / 0.14 | yes |
 | E_bl1 | 977,893 | 1200 | 4.14 | 1.69 | 2.45 | 0.40 | 0.00 / 0.56 | 0.00 / 0.14 | yes |
+| FINAL_bl1 | 989,695 | 1200 | 4.13 | 1.68 | 2.45 | 0.40 | 0.01 / 0.89 | 0.00 / 0.21 | yes |
 | F_bl1 | 987,878 | 1200 | 4.15 | 1.69 | 2.46 | 0.39 | 0.00 / 0.83 | 0.00 / 0.13 | yes |
 | G_bl1ta | 1,018,541 | 1200 | 4.13 | 1.70 | 2.44 | 0.40 | 0.00 / 0.98 | 0.00 / 0.43 | yes |
 | H_bl1 | 945,815 | 1200 | 4.09 | 1.69 | 2.42 | 0.41 | 0.01 / 1.39 | 0.02 / 0.59 | yes |
@@ -138,6 +156,10 @@ Area-weighted on a 10 mm grid; window = following car's frontal window (1.4 m wi
 | E_bl1 | 1 | 0.57 | 0.00, 1.39 | 0.64 | 1.87 | 0.20 | 0.66 | 0.070 | 8.7 | 0.82 | 766 |
 | E_bl1 | 2 | 0.33 | 0.00, 2.48 | 1.76 | 1.35 | 0.04 | 0.92 | 0.028 | 4.8 | 0.85 | 750 |
 | E_bl1 | 3 | 0.22 | 0.66, 1.98 | 2.44 | 1.00 | 0.01 | 0.97 | 0.016 | 2.7 | 0.64 | 731 |
+| FINAL_bl1 | 0.5 | 0.91 | 0.11, 0.04 | 0.54 | 0.79 | 0.36 | 0.47 | 0.092 | 11.2 | 0.33 | 1201 |
+| FINAL_bl1 | 1 | 0.55 | 0.00, 1.34 | 0.66 | 1.87 | 0.20 | 0.66 | 0.071 | 8.6 | 0.81 | 741 |
+| FINAL_bl1 | 2 | 0.33 | 0.01, 2.46 | 1.78 | 1.35 | 0.04 | 0.91 | 0.028 | 4.8 | 0.84 | 749 |
+| FINAL_bl1 | 3 | 0.22 | 0.66, 1.98 | 2.44 | 0.99 | 0.01 | 0.97 | 0.016 | 2.7 | 0.63 | 754 |
 | F_bl1 | 0.5 | 0.88 | 0.00, 0.16 | 0.40 | 0.84 | 0.36 | 0.47 | 0.092 | 11.1 | 0.33 | 1190 |
 | F_bl1 | 1 | 0.56 | 0.00, 1.27 | 0.70 | 1.88 | 0.20 | 0.66 | 0.071 | 8.7 | 0.81 | 749 |
 | F_bl1 | 2 | 0.33 | 0.06, 2.50 | 1.70 | 1.28 | 0.04 | 0.92 | 0.028 | 4.8 | 0.83 | 749 |
@@ -282,6 +304,12 @@ Five planes 0.15 m apart (a 0.6 m deep box) around each station, half model. `lo
 | E_bl1 | 2 | high | 0.098 | 0.816 | 2.127 | 0.060 | 8.63 | 10.94 | 14.2 | 183 |
 | E_bl1 | 3 | low | 0.009 | 0.982 | 0.085 | 0.012 | 0.75 | 1.29 | 0.8 | 282 |
 | E_bl1 | 3 | high | 0.036 | 0.929 | 0.731 | 0.035 | 1.84 | 3.78 | 8.0 | 183 |
+| FINAL_bl1 | 1 | low | 0.096 | 0.824 | 1.013 | 0.041 | 5.83 | 12.32 | 3.0 | 317 |
+| FINAL_bl1 | 1 | high | 0.302 | 0.519 | 6.843 | 0.107 | 10.63 | 26.05 | 19.2 | 179 |
+| FINAL_bl1 | 2 | low | 0.026 | 0.949 | 0.179 | 0.017 | 1.23 | 2.43 | 1.4 | 322 |
+| FINAL_bl1 | 2 | high | 0.098 | 0.817 | 2.157 | 0.060 | 8.72 | 10.97 | 14.2 | 170 |
+| FINAL_bl1 | 3 | low | 0.010 | 0.981 | 0.088 | 0.012 | 0.76 | 1.34 | 0.8 | 311 |
+| FINAL_bl1 | 3 | high | 0.036 | 0.930 | 0.731 | 0.035 | 1.80 | 3.71 | 8.0 | 173 |
 | F_bl1 | 1 | low | 0.092 | 0.831 | 0.941 | 0.040 | 5.93 | 11.63 | 3.1 | 301 |
 | F_bl1 | 1 | high | 0.298 | 0.526 | 6.746 | 0.106 | 10.59 | 25.95 | 19.3 | 181 |
 | F_bl1 | 2 | low | 0.025 | 0.951 | 0.166 | 0.017 | 1.23 | 2.33 | 1.4 | 293 |
@@ -429,6 +457,14 @@ From Fluent's area-weighted average and face maximum, and the share of faces per
 | F_bl1 | car_rws | 87 | 178 | 8 | 34 | 140 | 2 % | 43 % | 55 % | 0 % |
 | F_bl1 | wheel_front | 147 | 354 | 25 | 89 | 213 | 0 % | 9 % | 90 % | 1 % |
 | F_bl1 | wheel_rear | 147 | 354 | 31 | 98 | 216 | 0 % | 4 % | 95 % | 1 % |
+| FINAL_bl1 | car_body | 137 | 548 | 7 | 51 | 197 | 2 % | 28 % | 69 % | 1 % |
+| FINAL_bl1 | car_floor | 90 | 390 | 7 | 33 | 131 | 3 % | 43 % | 54 % | 0 % |
+| FINAL_bl1 | car_fw | 89 | 238 | 7 | 38 | 150 | 3 % | 39 % | 58 % | 0 % |
+| FINAL_bl1 | car_fws | 35 | 76 | 5 | 19 | 51 | 5 % | 73 % | 21 % | 0 % |
+| FINAL_bl1 | car_rw | 84 | 198 | 6 | 44 | 147 | 3 % | 34 % | 63 % | 0 % |
+| FINAL_bl1 | car_rws | 87 | 179 | 8 | 34 | 140 | 2 % | 43 % | 55 % | 0 % |
+| FINAL_bl1 | wheel_front | 148 | 360 | 24 | 88 | 215 | 0 % | 9 % | 90 % | 1 % |
+| FINAL_bl1 | wheel_rear | 145 | 347 | 31 | 96 | 212 | 0 % | 4 % | 95 % | 1 % |
 | G_bl1ta | car_body | 137 | 463 | 7 | 51 | 198 | 3 % | 27 % | 69 % | 1 % |
 | G_bl1ta | car_floor | 91 | 306 | 7 | 34 | 131 | 3 % | 43 % | 55 % | 0 % |
 | G_bl1ta | car_fw | 88 | 236 | 6 | 35 | 148 | 3 % | 42 % | 55 % | 0 % |
@@ -458,7 +494,7 @@ From Fluent's area-weighted average and face maximum, and the share of faces per
 | K_bl1tb | wheel_front | 148 | 375 | 25 | 88 | 215 | 0 % | 8 % | 91 % | 1 % |
 | K_bl1tb | wheel_rear | 145 | 343 | 33 | 96 | 216 | 0 % | 4 % | 95 % | 1 % |
 
-Mass imbalance (net mass flow / inlet mass flow): A 4.6e-07, B 2.2e-07, B_AB 2.0e-06, C 1.2e-07, CP 2.5e-06, CPFF_bl1 7.3e-07, CP_bl1 4.3e-07, CP_bl1r 9.9e-07, CP_bl1ta 4.7e-07, C_bl1 9.0e-08, C_coarse 8.8e-09, C_num 6.8e-08, C_w 5.1e-08, D 6.3e-08, D_AB 8.4e-07, D_bl1 2.1e-07, E_bl1 1.5e-07, F_bl1 7.2e-07, G_bl1ta 4.5e-07, H_bl1 5.2e-07, J_bl1 7.4e-07, K_bl1tb 1.2e-07.
+Mass imbalance (net mass flow / inlet mass flow): A 4.6e-07, B 2.2e-07, B_AB 2.0e-06, C 1.2e-07, CP 2.5e-06, CPFF_bl1 7.3e-07, CP_bl1 4.3e-07, CP_bl1r 9.9e-07, CP_bl1ta 4.7e-07, C_bl1 9.0e-08, C_coarse 8.8e-09, C_num 6.8e-08, C_w 5.1e-08, D 6.3e-08, D_AB 8.4e-07, D_bl1 2.1e-07, E_bl1 1.5e-07, FINAL_bl1 7.3e-07, F_bl1 7.2e-07, G_bl1ta 4.5e-07, H_bl1 5.2e-07, J_bl1 7.4e-07, K_bl1tb 1.2e-07.
 
 params/aero_variants.csv updated from CFD for: none.
 

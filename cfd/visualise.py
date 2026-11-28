@@ -10,6 +10,8 @@ Variants (labels in every picture):
     C  run CP    maximum wings, as-built (SolidWorks) bodywork (the lap sim uses it)
     D  run D_AB  wake-tuned, as-built bodywork, diffuser 12 deg (NOT D's 14 deg:
                  14 deg did not mesh on this bodywork), 1 prism layer
+    FINAL  run FINAL_bl1  the final car (2026-11-28): C (CP) with the F rear and J front
+                 wing supports, i.e. CPFF's geometry (CFD only: the CAD has no supports), 1 prism layer
 B, C and D share the as-built bodywork (SolidWorks nose, sidepods, 10 mm floor
 plate) since 2026-11-25; A has the older CFD bodywork (see cfd/geometry_notes.md).
 The old B and D pictures (older bodywork) are in media/cfd/vis_old_simplified/.
@@ -25,13 +27,16 @@ Steps (each reads what the step before it wrote):
     stills   media/cfd/vis/<V>_*.png
     anims    media/cfd/vis/<V>_orbit / _sweep / _buildup .mp4 + .gif
     compare  media/cfd/vis/compare_ABCD.png + .mp4 + .gif
-    smoke    media/cfd/vis/smoke_<V>.mp4 + .gif (C, D, A) and smoke_ABD.mp4 + .gif
+    smoke    media/cfd/vis/smoke_<V>.mp4 + .gif (C, D, A, FINAL), smoke_ABD.mp4 + .gif and
+             smoke_C_FINAL.mp4 + .gif (C against the final car)
     all      everything above, in that order
 
 Usage:
     .venv/Scripts/python cfd/visualise.py all
     .venv/Scripts/python cfd/visualise.py smoke C          # one smoke film (C, D or A)
     .venv/Scripts/python cfd/visualise.py smoke ABD        # the A-B-D smoke side by side
+    .venv/Scripts/python cfd/visualise.py smoke C_FINAL    # C (run CP) above the final car
+    .venv/Scripts/python cfd/visualise.py stills FINAL     # the final car's stills
     .venv/Scripts/python cfd/visualise.py anims C --only orbit   # one film (orbit, sweep, buildup)
     .venv/Scripts/python cfd/visualise.py stills A B       # some variants
     .venv/Scripts/python cfd/visualise.py --selftest
@@ -65,13 +70,18 @@ SLICES_L = (1.0, 2.0, 3.0)                        # car lengths behind the rear 
 def slice_x(n_l: float) -> float:
     return WHEELBASE + n_l * CAR_LENGTH            # 4.50, 7.45, 10.40 m
 
+# The final car (2026-11-28): CPFF's geometry under the name FINAL (cfd/fluent_halfcar.py GEOMETRY_OF).
+# 2 prism layers gave 1,082,944 cells (over the Student limit), so the run has 1 layer like CPFF_bl1.
+FINAL_RUN, FINAL_TITLE = "FINAL_bl1", "FINAL  final car, F rear + J front supports (run FINAL_bl1)"   # short: the smoke header line
 VARIANTS = {   # label -> (run folder, title)
     "A": ("A", "A  no wings"),
     "B": ("B_AB", "B  moderate wings, as-built bodywork (run B_AB)"),
     "C": ("CP", "C  max wings, SolidWorks bodywork (run CP)"),
     "D": ("D_AB", "D  wake-tuned, as-built bodywork, diffuser 12° not 14° (run D_AB)"),
+    "FINAL": (FINAL_RUN, FINAL_TITLE),
 }
-SMOKE_VARIANTS = ("C", "D", "A")
+SMOKE_VARIANTS = ("C", "D", "A", "FINAL")
+SIDE_FILMS = {"ABD": ("A", "B", "D"), "C_FINAL": ("C", "FINAL")}   # smoke side-by-side films: token -> rows
 
 GRIDS = {   # name: (origin, spacing, upper corner), metres
     "near": ((-1.30, 0.004, 0.004), 0.0125, (3.40, 0.95, 1.80)),
@@ -82,8 +92,8 @@ CAR_BOX = ((-1.30, 2.60), (2e-4, 0.95), (2e-4, 1.70))   # boundary faces inside 
 # common colour scales (the same in every picture, so variants compare side by side)
 CLIM = {"Cp": (-3.0, 1.0), "speed": (0.0, 1.4), "deficit": (0.0, 0.6), "k": (0.0, 8.0), "wx": (-200.0, 200.0)}
 CMAP = {"Cp": "RdBu_r", "speed": "turbo", "deficit": "magma", "k": "viridis", "wx": "coolwarm"}
-BODY_NOTE = ("B, C and D are on the same as-built bodywork (D's diffuser is 12 degrees here, not 14); "
-             "A is on the older CFD bodywork. ")
+BODY_NOTE = ("B, C, D and FINAL are on the same as-built bodywork (D's diffuser is 12 degrees here, not 14; FINAL is "
+             "C with the F rear and J front wing supports, CFD only, 1 prism layer); A is on the older CFD bodywork. ")
 CAPTION = (BODY_NOTE + "Steady RANS (k-omega SST), half car mirrored, Student mesh of about 1 million cells, 20 m/s. "
            "Only the ranking of the variants is trustworthy, not the absolute values.")
 SMOKE_CAPTION = (BODY_NOTE + "Steady-state RANS solution: the smoke shows time-averaged streamlines, not real unsteady "
@@ -202,8 +212,8 @@ def main(argv=None) -> int:
     ap.add_argument("step", nargs="?", default="all",
                     choices=["export", "stills", "anims", "compare", "smoke", "all"])
     ap.add_argument("variants", nargs="*",
-                    help="A B C D (default: all four; smoke: C D A and the A-B-D side by side; "
-                         "smoke ABD: only the side by side)")
+                    help="A B C D FINAL (default: all; smoke: C D A FINAL and the side-by-side films; "
+                         "smoke ABD or smoke C_FINAL: only that side by side)")
     ap.add_argument("--only", choices=["orbit", "sweep", "buildup"], help="anims: only this film")
     ap.add_argument("--force", action="store_true", help="export: redo the cache")
     ap.add_argument("--selftest", action="store_true")
@@ -211,13 +221,13 @@ def main(argv=None) -> int:
     if a.selftest:
         return selftest()
     given = [v.upper() for v in a.variants]
-    side = "ABD" in given                       # the smoke side-by-side film
-    if side and a.step != "smoke":
-        ap.error("ABD (the smoke side-by-side film) goes with the smoke step: visualise.py smoke ABD")
-    labels = [v for v in given if v != "ABD"] or ([] if side else list(VARIANTS))
+    sides = [v for v in given if v in SIDE_FILMS]   # the smoke side-by-side films asked for
+    if sides and a.step != "smoke":
+        ap.error(f"{sides} (smoke side-by-side films) go with the smoke step: visualise.py smoke ABD")
+    labels = [v for v in given if v not in SIDE_FILMS] or ([] if sides else list(VARIANTS))
     bad = [v for v in labels if v not in VARIANTS]
     if bad:
-        ap.error(f"unknown variant(s) {bad}; use A B C D")
+        ap.error(f"unknown variant(s) {bad}; use {' '.join(VARIANTS)} (smoke also {' '.join(SIDE_FILMS)})")
     OUT.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     if a.step in ("export", "all"):
@@ -238,8 +248,8 @@ def main(argv=None) -> int:
         films = list(SMOKE_VARIANTS) if (a.step == "all" or not given) else labels
         for v in films:
             vs.smoke_film(load(v))
-        if side or not given or a.step == "all":
-            vs.smoke_side_by_side([load(v) for v in "ABD"])
+        for token in (SIDE_FILMS if (not given or a.step == "all") else sides):
+            vs.smoke_side_by_side([load(v) for v in SIDE_FILMS[token]])
     log(f"done in {time.time() - t0:.0f} s; pictures in {OUT}")
     return 0
 

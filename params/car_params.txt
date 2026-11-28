@@ -77,12 +77,18 @@
 "m_susp_links_rear"= 4.2       ' GUESS as front, with the toe link
 "x_susp_links_rear"= 1550
 "z_susp_links_rear"= 350
-"m_front_wing"= 6.0            ' GUESS 1.25 m2 of three-element carbon sandwich, two endplates, mounts
+"m_front_wing"= 6.0 - 0.087    ' GUESS 6.0 for 1.25 m2 of three-element carbon sandwich, two endplates and mounts, minus the two J supports (m_fw_supports 0.087, CALC, own line): 5.913 for elements, endplates and mount hardware (2026-11-28: double count removed; keep the 0.087 equal to m_fw_supports)
 "x_front_wing"= -300           ' chord stack from -600 (fw LE) to about 0
 "z_front_wing"= 150
-"m_rear_wing"= 7.0             ' GUESS 1.1 m2 of elements, two 0.5 m2 endplates, pylons
+"m_rear_wing"= 7.0 - 1.643     ' GUESS 7.0 for 1.1 m2 of elements, two 0.5 m2 endplates and pylons, minus the two F supports (m_rw_supports 1.643, CALC, own line): 5.357 for elements, endplates and mount hardware (2026-11-28: double count removed; keep the 1.643 equal to m_rw_supports)
 "x_rear_wing"= 1850            ' chord stack from 1480 (rw LE) to 2300
 "z_rear_wing"= 1250            ' elements from rw_height upward, pylons below
+"m_fw_supports"= 0.087         ' CALC two front-wing supports J (lens, 5 mm round front edge, 84 mm chord, 16 mm thick), CFRP 1.5 mm skin (1600 kg/m3) over PMI foam core (52 kg/m3); cad/generate/supports_mass.csv (build_parts.py), 0.0434 kg each
+"x_fw_supports"= -635          ' CALC supports_mass.csv: x -634.7, z 170.7
+"z_fw_supports"= 171
+"m_rw_supports"= 1.643         ' CALC two rear-wing supports F (lens, 5 mm round front edge, 228 mm chord, 16 mm thick, RT2_cross to the main element, about 690 mm tall), same sandwich; supports_mass.csv, 0.8217 kg each
+"x_rw_supports"= 1781          ' CALC supports_mass.csv: x 1780.7, z 804.0
+"z_rw_supports"= 804
 "m_floor_diffuser"= 6.0        ' GUESS 2 m2 sandwich floor at 2.5 kg/m2 plus diffuser strakes
 "x_floor_diffuser"= 1200
 "z_floor_diffuser"= 60
@@ -137,13 +143,15 @@
 
 ' ---------------- Masses (kg) and distribution: rolled up from the budget ----
 ' Do not type numbers here; change the budget lines above.
-"mass_car"= "m_frame" + "m_brackets_welds" + "m_battery" + "m_motor" + "m_inverter_hv" + "m_lv_electronics" + "m_chain_drive" + "m_corners_front" + "m_corners_rear" + "m_susp_links_front" + "m_susp_links_rear" + "m_front_wing" + "m_rear_wing" + "m_floor_diffuser" + "m_bodywork" + "m_cockpit" + "m_brake_hydraulics" + "m_cooling" + "m_fasteners_misc"
+"mass_car"= "m_frame" + "m_brackets_welds" + "m_battery" + "m_motor" + "m_inverter_hv" + "m_lv_electronics" + "m_chain_drive" + "m_corners_front" + "m_corners_rear" + "m_susp_links_front" + "m_susp_links_rear" + "m_front_wing" + "m_rear_wing" + "m_floor_diffuser" + "m_bodywork" + "m_cockpit" + "m_brake_hydraulics" + "m_cooling" + "m_fasteners_misc" + "m_fw_supports" + "m_rw_supports"
 "cg_x_moment_1"= "m_frame" * "x_frame" + "m_brackets_welds" * "x_brackets_welds" + "m_battery" * "x_battery" + "m_motor" * "x_motor" + "m_inverter_hv" * "x_inverter_hv" + "m_lv_electronics" * "x_lv_electronics" + "m_chain_drive" * "x_chain_drive" + "m_corners_front" * "x_corners_front" + "m_corners_rear" * "x_corners_rear" + "m_susp_links_front" * "x_susp_links_front"    ' sum of mass x x, first 10 budget lines (split: SolidWorks drops equations longer than about 500 characters)
 "cg_x_moment_2"= "m_susp_links_rear" * "x_susp_links_rear" + "m_front_wing" * "x_front_wing" + "m_rear_wing" * "x_rear_wing" + "m_floor_diffuser" * "x_floor_diffuser" + "m_bodywork" * "x_bodywork" + "m_cockpit" * "x_cockpit" + "m_brake_hydraulics" * "x_brake_hydraulics" + "m_cooling" * "x_cooling" + "m_fasteners_misc" * "x_fasteners_misc" + "mass_driver" * "x_driver"
-"cg_x_from_front_axle"= ("cg_x_moment_1" + "cg_x_moment_2") / ("mass_car" + "mass_driver")
+"cg_x_moment_3"= "m_fw_supports" * "x_fw_supports" + "m_rw_supports" * "x_rw_supports"    ' wing supports (2026-11-28)
+"cg_x_from_front_axle"= ("cg_x_moment_1" + "cg_x_moment_2" + "cg_x_moment_3") / ("mass_car" + "mass_driver")
 "cg_z_moment_1"= "m_frame" * "z_frame" + "m_brackets_welds" * "z_brackets_welds" + "m_battery" * "z_battery" + "m_motor" * "z_motor" + "m_inverter_hv" * "z_inverter_hv" + "m_lv_electronics" * "z_lv_electronics" + "m_chain_drive" * "z_chain_drive" + "m_corners_front" * "z_corners_front" + "m_corners_rear" * "z_corners_rear" + "m_susp_links_front" * "z_susp_links_front"    ' sum of mass x z, first 10 budget lines (split: SolidWorks drops equations longer than about 500 characters)
 "cg_z_moment_2"= "m_susp_links_rear" * "z_susp_links_rear" + "m_front_wing" * "z_front_wing" + "m_rear_wing" * "z_rear_wing" + "m_floor_diffuser" * "z_floor_diffuser" + "m_bodywork" * "z_bodywork" + "m_cockpit" * "z_cockpit" + "m_brake_hydraulics" * "z_brake_hydraulics" + "m_cooling" * "z_cooling" + "m_fasteners_misc" * "z_fasteners_misc" + "mass_driver" * "z_driver"
-"cg_height"= ("cg_z_moment_1" + "cg_z_moment_2") / ("mass_car" + "mass_driver")
+"cg_z_moment_3"= "m_fw_supports" * "z_fw_supports" + "m_rw_supports" * "z_rw_supports"    ' wing supports (2026-11-28)
+"cg_height"= ("cg_z_moment_1" + "cg_z_moment_2" + "cg_z_moment_3") / ("mass_car" + "mass_driver")
 "weight_dist_front"= 1 - "cg_x_from_front_axle" / "wheelbase"    ' fraction of car + driver mass on the front axle
 "unsprung_mass_corner_front"= "m_corners_front" / 2
 "unsprung_mass_corner_rear"= "m_corners_rear" / 2

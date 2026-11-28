@@ -3,6 +3,57 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-28 (CAD session 2): packaging envelopes, packaging clashes, CAD CG, wing mass double count
+
+**Status: finished, no commits.** cfd/* not touched; lap sim and load cases not re-run (they wait for the CFD numbers).
+
+How I read the brief:
+- Each budget line without a CAD body gets simple envelope parts, sized from the parameters where they exist and from stated assumptions otherwise.
+- Each envelope carries a mass taken from its budget line. No mass is added.
+- The CG from the CAD geometry is reported next to the budget CG. Neither was changed.
+- Clashes are reported, not fixed.
+
+- **Added:** 28 envelope parts `env_*` (`cad/generate/envelopes.py`, built by BuildBodies, imported and mated by BuildAssembly, density = budget mass / volume, each within 1 %):
+  - driver legs, torso and helmet (the `frame_layout.m` boxes, 21 / 43 / 6 kg);
+  - seat;
+  - steering rack, column and wheel;
+  - 4 rockers and 4 spring/dampers;
+  - 4 brakes;
+  - motor, diff, chain and 2 halfshafts;
+  - 2 battery packs;
+  - inverter and LV electronics.
+- **Wing mass double count fixed:** `m_front_wing` 6.0 − 0.087 = 5.913 and `m_rear_wing` 7.0 − 1.643 = 5.357 kg. Car 232.56 / 302.56 kg again (was 234.29 / 304.29). Budget CG 901.5 / 308.9 mm (was 906.3 / 314.0; v1.0.0 902.0 / 311.3). 41.84 % front.
+- **CG, budget against CAD** (`cad/generate/cad_cg_report.txt`), with driver: budget 901.5 / 308.9, CAD 891.3 / 316.6 (x −10.2, z +7.7 mm); 42.50 % front against 41.84 %. The main causes are the driver envelope (+50, +59), the front wing and the bodywork (both about 400 mm further forward in the CAD).
+- **30 packaging clashes**, numbered with suggested fixes in `docs/buildup_audit.md` section 4: rockers in their mount nodes and the nose, front dampers in the nose, chain through the RS1 cross tubes, motor 25 mm into the torso box and the seat back, halfshafts through the rear pushrods, column and rack through front tubes, legs box against the wheel, column and LV box, plus 8 artefacts of static envelopes over wheel travel. No frame or suspension change.
+- **Film** re-recorded with eight envelope stages: 44 stills, 21.2 s, MP4 0.57 MB, GIF 0.45 MB. Standard views re-exported by the rebuild; all 26 steps PASS.
+- **Two harness faults found and fixed on the way:**
+  - BuildAssembly crashed SolidWorks twice (RPC failed in OpenDoc6) with every part window left open. It now closes each part window once the part is a component.
+  - The five box envelopes exported as two-product STEP files, which SolidWorks imported without the density, so they came in at 1000 kg/m³. They are now built in place.
+- **Not checked:** see the detail at the bottom.
+
+## Summary, 2026-11-28 (CAD session): wing supports in the CAD, mass and CG, build-up film re-recorded
+
+**Status: finished, no commits.**
+
+How I read the brief: the CAD gets the CFD's winners exactly as the CFD built them (rear F, front J: `cfd_variants.rws_section` "round", at the CFD's X, Y and chord). Where the CFD support runs into a body, the CAD support stops at that body's surface. The aero numbers are not touched.
+
+- **Supports (`cad/generate/build_parts.py`, STEP bodies like every other body; BuildAssembly imports and mates them):**
+  - `rw_support_R/L` (F): X 1666.9 to 1895 (228 mm chord), Y +-150, 16 mm thick, 5 mm round front edge, 3 mm square rear edge. Z 470 to 1156: from the frame's rear top cross tube RT2_cross (saddled over its upper half) up to the main element's underside. The CFD starts it at Z 300 inside a motor-cover hull the parts do not have; at Z 300 it would run through RS2_U_cross.
+  - `fw_support_R/L` (J): X -672 to -588 (84 mm chord), Y +-68, 16 mm thick, from the main element's upper surface to the nose's outer skin (Z 230 for the 22 mm ahead of the nose tip, as in the CFD).
+  - Same sections as the CFD: 2898.3 mm2 (rear) and 1050.8 mm2 (front) at every height checked, in both models.
+  - **Material:** CFRP skin 1.5 mm (1600 kg/m3) over a PMI foam core (52 kg/m3). 0.822 kg per rear support, 0.043 kg per front one, 1.730 kg for the four. SOLIDWORKS gets the sandwich's equivalent density (434 and 520 kg/m3), and its part mass matches.
+  - **Checks:** clearance check ALL PASS (supports touch RT2_cross, their wing and the nose with no overlap; no other tube within 10 mm). SOLIDWORKS: 23 of 23 parts mated, no mate errors, interference none. SuspensionCheck lists no support (its one warning, pushrod on lower wishbone 7-13 mm3, is unchanged from before).
+  - `python tools/sw_run.py rebuild`: 26 of 26 steps pass (16:51-17:14). The assembly has 52 components (48 before).
+- **Mass and CG** (`params/car_params.txt`, new CALC lines `m_fw_supports`, `m_rw_supports`; the wing GUESS lines were not reduced):
+  - car 232.56 -> **234.29 kg** (with driver 302.56 -> 304.29);
+  - CG x 901.97 -> **906.28 mm**, z 311.34 -> **313.96 mm**, front 41.81 -> **41.53 %**.
+  - Hand check: +1.730 kg; (302.56 x 901.97 + 0.087 x -635 + 1.643 x 1781) / 304.29 = 906.28.
+  - `media/mass_table.md`, `media/mass_budget.md/.png` regenerated; `run_all('test')` 28 of 28 PASS.
+  - **Not re-run:** lap times, load cases, frame FE and suspension tuning (still at 302.6 kg; the README says so).
+- **Film audit** (`docs/buildup_audit.md`): the old film showed every component the assembly had. Missing were the supports (they did not exist), so both wings floated. The 16 links came in one still, dark grey behind blue tubes, hard to see. Now: lower and upper wishbones, uprights and hubs, tie rods and toe links, pushrods (amber), wheels, floor, sidepods, nose, front supports, front wing, rear supports, rear wing. Steering column and rack, rockers, dampers, brakes, motor, drive, battery, electronics, seat and driver are not in the CAD, so no film can show them.
+- **Film:** `car_buildup.mp4` 0.41 MB, `car_buildup.gif` 0.38 MB, 36 stills, 16.5 s. Standard views re-saved by the rebuild (the README's iso view shows the supports).
+- **README:** only the mass row, the guess share (24 %) and the "CAD has no supports" statements.
+
 ## Summary, 2026-11-28 (CFD session): wing supports finished: pictures, G and K again
 
 **Status: finished, no commits.** Plan: `docs/wing_supports_plan.md` (finishing round). Results: `media/cfd/supports/wing_supports_results.md` (finishing-round sections).
@@ -1665,3 +1716,79 @@ Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-u
   - CPG - CPF, autocross four-wheel: +0.09 s, inside the 0.13 s band.
 - **Not checked:** see the results file (K vs J, a common mesh fix, one run per variant, yaw, structure, CAD).
 
+## 2026-11-28, CAD session: wing supports in the CAD, mass, film (detail)
+
+- **Brief:** model F (rear) and J (front) in the SOLIDWORKS assembly as in the CFD, in the rebuild; mass and CG; film audit and re-record; stills; docs. No commits, no questions, nothing deleted.
+- **Code:**
+  - `build_parts.py`: `nose_sections()` split out of `build_nose()` (same sections; the nose STEP is rebuilt by the same code); `build_rw_support`, `build_fw_support`, `support_mass`, `frame_node`; `supports_mass.csv` written per run. The section comes from `cfd_variants.rws_section` with the CFD's `RWS_EDGE_T`, so a change to the CFD section changes the CAD too.
+  - `check_clearances.py`: the four supports; rules "touches its mount tube" (`SUPPORT_MOUNTS`, RT2_cross for the rear pair) and "touches what it holds" (`SUPPORT_TOUCH`: wing main element, and the nose for the front pair), both gap under 0.1 mm and overlap under 1 mm3.
+  - `BuildAssembly.cs`: `SupportDensity` sets the part's document density (`swMaterialPropertyDensity`, checked by reflection on swconst.dll) from `supports_mass.csv` and checks SOLIDWORKS' mass within 1 %.
+  - `ShowcaseBuild.cs`: stages split as in the audit, colours for links, pushrods and supports, count check per group; `tools/showcase_build.py` title. `tools/README.md` rows for BuildBodies and BuildAssembly.
+- **Placement found on the way:** the CFD rear wing sits 19.4 mm further back than the CAD's (main LE X 1606.9 vs 1587.5: the CFD cuts the flap trailing edges at 0.97 c, which moves the anchored stack). The support keeps the CFD's absolute X (1666.9 to 1895), which still lies under the CAD main element. The front wing positions agree exactly.
+- **Rear support base:** RT2_cross (X 1690, Z 470) is 23 to 36 mm behind the support's leading edge, where the lens is thin. The support sits on the tube's upper half and cantilevers 192 mm behind it. That is a geometric attachment only: no bracket, no load path check.
+- **First film run** stopped on my own still-count check (37 asked, 36 made: 1 fit, 1 empty, 21 frame, 13 stages); the check was corrected to 36 and the film re-recorded.
+- **Not checked:** loads, stiffness, strength and flutter of the supports and their mounts (about 470 N on the front wing and more on the rear at 20 m/s go through them); bonding or bolting to the steel tube and the 2 mm nose skin; the effect of the extra 1.73 kg on lap times, loads and ride frequencies (not re-run); whether the CFD's idealised hull tail around the rear supports' base matters (the parts have none); yaw.
+
+
+## 2026-11-28 (evening), CFD session: the final car FINAL
+
+- **Brief read as:** FINAL = CPFF's geometry (CP bodywork and wings, F rear and J front supports), named FINAL in files and tables; try 2 prism layers first (1 layer if over the limit or 3 failed meshes); films and pictures as for A-D; a CFD row FINAL in `params/aero_variants.csv` without changing the default car; no commits, no questions, one Fluent at a time.
+- **Naming without copying the STEP files:** `cfd/fluent_halfcar.py` has `GEOMETRY_OF = {"FINAL": "CPFF"}`. Variant FINAL reads `faces_CPFF.csv` and `fluid_CPFF.step`, and everything it writes is named FINAL. No new files in `cad/step/cfd/`.
+- **Meshing (chain `cfd/cases/chain_FINAL.sh`, log `chain_FINAL.out`):**
+  - 2 layers, try 1 (symmetry split at Z 1050 is in CPFF's geometry): the surface mesh passed (same faces as CPFF_bl1), the volume mesh gave **1,082,944 cells, 3.3 % over the 1,048,576 limit**. A cell-limit refusal is not a mesh failure that a TE fix could cure (the fix adds faces), so no tries 2 and 3.
+  - 1 layer, FINAL_bl1: 989,695 cells, the same mesh as CPFF_bl1 (cells, faces per zone, quality).
+- **Solve:** 16:50-18:05, force-converged (band 0.89 / 0.21 %), mass imbalance 7.3e-07. Face export of all wing zones; the zone sums match Fluent to 6e-12.
+- **Finding:** FINAL_bl1 reproduces CPFF_bl1 byte for byte (`forces.out` and all four wake planes; every `cfd_summary.csv` column equal). Fluent is deterministic on the same mesh and settings, so FINAL is CPFF's result under the final name, not a new sample, and a re-run is no noise test.
+- **Numbers (full car, 20 m/s):** ClA 4.133, CdA 1.684, L/D 2.454, front share 0.397; support drag per half car front 0.15 N, rear 0.43 N (CP_bl1's flat pylons 0.45 / 4.34 N); q-ratio 1 / 2 / 3 L 0.660 / 0.915 / 0.971.
+  - Against CP_bl1 (same 1 layer): ClA +3.9 %, beyond the 2.2 % noise; CdA +1.0 %, inside; L/D +2.9 %; front share -0.033.
+  - Against row CP (2 layers): ClA +6.2 %, CdA +1.4 %, L/D +4.7 %, front share -0.036. That comparison mixes in the layer count.
+  - Hand check: full-car downforce 991.917 N / q 240 Pa (0.5 x 1.2 x 20²) = 4.133 m², the ClA in the table; front 394.103 / 991.917 = 0.397.
+- **Tables:** `postprocess.py --no-plots` (all old rows checked unchanged; `cfd_summary.csv` put back in its committed column order). New section "Final car" in `media/cfd/cfd_results.md`, built by `postprocess.final_car_section()` from `cfd/results/final_table.csv` (`support_table.py CP_bl1 CP CPFF_bl1 FINAL_bl1 --out ...`; `support_table.csv` untouched).
+- **Aero table:** row FINAL in `params/aero_variants.csv` (CFD only). FINAL allowed in `read_aero_variants.m` and `car_from_params.m`; the default stays CP. Checked in MATLAB: the table reads, `car_from_params()` gives CP, `car_from_params('FINAL')` gives 4.133 / 1.684 / 0.397.
+- **Pictures and films (`visualise.py`, variant FINAL = run FINAL_bl1; side-by-side film token C_FINAL):** `FINAL_surface_cp/streamlines/vortices/wake_slices/symmetry.png`; `smoke_FINAL.mp4` 6.2 MB, `smoke_C_FINAL.mp4` 6.5 MB (git-ignored); `smoke_C_FINAL.gif` 3.7 MB, kept in git for the README. The first render cut off the end of the smoke header line (title too long): the FINAL title was shortened, the layer note moved to the caption, and everything was re-rendered. Checked by eye: two stills and a 4-frame sheet of each film.
+- **Docs:** README (section "Aerodynamics: the final car against C"), `cfd/README.md`, `.gitignore` (GIF exception), this log.
+- **Not checked:** 2 prism layers (cell limit); any second sample of FINAL (one run; the re-run is identical by construction); the lap sim with FINAL (default unchanged on purpose); yaw, unsteady flow, mesh independence at the supports; structure of the supports.
+
+
+## 2026-11-28, CAD session 2: packaging envelopes, clashes, CAD CG, wing mass (detail)
+
+**Envelopes** (`cad/generate/envelopes.py`, self-test: helmet centre (1338.5, 762.2) by hand, and per-line mass sums).
+- Sizes and positions are in the table in `docs/buildup_audit.md` section 4.
+- Driver: legs box x 200..850, y ±190, z 150..430; torso box x 790..1250, y ±230, z 120..649; helmet sphere r 150 at (1339, 0, 762). These are `matlab/cad/frame_layout.m` `envelopes()`: hip (850, 180), seat back 40°, shoulder 560 mm up the back, helmet 200 mm further.
+- Mass split: legs 30 % (the `x_driver` comment), head with helmet 6 kg (GUESS), torso the rest. The legs and helmet are cut by the torso box so that the three parts do not overlap.
+- Budget splits taken from the line comments: seat 1.0 and steering 3.0 of `m_cockpit` (steering split GUESS: wheel 1.0, column 0.6, rack 1.4); rocker 0.3, damper 0.6 and brake 1.8 per corner; diff 6.0, chain 2.3 and halfshafts 2 × 1.0 of `m_chain_drive`; batteries 2 × 22.5. Motor, inverter and LV electronics take their whole lines.
+- Three of my own placements were corrected before reporting: the column started inside the rack, the seat back reached the helmet, and the dampers were 2.3 mm above their cross tubes.
+
+**Checks.**
+- `check_clearances.py` section 5 (`packaging_report.txt`) gives 22 static clashes. They are findings, not rule failures, so BuildBodies still passes.
+- BuildAssembly interference finds 19 pairs, the same clashes minus the seat gap (#1) and the halfshaft/pushrod pairs, which SuspensionCheck adds at 1421 mm³.
+- SuspensionCheck adds brake vs own rim at ±30 mm (#23–26) and rocker vs pushrod at +30 mm (#27–30), artefacts of envelopes that do not move with the wheels or the rockers.
+- Not clashing: batteries, motor and inverter vs frame; brakes vs rims at static, uprights and hubs; every envelope vs the tyres over travel and steer; driver vs frame.
+- Observation: the helmet centre is 89 mm behind the main-hoop plane, between the rear braces. The FS helmet-line rules were not checked.
+
+**CAD CG** (`cad/generate/cad_cg.py`, runs in BuildBodies; self-test: 1 kg at (0, 0) and 3 kg at (100, 40) give (75, 30); the corner and link comment splits add up to 11.1 and 2.1 kg).
+- Every line keeps its budget mass and moves to the centre of its CAD bodies; lines with no CAD body stay at the budget position.
+- Result: with driver, budget 901.5 / 308.9 against CAD 891.3 / 316.6 mm; without driver, 920.0 / 302.6 against 891.7 / 295.0. The per-line table is in the report.
+- Found: the `x_chain_drive` comment puts the motor sprocket at X 1850, but `motor_x` is 1340. Not changed.
+
+**Wing lines.**
+- `"m_front_wing"= 6.0 - 0.087` and `"m_rear_wing"= 7.0 - 1.643`, written as numbers with the split in the comment. The comment says to keep them equal to the support lines.
+- The table shows the split (`media/mass_table.md`, written by `make_media.m` `mass_table`, now with two closing lines).
+- `media/mass_budget.md/.png` regenerated.
+
+**Harness.**
+- `BuildAssembly.SupportDensity` also handles `env_*` (from `envelopes_mass.csv`).
+- `AddAt` closes the part window after adding.
+- The ShowcaseBuild stages and counts now include the envelopes (44 stills).
+- `sw_run.py` BuildBodies runs `cad_cg.py`.
+- Pre-existing, not changed: `fw_/rw_endplate_*.step` and `rim_*.step` are also two-product STEP files. Harmless now, because they get no density.
+
+**Not checked:**
+- envelope masses beyond the budget;
+- envelopes moving with the suspension;
+- the FS driver template;
+- routing (HV and LV cables, coolant, brake lines);
+- the parts still not in the CAD: pedal box, harness, firewall, headrest, cooling, hydraulics, brackets;
+- the lap sim and load cases at the new CG (not re-run, by instruction).
+
+The SolidWorks assembly mass (323.3 kg) is not the car's: the non-envelope bodies are at SolidWorks' default density.

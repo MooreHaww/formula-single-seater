@@ -3,7 +3,11 @@
 // missing) WITHOUT saving the assembly, fixes one perspective three-quarter-front camera, then shows the car
 // stage by stage and saves one PNG per stage to media/showcase/frames_build/ with a manifest
 // (index, file, stage, caption). The frame tubes come in group by group, a few tubes per still: the
-// chassis bodies are hidden in the chassis part (Body2.HideBody), which the assembly shows.
+// chassis bodies are hidden in the chassis part (Body2.HideBody), which the assembly shows. Then the
+// suspension inboard to outboard (lower and upper wishbones, uprights and hubs, tie rods and toe links,
+// pushrods), the packaging envelopes (rockers and dampers, steering, brakes, motor and drive, batteries,
+// electronics, seat, driver: space reservations, not designed parts), wheels, floor, sidepods, nose, and
+// each wing after its supports (docs/buildup_audit.md).
 // Nothing is saved: the assembly and the chassis are closed without saving by close-all afterwards.
 // Report: media/showcase/frames_build/showcase_build_report.txt
 using System;
@@ -79,19 +83,42 @@ namespace SwHarness
             var chassisC = pick("chassis").FirstOrDefault();
             if (chassisC == null) throw new StepStoppedException("no chassis component in the assembly");
             string[] corners = { "FL_", "FR_", "RL_", "RR_" };
-            var arms = comps.Where(c => corners.Any(k => c.Name2.StartsWith(k)) && new[] { "_lwb", "_uwb", "_push", "_tie" }.Any(s => c.Name2.Contains(s))).ToList();
+            Func<string, List<Component2>> corner = suf => comps.Where(c => corners.Any(k => c.Name2.StartsWith(k)) && c.Name2.Contains(suf)).ToList();
+            var lwb = corner("_lwb"); var uwb = corner("_uwb"); var tie = corner("_tie"); var push = corner("_push");
+            var arms = lwb.Concat(uwb).Concat(tie).Concat(push).ToList();
             var uprights = comps.Where(c => corners.Any(k => c.Name2.StartsWith(k)) && new[] { "_upright", "_hub" }.Any(s => c.Name2.Contains(s))).ToList();
             var wheels = pick("rim_").Concat(pick("tyre_")).ToList();
             var floor = pick("floor_diffuser");
             var sidepods = pick("sidepod_");
             var nose = pick("nose");
-            var fw = pick("fw_");
-            var rw = pick("rw_");
-            var known = new HashSet<Component2>(layout.Concat(new[] { chassisC, g }).Concat(arms).Concat(uprights).Concat(wheels).Concat(floor).Concat(sidepods).Concat(nose).Concat(fw).Concat(rw));
+            // wing supports (2026-11-28) are their own stage, before the wing they carry
+            var fws = pick("fw_support");
+            var rws = pick("rw_support");
+            var fw = pick("fw_").Except(fws).ToList();
+            var rw = pick("rw_").Except(rws).ToList();
+            // packaging envelopes (env_*, 2026-11-28): one stage per system
+            var rkd = pick("env_rocker_").Concat(pick("env_damper_")).ToList();
+            var steer = pick("env_steering_");
+            var brakes = pick("env_brake_");
+            var drive = pick("env_motor").Concat(pick("env_diff")).Concat(pick("env_chain")).Concat(pick("env_halfshaft_")).ToList();
+            var batt = pick("env_battery_");
+            var elec = pick("env_inverter").Concat(pick("env_lv_electronics")).ToList();
+            var seat = pick("env_seat");
+            var driver = pick("env_driver_");
+            var envs = rkd.Concat(steer).Concat(brakes).Concat(drive).Concat(batt).Concat(elec).Concat(seat).Concat(driver).ToList();
+            var envAll = pick("env_");
+            var known = new HashSet<Component2>(layout.Concat(new[] { chassisC, g }).Concat(arms).Concat(uprights).Concat(wheels).Concat(floor).Concat(sidepods).Concat(nose).Concat(fw).Concat(rw).Concat(fws).Concat(rws).Concat(envs));
             var other = comps.Where(c => !known.Contains(c)).ToList();
-            rep.Note(arms.Count == 16 && uprights.Count == 8 && wheels.Count == 8 && floor.Count == 1 && sidepods.Count == 2 && nose.Count == 1 && fw.Count == 5 && rw.Count == 5,
-                "components: suspension links " + arms.Count + " (16), uprights and hubs " + uprights.Count + " (8), rims and tyres " + wheels.Count + " (8), floor " + floor.Count +
-                ", sidepods " + sidepods.Count + ", nose " + nose.Count + ", front wing " + fw.Count + " (5), rear wing " + rw.Count + " (5)");
+            rep.Note(lwb.Count == 4 && uwb.Count == 4 && tie.Count == 4 && push.Count == 4 && uprights.Count == 8 && wheels.Count == 8 && floor.Count == 1 &&
+                     sidepods.Count == 2 && nose.Count == 1 && fw.Count == 5 && rw.Count == 5 && fws.Count == 2 && rws.Count == 2,
+                "components: lower wishbones " + lwb.Count + " (4), upper wishbones " + uwb.Count + " (4), tie rods and toe links " + tie.Count + " (4), pushrods " + push.Count +
+                " (4), uprights and hubs " + uprights.Count + " (8), rims and tyres " + wheels.Count + " (8), floor " + floor.Count + ", sidepods " + sidepods.Count +
+                ", nose " + nose.Count + ", front wing " + fw.Count + " (5), front supports " + fws.Count + " (2), rear wing " + rw.Count + " (5), rear supports " + rws.Count + " (2)");
+            rep.Note(rkd.Count == 8 && steer.Count == 3 && brakes.Count == 4 && drive.Count == 5 && batt.Count == 2 && elec.Count == 2 && seat.Count == 1 &&
+                     driver.Count == 3 && envs.Count == envAll.Count,
+                "packaging envelopes: rockers and dampers " + rkd.Count + " (8), steering " + steer.Count + " (3), brakes " + brakes.Count + " (4), motor and drive " +
+                drive.Count + " (5), batteries " + batt.Count + " (2), electronics " + elec.Count + " (2), seat " + seat.Count + " (1), driver " + driver.Count +
+                " (3); every env_ component in a stage: " + envs.Count + " of " + envAll.Count);
             if (other.Count > 0) rep.Info("other components (hidden throughout): " + string.Join(", ", other.Select(c => c.Name2)));
 
             // chassis tube bodies, matched to frame_tubes.csv and grouped
@@ -128,12 +155,26 @@ namespace SwHarness
                     { foreach (var c in cs) c.MaterialPropertyValues = new double[] { rr, gg2, bb, 1, 1, 0.4, 0.3, 0, 0 }; };
                 paint(new[] { g }, 0.93, 0.93, 0.94);
                 paint(new[] { chassisC }, 0.13, 0.32, 0.58);
-                paint(arms.Concat(uprights), 0.28, 0.28, 0.30);
+                // links lighter than before (dark grey links vanished against the blue frame, 2026-11-28 audit),
+                // pushrods in amber so they read as their own stage
+                paint(lwb.Concat(uwb).Concat(tie), 0.62, 0.63, 0.66);
+                paint(push, 0.93, 0.62, 0.10);
+                paint(uprights, 0.28, 0.28, 0.30);
                 paint(pick("rim_"), 0.78, 0.78, 0.80);
                 paint(pick("tyre_"), 0.13, 0.13, 0.13);
                 paint(floor, 0.20, 0.20, 0.22);
                 paint(sidepods.Concat(nose), 0.78, 0.16, 0.12);
                 paint(fw.Concat(rw), 0.17, 0.17, 0.19);
+                paint(fws.Concat(rws), 0.36, 0.38, 0.42);   // carbon supports, a shade lighter than the wings so they show
+                // envelopes: plain system colours (they are space reservations, the captions say so)
+                paint(rkd, 0.95, 0.84, 0.25);
+                paint(steer, 0.55, 0.56, 0.60);
+                paint(brakes, 0.45, 0.45, 0.48);
+                paint(drive, 0.30, 0.55, 0.40);
+                paint(batt, 0.10, 0.60, 0.62);
+                paint(elec, 0.48, 0.32, 0.66);
+                paint(seat, 0.10, 0.10, 0.11);
+                paint(driver, 0.86, 0.86, 0.90);
                 foreach (var c in layout.Concat(other)) c.Visible = (int)swComponentVisibilityState_e.swComponentHidden;
                 var mv = (ModelView)m.ActiveView;
                 mv.DisplayMode = (int)swViewDisplayMode_e.swViewDisplayMode_ShadedWithEdges;
@@ -182,14 +223,30 @@ namespace SwHarness
                 rep.Note(allBodies.All(b => b.Visible), "every chassis body shown after the frame stages (" + allBodies.Length + ")");
 
                 var stages = new (List<Component2> cs, string stage, string cap)[] {
-                    (arms, "arms", "Suspension: wishbones, pushrods and tie rods"),
+                    // inboard to outboard: wishbones on the frame pickups, uprights and hubs on the wishbones,
+                    // tie rods (steering) and toe links to the uprights, pushrods, then the wheels
+                    (lwb, "lower_wishbones", "Suspension: lower wishbones"),
+                    (uwb, "upper_wishbones", "Suspension: upper wishbones"),
                     (uprights, "uprights", "Suspension: uprights and hubs"),
+                    (tie, "tie_rods", "Steering tie rods and rear toe links"),
+                    (push, "pushrods", "Suspension: pushrods"),
+                    // packaging envelopes, inboard systems first (each on what carries or drives it)
+                    (rkd, "rockers_dampers", "Rockers and spring/dampers (envelopes)"),
+                    (steer, "steering", "Steering rack, column and wheel (envelopes)"),
+                    (brakes, "brakes", "Brake discs and calipers (envelopes)"),
+                    (drive, "drive", "Motor, chain, diff and halfshafts (envelopes)"),
+                    (batt, "battery", "Battery packs in the sidepod structure (envelopes)"),
+                    (elec, "electronics", "Inverter and LV electronics (envelopes)"),
+                    (seat, "seat", "Seat (envelope)"),
+                    (driver, "driver", "Driver: legs, torso, helmet (envelope)"),
                     (wheels, "wheels", "Rims and tyres"),
                     (floor, "floor", "Floor and diffuser"),
                     (sidepods, "sidepods", "Sidepods"),
                     (nose, "nose", "Nose"),
+                    (fws, "front_supports", "Front wing supports (lens, J)"),
                     (fw, "front_wing", "Front wing"),
-                    (rw, "rear_wing", "Rear wing: the as-built car (CP)"),
+                    (rws, "rear_supports", "Rear wing supports (lens, F)"),
+                    (rw, "rear_wing", "Rear wing: the final car (CP with F and J supports)"),
                 };
                 foreach (var (cs, stage, cap) in stages)
                 {
@@ -206,7 +263,7 @@ namespace SwHarness
                 App.SetUserPreferenceIntegerValue(pCap, oldCap);
             }
             File.WriteAllText(Path.Combine(outDir, "manifest.csv"), manifest.ToString());
-            rep.Note(idx >= 30, "stills saved: " + idx + " (manifest.csv); the assembly and chassis are NOT saved (close-all closes them without saving)");
+            rep.Note(idx >= 44, "stills saved: " + idx + " (manifest.csv); the assembly and chassis are NOT saved (close-all closes them without saving)");
             bool restored = App.GetUserPreferenceIntegerValue(pApp) == oldApp && App.GetUserPreferenceIntegerValue(pCol) == oldCol && App.GetUserPreferenceIntegerValue(pCap) == oldCap;
             rep.Note(restored, "background and picture-capture settings restored to the user's own (capture was " + oldCap + ")");
             string full = rep.Text("ShowcaseBuild, " + AssemblyPath);

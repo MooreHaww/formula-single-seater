@@ -171,6 +171,8 @@ def smoke_side_by_side(datas, frames=FRAMES):
     from PIL import Image, ImageDraw
     from vis_common import font
     labels = "".join(d["label"] for d in datas)
+    if any(len(d["label"]) > 1 for d in datas):     # C and FINAL -> smoke_C_FINAL, not smoke_CFINAL
+        labels = "_".join(d["label"] for d in datas)
     log(f"smoke side by side {labels}")
     size = (1280, 400)
     allines = [smoke_lines(d) for d in datas]

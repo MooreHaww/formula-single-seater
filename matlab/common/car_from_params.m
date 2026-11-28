@@ -34,11 +34,11 @@ if nargin < 1 || isempty(variant), variant = 'CP'; end
 if nargin < 2 || isempty(p), p = read_car_params(); end
 if nargin < 3, aeroSource = 'table'; end
 variant = upper(char(variant));
-if ~ismember(variant, {'A', 'B', 'C', 'D', 'CP', 'CPF', 'CPFF', 'CPG'})
-    error('car_from_params:variant', 'Variant must be A, B, C, D, CP, CPF, CPFF or CPG, got %s', variant);
+if ~ismember(variant, {'A', 'B', 'C', 'D', 'CP', 'CPF', 'CPFF', 'CPG', 'FINAL'})
+    error('car_from_params:variant', 'Variant must be A, B, C, D, CP, CPF, CPFF, CPG or FINAL, got %s', variant);
 end
 pv = variant;                                   % parameter-file guess: CP has C's wings
-if ~isfield(p, ['ClA_' pv]) && startsWith(pv, 'CP'), pv = 'C'; end   % CP, CPF, CPFF, CPG: C's wings
+if ~isfield(p, ['ClA_' pv]) && (startsWith(pv, 'CP') || strcmp(pv, 'FINAL')), pv = 'C'; end   % CP, CPF, CPFF, CPG, FINAL: C's wings
 
 car.variant   = variant;
 car.g         = 9.81;

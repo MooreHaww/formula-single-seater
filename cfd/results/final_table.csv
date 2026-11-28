@@ -1,0 +1,5 @@
+run,cells,converged,ClA,CdA,L_over_D,aero_front,fws_down_N_half,fws_drag_N_half,fws_source,rws_down_N_half,rws_drag_N_half,rws_source,fw_down_with_support_N,fw_down_wing_only_N,ClA_fw_with_support,q_ratio_1L,q_ratio_2L,q_ratio_3L,d_ClA_pct,d_CdA_pct,d_L_over_D_pct,d_fw_down_with_support_N_pct,d_aero_front,beyond_spread
+CP_bl1,918527,True,3.9768,1.6672,2.3854,0.43075,0.035623,0.4518,"face export, snapshot",-0.12102,4.3439,"face export, snapshot",470.54,470.47,1.9606,0.6486,0.91208,0.97167,0,0,0,0,0,none
+CP,1007086,False,3.8921,1.6605,2.3439,0.4326,nan,nan,missing,-0.098481,4.5731,"face export, snapshot",465.55,nan,1.9398,0.63749,0.92076,0.97821,-2.1303,-0.39872,-1.7385,-1.0607,0.0018459,none
+CPFF_bl1,989695,True,4.133,1.684,2.4543,0.39731,0.028348,0.15075,"zone, 200-it mean",-0.053861,0.43344,"zone, 200-it mean",471.3,471.24,1.9637,0.6605,0.91461,0.97099,3.9274,1.0073,2.8909,0.16126,-0.033439,ClA
+FINAL_bl1,989695,True,4.133,1.684,2.4543,0.39731,0.028348,0.15075,"zone, 200-it mean",-0.053861,0.43344,"zone, 200-it mean",471.3,471.24,1.9637,0.6605,0.91461,0.97099,3.9274,1.0073,2.8909,0.16126,-0.033439,ClA

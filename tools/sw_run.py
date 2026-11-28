@@ -167,7 +167,8 @@ def build123d_python():
 
 
 def py_step(step, args):
-    """BuildBodies: cad/generate/build_parts.py into cad/step, then check_clearances.py.
+    """BuildBodies: cad/generate/build_parts.py into cad/step (bodies, supports, packaging envelopes), then
+    check_clearances.py (rules, plus the packaging findings in packaging_report.txt) and cad_cg.py (CAD CG vs budget).
     Exit 0 only if every clearance rule passes."""
     t0 = time.time()
     py = build123d_python()
@@ -175,7 +176,7 @@ def py_step(step, args):
         out, code = "STOPPED, NOTHING CHANGED: no Python with build123d (.venv or uvx)" + chr(10), 2
     else:
         out, code = "", 0
-        for script in ("build_parts.py", "check_clearances.py"):
+        for script in ("build_parts.py", "check_clearances.py", "cad_cg.py"):
             r = subprocess.run(py + [os.path.join(REPO, "cad", "generate", script)] + args, capture_output=True, text=True,
                                encoding="utf-8", errors="replace", cwd=REPO)
             out += r.stdout + r.stderr

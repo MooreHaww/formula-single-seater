@@ -34,7 +34,7 @@ HOLD = {"empty": 18, "frame": 7, "rear_wing": 16}    # frames per still; anythin
 FINAL_HOLD = 48               # 2 s on the finished car
 MP4_LIMIT = 10 * 1024 * 1024
 GIF_LIMIT = 5 * 1024 * 1024
-TITLE = "Formula single-seater: SolidWorks build-up of the as-built car (CP)"
+TITLE = "Formula single-seater: SolidWorks build-up of the final car (CP with lens wing supports)"
 FOOT = "CAD model, built by script from one parameter file. Virtual: nothing here was built or tested."
 
 

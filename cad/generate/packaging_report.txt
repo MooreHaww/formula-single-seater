@@ -1,0 +1,63 @@
+PACKAGING: 22 clash(es) for 28 envelopes   (envelopes are space reservations, not designed parts; a clash is a finding for docs/buildup_audit.md, not a rule failure)
+rules: frame tube >= 10 mm; tyre (static, bump, droop, steer) >= 25 mm; brake to its own rim >= 5 mm; suspension member (static) >= 5 mm; body part, rim, other envelope: no overlap
+
+ok        env_driver_legs vs frame: no tube within 10 mm
+ok        env_driver_torso vs frame: closest FH_T-MH_B_R 12.5 mm
+ok        env_driver_head vs frame: no tube within 10 mm
+CLASH  1  env_seat vs frame: FH_L_cross gap 7.3 mm; MH_L_cross gap 7.3 mm; FH_L-MH_L_diag gap 7.3 mm (rule >= 10 mm)
+ok        env_steering_wheel vs frame: no tube within 10 mm
+CLASH  2  env_steering_column vs frame: FS2_U_cross overlap 5610 mm3 (rule >= 10 mm)
+CLASH  3  env_steering_rack vs frame: FS1_L-FS2_L_diag overlap 231 mm3 (rule >= 10 mm)
+CLASH  4  env_rocker_FR vs frame: FBT_cross overlap 17711 mm3; joint FBT_R overlap 12903 mm3; FBT-FS1_U_R overlap 7803 mm3; FBT-FS2_U_R overlap 7620 mm3 (rule >= 10 mm)
+ok        env_rocker_FR vs FR_push: gap 18.3 mm (rule >= 5 mm, static)
+CLASH  5  env_rocker_FR vs nose: overlap 3649 mm3 (rule: no overlap)
+ok        env_damper_FR vs frame: no tube within 10 mm
+CLASH  6  env_damper_FR vs nose: overlap 4137 mm3 (rule: no overlap)
+ok        env_brake_FR vs frame: no tube within 10 mm
+ok        env_brake_FR vs its own rim: gap 8.3 mm (rule >= 5 mm)
+ok        env_brake_FR vs FR_upright: gap 24.4 mm (rule >= 5 mm, static)
+ok        env_brake_FR vs FR_hub: gap 37.2 mm (rule >= 5 mm, static)
+CLASH  7  env_rocker_FL vs frame: FBT_cross overlap 17711 mm3; joint FBT_L overlap 12903 mm3; FBT-FS1_U_L overlap 7803 mm3; FBT-FS2_U_L overlap 7620 mm3 (rule >= 10 mm)
+ok        env_rocker_FL vs FL_push: gap 18.3 mm (rule >= 5 mm, static)
+CLASH  8  env_rocker_FL vs nose: overlap 3649 mm3 (rule: no overlap)
+ok        env_damper_FL vs frame: no tube within 10 mm
+CLASH  9  env_damper_FL vs nose: overlap 4137 mm3 (rule: no overlap)
+ok        env_brake_FL vs frame: no tube within 10 mm
+ok        env_brake_FL vs its own rim: gap 8.3 mm (rule >= 5 mm)
+ok        env_brake_FL vs FL_upright: gap 24.4 mm (rule >= 5 mm, static)
+ok        env_brake_FL vs FL_hub: gap 37.2 mm (rule >= 5 mm, static)
+CLASH 10  env_rocker_RR vs frame: RRK_cross overlap 17711 mm3; joint RRK_R overlap 12903 mm3; RRK-RT1_R overlap 7166 mm3; RRK-RT2_R overlap 5513 mm3 (rule >= 10 mm)
+ok        env_rocker_RR vs RR_push: gap 12.2 mm (rule >= 5 mm, static)
+ok        env_damper_RR vs frame: closest MH_T-RT2_R 81.2 mm
+ok        env_brake_RR vs frame: no tube within 10 mm
+ok        env_brake_RR vs its own rim: gap 8.3 mm (rule >= 5 mm)
+ok        env_brake_RR vs RR_upright: gap 33.1 mm (rule >= 5 mm, static)
+ok        env_brake_RR vs RR_hub: gap 37.2 mm (rule >= 5 mm, static)
+CLASH 11  env_rocker_RL vs frame: RRK_cross overlap 17711 mm3; joint RRK_L overlap 12903 mm3; RRK-RT1_L overlap 7166 mm3; RRK-RT2_L overlap 5513 mm3 (rule >= 10 mm)
+ok        env_rocker_RL vs RL_push: gap 12.2 mm (rule >= 5 mm, static)
+ok        env_damper_RL vs frame: closest MH_T-RT2_L 81.2 mm
+ok        env_brake_RL vs frame: no tube within 10 mm
+ok        env_brake_RL vs its own rim: gap 8.3 mm (rule >= 5 mm)
+ok        env_brake_RL vs RL_upright: gap 33.1 mm (rule >= 5 mm, static)
+ok        env_brake_RL vs RL_hub: gap 37.2 mm (rule >= 5 mm, static)
+ok        env_motor vs frame: closest MH_L-RS1_L_diag 36.0 mm
+ok        env_diff vs frame: closest RS1_U_cross 11.3 mm
+CLASH 12  env_chain vs frame: RS1_U_cross overlap 10134 mm3; RS1_L_cross overlap 2143 mm3 (rule >= 10 mm)
+CLASH 13  env_halfshaft_R vs frame: RS1_L-RS2_U_R overlap 50 mm3 (rule >= 10 mm)
+ok        env_halfshaft_R vs tyre_rear: closest gap 89.2 mm at R droop -30 (rule >= 25 mm)
+CLASH 14  env_halfshaft_R vs RR_push: overlap 6860 mm3 (rule >= 5 mm, static)
+ok        env_halfshaft_R vs RR_upright: gap 15.2 mm (rule >= 5 mm, static)
+CLASH 15  env_halfshaft_L vs frame: RS1_L-RS2_U_L overlap 50 mm3 (rule >= 10 mm)
+ok        env_halfshaft_L vs tyre_rear: closest gap 89.2 mm at L bump +30 (rule >= 25 mm)
+CLASH 16  env_halfshaft_L vs RL_push: overlap 6859 mm3 (rule >= 5 mm, static)
+ok        env_halfshaft_L vs RL_upright: gap 15.2 mm (rule >= 5 mm, static)
+ok        env_battery_R vs frame: no tube within 10 mm
+ok        env_battery_L vs frame: no tube within 10 mm
+ok        env_inverter vs frame: no tube within 10 mm
+ok        env_lv_electronics vs frame: no tube within 10 mm
+CLASH 17  env_driver_legs vs env_steering_wheel: overlap 386773 mm3 (rule: no overlap between envelopes)
+CLASH 18  env_driver_legs vs env_steering_column: overlap 214118 mm3 (rule: no overlap between envelopes)
+CLASH 19  env_driver_legs vs env_lv_electronics: overlap 360000 mm3 (rule: no overlap between envelopes)
+CLASH 20  env_driver_torso vs env_motor: overlap 268788 mm3 (rule: no overlap between envelopes)
+CLASH 21  env_seat vs env_motor: overlap 263584 mm3 (rule: no overlap between envelopes)
+CLASH 22  env_steering_column vs env_lv_electronics: overlap 78012 mm3 (rule: no overlap between envelopes)

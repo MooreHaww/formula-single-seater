@@ -4,7 +4,7 @@ A Formula-Student-sized electric single-seater, designed from one parameter file
 
 The proportions follow Formula Student, but the aero package was sized for maximum downforce first and was not checked against the FS rules: the wings are larger than an FS car's, and the rear wing reaches about 1.55 m above the ground (`cfd/geometry_notes.md`, variant C). No rule check was made.
 
-![SolidWorks build-up of the as-built car (CP)](media/showcase/car_buildup.gif)
+![SolidWorks build-up of the final car (CP with the F and J wing supports)](media/showcase/car_buildup.gif)
 
 ![CFD comparison of the aero variants A, B, C and D](media/cfd/vis/compare_ABCD.gif)
 
@@ -57,7 +57,7 @@ All numbers come from the scripts named in the table, as of 2026-11-25. None of 
 
 | Quantity | Value | Source |
 |---|---|---|
-| Mass, car without / with driver | 232.6 / 302.6 kg, 41.8 % front, CG 902 mm behind the front axle, 311 mm high | `matlab/mass_budget.m`, `media/mass_table.md` |
+| Mass, car without / with driver | 232.6 / 302.6 kg, 41.8 % front, CG 902 mm behind the front axle, 309 mm high (2026-11-28: the four wing supports, 1.73 kg, have their own lines and are taken off the wing guesses, so the total is the v1.0.0 total; the CG height moved from 311 to 309 mm. The lap times and loads in this README were computed with the v1.0.0 CG and not re-run) | `matlab/mass_budget.m`, `media/mass_table.md` |
 | Frame | 123 tubes of 25.4 mm OD (material: see below), 46.26 kg as the trimmed SOLIDWORKS weldment (48.7 kg on centre-line lengths, which count each coped end twice); no welds or brackets (6.4 kg allowance on its own line) | `params/car_params.txt`, `cad/chassis/check_chassis_report.txt` (measured), `matlab/cad/frame_trimmed_mass.m` (CG) |
 | Frame torsional stiffness | 1476 Nm/deg, 1.6 % under the 1500 target (834 without the 9 diagonal tubes; 1503 with a tenth, RT1-RRK, removed on 2026-11-25 because it met its cross tubes at 5.4 deg); a fused solid model in SOLIDWORKS Simulation gives 1470 (same load case, 2.9 M-node mesh) | `matlab/stress/frame_fe.m` (beam model), `tools/sw_harness/FrameAnalysis.cs` (solid cross-check) |
 | Frame, lowest factor of safety on yield | 2.62, bump case (3 g total wheel load), nominal beam stress, against 4130's yield (435 MPa): it assumes 4130 tube | `matlab/stress/frame_fe.m`, `docs/stress_frame.md` |
@@ -154,7 +154,7 @@ Every film below is a simulation or a CAD model. Nothing in them was built or te
 https://github.com/user-attachments/assets/e47ae17a-36b9-46d6-aa46-5714b42f49ec
 
 
-The as-built car (CP) assembled stage by stage in SolidWorks, from the frame tubes to the rear wing (CAD model, from a fixed camera).
+The as-built car (CP) assembled stage by stage in SolidWorks, from the frame tubes to the rear wing (CAD model, from a fixed camera). The rockers, dampers, steering, brakes, motor and drive, batteries, electronics, seat and driver are packaging envelopes (simple boxes, cylinders and a sphere with their budget masses), not designed parts.
 
 ### Suspension
 
@@ -184,7 +184,13 @@ Simulated smoke streaks past the chosen car, CP (C's wings on the as-built bodyw
 
 ![Rear-wing supports in CFD: CP's flat plate against three lens sections](media/cfd/supports/supports_compare.gif)
 
-Simulated particle streaks past the rear-wing support: CP's flat 16 mm plate against three lens sections (E, F, H), seen from the side and in section from above (half-car CFD, steady RANS; CFD only: the CAD and v1.0.0 have no supports). Numbers and limits: `media/cfd/supports/wing_supports_results.md`.
+Simulated particle streaks past the rear-wing support: CP's flat 16 mm plate against three lens sections (E, F, H), seen from the side and in section from above (half-car CFD, steady RANS; v1.0.0 has no supports; since 2026-11-28 the CAD has F at the rear and J at the front). Numbers and limits: `media/cfd/supports/wing_supports_results.md`.
+
+### Aerodynamics: the final car against C
+
+![Smoke tunnel: C (run CP) above the final car FINAL](media/cfd/vis/smoke_C_FINAL.gif)
+
+Simulated smoke streaks past C (run CP) and the final car FINAL (C's wings with the F rear and J front wing supports; CFD only), same seeds and camera. FINAL ran with 1 prism layer (2 layers went over the Student cell limit). Against CP_bl1 (also 1 layer) it has ClA +3.9 %, beyond the 2.2 % noise, with CdA +1.0 % and the aero balance 3 points further rearward. Steady RANS, one run per variant: only the ranking is trustworthy. Numbers: section "Final car" of `media/cfd/cfd_results.md`. The lap sim still uses CP until the CAD mass is updated.
 
 ### Lap-time simulation
 
@@ -211,12 +217,13 @@ These are the things the numbers above depend on that were not measured, or were
   - The ranking itself is not robust where two variants are closer than the measured layer and mesh effect: CP's own 1-layer run moved ClA by +2.2 %, more than D's lead over CP.
   - Variant A's downforce did not converge.
   - B and D were re-solved on the as-built bodywork (runs B_AB, D_AB). **D's diffuser there is 12°, not D's 14°:** at 14° the diffuser roof grazes the as-built hull, and the two fixes tried failed to mesh. D_AB has 1 prism layer instead of 2 (cell limit). A and C stay on the older CFD bodywork.
-  - **Wing supports (front and rear).** The CAD has no supports on either wing (no pylons or struts). Both wings float in the model, as the build-up film shows. The front wing's nearest gap to the nose is about 38 mm (flap 2), and mounting is not designed for either wing. The CFD model is different. `cad/generate/cfd_variants.py` adds idealised pylons to both wings, fused into the one car solid:
+  - **Wing supports (front and rear).** Since 2026-11-28 the CAD has the lens supports the CFD chose (F rear, J front; `docs/log.md`); v1.0.0 has none. The front wing's nearest gap to the nose is about 38 mm (flap 2), and mounting is not designed for either wing. The CFD model is different. `cad/generate/cfd_variants.py` adds idealised pylons to both wings, fused into the one car solid:
     - front wing: one flat plate each side, 16 mm thick (Y 60 to 76 mm), running from the main element's middle line (72 to 93 % of its chord) up to Z 230 mm, into the nose. It is counted in the front-wing force zone.
     - rear wing: one flat plate each side, 16 mm thick, 260 mm chord, 150 mm from the centreline, running from 300 mm above the ground up into the main element. It is counted in the rear-wing force zone.
 
     So the aero results include the drag and interference of these idealised pylons only, not of a designed mount; real mounts would differ.
   - The front/rear aero split is an estimate. The balance target used for trimming (0.40 front) is a target, not a result.
+- **Wing supports in the CAD.** The supports are not structurally designed: loads, stiffness, strength, flutter and the mount hardware are not worked out (geometry and sandwich mass only). The CFD's rear wing sits 19.4 mm further back than the CAD's (main-element leading edge X 1606.9 against 1587.5; the CFD cuts the trailing edges at 0.97 c). The CAD supports keep the CFD's absolute X, so the CAD and CFD supports match but the wings around them do not, by 19.4 mm.
 - **CFD mesh limit.** The Ansys Student licence stops at 1,048,576 cells (measured: above that, Fluent Meshing exits without writing a mesh). The meshes are 0.27 to 1.04 M cells, so the near-wall resolution and the far wake are coarse.
 - **Roll centres** are static: computed at ride height and held fixed with roll in the cornering model.
 - **No anti-roll bar.** The roll stiffness split (38 % front) comes from the ride frequencies alone; tyre stiffness is ignored.
@@ -230,7 +237,7 @@ These are the things the numbers above depend on that were not measured, or were
   - **Torsional stiffness is confirmed by a solid model.** A separate analysis-only solid frame (`cad/analysis/frame_analysis.SLDPRT`, built from the same tube data, tube ends overlapping their neighbours by 1 mm and fused into one body) gives 1470 Nm/deg against the beam model's 1476 in the headline case, and 1350 against 1365 with couples at the nodes (123 tubes, 2026-11-25). The mesh study was done on the 2026-11-18 frame (124 tubes, with RT1-RRK): going from a 5 mm to a 4 mm mesh changed the result by 0.3 % or less, and a 3 mm mesh failed to mesh on the Student licence. The 123-tube frame was solved at 4 mm only (see `docs/log.md` and `docs/stress_frame.md`).
   - **Stresses are not confirmed.** The solid model's peaks sit where the point loads enter and are not used. The frame stresses and factors of safety are the beam model's nominal values.
   - **What neither model includes:** both assume perfectly fused joints, with no welds as built, no brackets and no fabrication tolerances. The real frame will be softer than both by an amount neither can predict. Only a physical torsion test would settle it.
-- **Mass and CG.** 25 % of the mass is a placeholder (flag GUESS in `media/mass_table.md`), including the inverter, the wings and the bodywork. The 6.4 kg for brackets and welds is a guess (about 13 % of the centre-line frame) and is not drawn. The CG height is therefore partly a guess too.
+- **Mass and CG.** 24 % of the mass is a placeholder (flag GUESS in `media/mass_table.md`), including the inverter, the wings and the bodywork. The 6.4 kg for brackets and welds is a guess (about 13 % of the centre-line frame) and is not drawn. The CG height is therefore partly a guess too. Placing each budget mass at its CAD body or envelope instead of its budget position gives a CG of 891 mm / 317 mm (with driver; 42.5 % front) against the budget's 902 / 309 (`cad/generate/cad_cg_report.txt`). The budget was not changed to match. The largest moves are the driver (+50 mm back, +59 mm up), the front wing and the bodywork (the CAD's are about 400 mm further forward than their budget positions).
 - **Lap simulation.**
   - Quasi-steady, perfect driver, no transients.
   - The point-mass model has no load transfer. The four-wheel model adds steady load transfer at the corner limit only.
@@ -241,11 +248,11 @@ These are the things the numbers above depend on that were not measured, or were
   - The ball-joint housing size (12.5 mm radius) is an assumption: an Aurora COM-5T spherical bearing (5/16 in bore, 19.05 mm OD) in a 3 mm-wall steel cup.
   - The SOLIDWORKS motion study reaches only +23 mm (front) and +14 mm (rear) of bump, against the ±30 mm asked for. The cause is not found. The ±30 mm clearance check is done instead by the SuspensionCheck step, which poses the corners directly.
   - The rear lower wishbone and pushrod tubes overlap by 7–13 mm³ near their shared outer joint at droop and static (SuspensionCheck warning). The links are modelled as plain tubes meeting at the joint centre; real rod ends and a clevis would set their spacing.
-- **Packaging.** The driver is represented by boxes (legs, torso) and a helmet sphere, not a manikin. The pedal box has no envelope of its own; the frame keeps the window between the FS2 cross tubes free for it. The frame clearances are checked against these boxes only.
+- **Packaging.** The driver is represented by boxes (legs, torso) and a helmet sphere, not a manikin. Since 2026-11-28 these and the other unmodelled systems are in the CAD assembly as packaging envelopes (`env_*`, `cad/generate/envelopes.py`): space reservations with their budget masses, not designed parts. They show 30 packaging clashes, 22 static and 8 over wheel travel (rockers in their mount nodes, chain through the rear cross tubes, motor 25 mm into the driver's torso box, halfshafts through the rear pushrods, and more), listed with suggested fixes in `docs/buildup_audit.md` and not fixed. The pedal box has no envelope of its own; the frame keeps the window between the FS2 cross tubes free for it. The frame clearances are checked against these boxes only.
 
 ## Future work
 
-- **Design the wing mountings (front and rear).** The CAD has no supports on either wing (no pylons or struts). Both wings float in the model, as the build-up film shows. Mounting is not designed. The CFD has idealised flat pylons on both wings: front, one each side from the main element into the nose; rear, one each side from 300 mm above the ground into the main element. These are not a design.
+- **Design the wing mountings (front and rear).** Since 2026-11-28 the CAD has the CFD's F (rear) and J (front) supports as geometry: CFRP skin over a foam core, 1.73 kg for the four, the rear pair standing on the frame tube RT2_cross, the front pair between the wing and the nose. Their structure (loads, stiffness, flutter) and the mount hardware are not designed. The CFD has idealised flat pylons on both wings: front, one each side from the main element into the nose; rear, one each side from 300 mm above the ground into the main element. These are not a design.
 - **Wing supports: rear wing, first CFD round (2026-11-26; CFD only, not in CAD).**
   - **What was run.** Three rear-wing supports were compared in the half-car CFD on the as-built car, against CP's idealised flat pylon. All four runs had 1 prism layer (cell limit), so the reference is CP_bl1. Each support has the pylon's envelope: 228 mm chord, 16 mm thick, two per car. The three sections:
     - E: lens;
@@ -260,7 +267,7 @@ These are the things the numbers above depend on that were not measured, or were
     - The aero balance moves rearward, from 43 % to about 40 % front.
     - No support makes downforce itself.
   - **Would build:** F (lens, 5 mm front-edge radius).
-  - **Lap time and balance with F: a sensitivity result for the next version, not the released car.** The CAD has no wing supports, and CP stays the default everywhere. Method:
+  - **Lap time and balance with F: a sensitivity result for the next version, not the released car.** CP stays the default aero car everywhere (the CAD got the F and J supports on 2026-11-28). Method:
     - aero row `CPF` in `params/aero_variants.csv` (run F_bl1, marked CFD only);
     - compared with CP_bl1 (same 1-layer mesh settings), with the same car, tyres and lap-sim settings (`matlab/lapsim/support_sensitivity.m`, `media/support_sensitivity.md`);
     - a difference counts only if it is larger than the effect of CP's 2.2 % aero spread on that result.
@@ -277,7 +284,7 @@ These are the things the numbers above depend on that were not measured, or were
   - **Details:** `media/cfd/supports/wing_supports_results.md` and `docs/wing_supports_plan.md`.
 - **Wing supports: front wing, second CFD round (2026-11-27; CFD only, not in CAD).**
   - **Limits:**
-    - The CAD and the released v1.0.0 have no supports on either wing.
+    - The released v1.0.0 has no supports on either wing (the CAD has F and J since 2026-11-28).
     - These are CFD results with one run per variant.
     - The runs are steady RANS, so only the ranking is trustworthy.
   - **What was run.** CP's flat front pylons (16 mm plates, 84 mm chord, only 60-100 mm exposed between the wing and the nose) were replaced in the same envelope by:
@@ -291,10 +298,10 @@ These are the things the numbers above depend on that were not measured, or were
     - CPFF cannot be told apart from CPF in the CFD or in the lap sim: every lap-time difference is inside the 2.2 % band. The 45 m balance is -0.3 % vs +0.4 %, inside its band of 1.5 points.
     - Row `CPFF` in `params/aero_variants.csv` is CFD only; CP stays the default.
   - **Would build:** J at the front, for its own lower drag rather than a measured gain, and F at the rear.
-  - **Not done:** K (run later, below), a rounded flat plate, 2 prism layers, yaw, structure (the front supports carry the front wing), CAD.
+  - **Not done:** K (run later, below), a rounded flat plate, 2 prism layers, yaw, structure (the front supports carry the front wing); CAD done 2026-11-28 as geometry only.
   - **Details:** the front-wing section of `media/cfd/supports/wing_supports_results.md`, with the flow picture `support_flow_front.png`.
 - **Wing supports: finishing round (2026-11-28; CFD only, not in CAD).**
-  - **Limits:** CFD only, steady RANS, one run per variant. The CAD and the released v1.0.0 have no supports.
+  - **Limits:** CFD only, steady RANS, one run per variant. The released v1.0.0 has no supports (the CAD has F and J since 2026-11-28).
   - **G and K meshed after all**, with a local face size on the flap trailing edges (1.1-1.8 mm wide, under the 2.5 mm minimum size; `cfd/fluent_halfcar_setup.md`).
     - The fix that meshes G also meshes CP, and CP on it moved by less than the noise (ClA -0.9 %).
     - K needed a different fix that no reference meshes on.

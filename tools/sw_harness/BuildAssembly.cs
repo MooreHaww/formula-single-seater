@@ -7,6 +7,8 @@
 //   left tyres and rims as second instances turned 180 deg about the vertical axis
 //   through their axle, fixed; interference (coincidence and the chassis' own tube
 //   contacts not counted); mass; save; cad/build_assembly_report.txt.
+// Wing supports and the packaging envelopes (env_*) get a document density so their
+// SolidWorks mass equals the budget mass (SupportDensity).
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -157,7 +159,7 @@ namespace SwHarness
             {
                 var cg = (double[])mp.CenterOfMass;
                 rep.Info("mass of what is in the assembly: " + F(mp.Mass) + " kg, CG x " + F(cg[0] * 1000, "0") + " / y " + F(cg[1] * 1000, "0") + " / z " +
-                         F(cg[2] * 1000, "0") + " mm (partial car: no driver, battery, motor or suspension yet; imported STEP bodies have no material, so SolidWorks counts them at its default density)");
+                         F(cg[2] * 1000, "0") + " mm (SolidWorks' own sum, not the car: the packaging envelopes and wing supports carry their budget masses, the other imported bodies are at SolidWorks' default density and the suspension is added later; cad/generate/cad_cg_report.txt has the CG from the geometry at budget masses)");
             }
 
             // save
@@ -179,11 +181,36 @@ namespace SwHarness
             int err = 0;
             var m = App.LoadFile4(stepPath, "r", null, ref err) as ModelDoc2;
             if (m == null) { rep.Note(false, Path.GetFileName(stepPath) + ": STEP import refused (error " + err + ")"); return false; }
+            SupportDensity(m, Path.GetFileNameWithoutExtension(partPath));
             int e = 0, w = 0;
             bool ok = m.Extension.SaveAs3(partPath, (int)swSaveAsVersion_e.swSaveAsCurrentVersion, (int)swSaveAsOptions_e.swSaveAsOptions_Silent, null, null, ref e, ref w);
             rep.Note(ok, Path.GetFileName(stepPath) + ": imported" + (ok ? " and saved as cad\\body\\" + Path.GetFileName(partPath) : ", NOT saved (error " + e + ")"));
             App.CloseDoc(m.GetTitle());
             return ok;
+        }
+
+        /// Wing supports (fw_support_R/L, rw_support_R/L, 2026-11-28): CFRP skin over a foam core, which a
+        /// single solid cannot carry as a material. The part gets the sandwich's equivalent density
+        /// (mass / volume from cad/generate/supports_mass.csv, written by build_parts.py) as its document
+        /// density, so SolidWorks' mass of the part equals the budget line. Checked against the CSV mass.
+        /// Packaging envelopes (env_*, 2026-11-28): space reservations, not designed parts. Same idea: the
+        /// density is the budget mass / volume from cad/generate/envelopes_mass.csv (columns part, budget_line,
+        /// mass_kg, volume_mm3, ...), so the assembly's mass properties carry the budget mass at the envelope.
+        static void SupportDensity(ModelDoc2 m, string name)
+        {
+            bool sup = name.Contains("_support_"), env = name.StartsWith("env_");
+            if (!sup && !env) return;
+            string csv = P("cad", "generate", sup ? "supports_mass.csv" : "envelopes_mass.csv");
+            var row = File.Exists(csv) ? Csv(csv).FirstOrDefault(r => r.Length >= 6 && r[0] == name) : null;
+            if (row == null) { rep.Note(false, name + ": no row in " + csv + " (run BuildBodies first)"); return; }
+            double vol = Val(row[sup ? 1 : 3]) * 1e-9, mass = Val(row[sup ? 5 : 2]);   // m3, kg
+            double rho = mass / vol;                                       // kg/m3
+            bool set = m.Extension.SetUserPreferenceDouble((int)swUserPreferenceDoubleValue_e.swMaterialPropertyDensity,
+                                                           (int)swUserPreferenceOption_e.swDetailingNoOptionSpecified, rho);
+            double got = Mass(m);
+            rep.Note(set && Math.Abs(got - mass) <= 0.01 * mass,
+                     name + ": density " + F(rho, "0.0") + " kg/m3 (" + (sup ? "CFRP 1.5 mm skin + PMI foam core, equivalent" : "packaging envelope: budget line " + row[1] + " / volume") +
+                     "), SolidWorks mass " + F(got, "0.000") + " kg vs " + F(mass, "0.000") + " kg in " + Path.GetFileName(csv) + " (within 1 %)");
         }
 
         static Component2 AddAt(string path, MathTransform xf)
@@ -193,7 +220,12 @@ namespace SwHarness
             int ae = 0;
             App.ActivateDoc3(am.GetTitle(), false, (int)swRebuildOnActivation_e.swDontRebuildActiveDoc, ref ae);
             if (m == null) return null;
+            Log("  adding " + Path.GetFileName(path));
             var c = asm.AddComponent5(path, (int)swAddComponentConfigOptions_e.swAddComponentConfigOptions_CurrentSelectedConfig, "", false, "", 0, 0, 0);
+            // the part's own window is not needed once it is a component (the assembly keeps the model loaded);
+            // with every part window left open SolidWorks crashed twice in OpenDoc6 here (RPC failed, 2026-11-28, 56 components)
+            if (!string.Equals(m.GetPathName(), am.GetPathName(), StringComparison.OrdinalIgnoreCase)) App.CloseDoc(m.GetTitle());
+            App.ActivateDoc3(am.GetTitle(), false, (int)swRebuildOnActivation_e.swDontRebuildActiveDoc, ref ae);
             if (c == null) return null;
             if (xf != null) c.Transform2 = xf;
             return c;

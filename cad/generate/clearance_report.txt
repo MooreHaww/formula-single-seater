@@ -15,8 +15,21 @@ PASS  floor_diffuser vs frame: closest joint MH_L_R 10.7 mm (rule >= 10)
 PASS  nose vs frame: closest FB_L_cross 10.0 mm (rule >= 10)
 PASS  sidepod_R vs frame: closest MH_M-SP2_U_R 10.5 mm (rule >= 10)
 PASS  sidepod_L vs frame: closest MH_M-SP2_U_L 10.5 mm (rule >= 10)
+PASS  rw_support_R on its mount tube RT2_cross: gap 0.00 mm, overlap 0.0 mm3 (rule: touching, no overlap)
+PASS  rw_support_R vs frame: no other tube within 10 mm
+PASS  rw_support_L on its mount tube RT2_cross: gap 0.00 mm, overlap 0.0 mm3 (rule: touching, no overlap)
+PASS  rw_support_L vs frame: no other tube within 10 mm
+PASS  fw_support_R vs frame: no tube within 10 mm
+PASS  fw_support_L vs frame: no tube within 10 mm
 PASS  fw_endplate_R vs tyre_front: closest 51.9 mm at R steer -28 deg (rule >= 25)
 PASS  fw_endplate_L vs tyre_front: closest 51.9 mm at L steer +28 deg (rule >= 25)
 PASS  floor_diffuser vs tyre_rear: closest 30.0 mm at R static (rule >= 25)
 PASS  sidepod_R vs tyre_rear: closest 34.9 mm at R bump +30 (rule >= 25)
 PASS  sidepod_L vs tyre_rear: closest 34.9 mm at L bump +30 (rule >= 25)
+PASS  rw_support_R touches rw_main: gap 0.00 mm, overlap 0.0 mm3 (rule: touching, no overlap)
+PASS  rw_support_L touches rw_main: gap 0.00 mm, overlap 0.0 mm3 (rule: touching, no overlap)
+PASS  fw_support_R touches fw_main: gap 0.00 mm, overlap 0.0 mm3 (rule: touching, no overlap)
+PASS  fw_support_R touches nose: gap 0.00 mm, overlap 0.0 mm3 (rule: touching, no overlap)
+PASS  fw_support_L touches fw_main: gap 0.00 mm, overlap 0.0 mm3 (rule: touching, no overlap)
+PASS  fw_support_L touches nose: gap 0.00 mm, overlap 0.0 mm3 (rule: touching, no overlap)
+INFO  packaging: 22 clash(es) for 28 envelopes, listed in packaging_report.txt (findings, not rule failures)

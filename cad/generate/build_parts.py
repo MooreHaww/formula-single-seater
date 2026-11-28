@@ -372,6 +372,24 @@ def build_floor(p):
     return part
 
 
+def nose_sections(p):
+    """The nose's outer sections (x, width, height, corner R, bottom z) and the X where it
+    ends (see build_nose). Also used by the front wing supports, which stop on its skin."""
+    x_end = p["front_hoop_x"] - 12.7 - TUBE_CLEAR
+    secs = [  # x, width, height, corner R, bottom z
+        (-p["nose_overhang"], 160, 80, 30, 200),
+        (-450, 320, 180, 60, 160),
+    ]
+    pts = frame_samples()
+    st = [-325.0, -230.0, -160.0, -80.0, 0.0, 80.0, 160.0, 280.0, 400.0, 520.0, x_end]
+    for i, x in enumerate(st):
+        lo = st[max(i - 1, 0)] if i > 0 else -340.0
+        hi = st[min(i + 1, len(st) - 1)]
+        w, h, R, zb = section_from_frame(pts, lo, hi, 90.0)
+        secs.append((x, w, h, R, zb))
+    return secs, x_end
+
+
 def build_nose(p):
     """Ruled loft through the five playbook sections with a 2 mm skin made
     by subtracting an inner loft that pokes through the front-hoop face
@@ -385,18 +403,7 @@ def build_nose(p):
     # the front suspension pickups, FBT and the upper frame line). The nose ends
     # TUBE_CLEAR + tube radius ahead of the front hoop plane, where the hoop's sideways
     # tubes leave the frame.
-    x_end = p["front_hoop_x"] - 12.7 - TUBE_CLEAR
-    secs = [  # x, width, height, corner R, bottom z
-        (-p["nose_overhang"], 160, 80, 30, 200),
-        (-450, 320, 180, 60, 160),
-    ]
-    pts = frame_samples()
-    st = [-325.0, -230.0, -160.0, -80.0, 0.0, 80.0, 160.0, 280.0, 400.0, 520.0, x_end]
-    for i, x in enumerate(st):
-        lo = st[max(i - 1, 0)] if i > 0 else -340.0
-        hi = st[min(i + 1, len(st) - 1)]
-        w, h, R, zb = section_from_frame(pts, lo, hi, 90.0)
-        secs.append((x, w, h, R, zb))
+    secs, x_end = nose_sections(p)
     outer = loft([section_rounded(*s) for s in secs], ruled=True)
     inner_secs = [(x, w - 2 * t, h - 2 * t, max(r - t, 2.0), zb + t) for (x, w, h, r, zb) in secs]
     inner_secs[-1] = (inner_secs[-1][0] + 5.0,) + inner_secs[-1][1:]     # 5 mm past the last section: open there
@@ -529,6 +536,121 @@ def build_sidepod(p, side: int):
 
 
 # ---------------------------------------------------------------------------
+# wing supports (2026-11-28): the CFD winners, rear F and front J (variant CPFF of
+# cad/generate/cfd_variants.py; media/cfd/supports/wing_supports_results.md). The section
+# is the CFD's own (cfd_variants.rws_section "round": lens, 5 mm round front edge, rear
+# edge cut square 3 mm, 16 mm thick at mid-chord), at the CFD's X, Y and chord.
+# Where the CFD support runs INTO a body (wing element, nose, hull) it is cut here at that
+# body's surface, so the SolidWorks parts touch instead of overlapping:
+#   rear: top on the main element's underside (CFD: up to its middle line, fused);
+#         bottom saddled on the frame's rear top cross tube RT2_cross (node RT2, the
+#         "rear top / wing mount" node). The CFD support starts at Z 300 inside its
+#         idealised motor-cover hull, which the parts do not have; at Z 300 it would run
+#         through RS2_U_cross, so the CAD support stops on RT2_cross at Z 470 instead.
+#   front: bottom on the main element's upper surface, top on the nose's outer skin
+#         (CFD: to Z 230 inside the solid CFD nose); the front 22 mm ahead of the nose tip
+#         keeps the CFD's flat top at Z 230.
+# Material: CFRP skin SUPPORT_SKIN thick (quasi-isotropic carbon/epoxy, RHO_CFRP) over a
+# closed-cell PMI foam core (Rohacell 51 class, RHO_CORE). Not structurally designed:
+# no load, stiffness or flutter check, no mount hardware (bolts, inserts, clamps).
+SUPPORT_SKIN = 1.5      # mm
+RHO_CFRP = 1600e-9      # kg/mm3
+RHO_CORE = 52e-9        # kg/mm3
+SUPPORT_VARIANT = "CPFF"  # the CFD variant with both supports (J front, F rear)
+
+
+def frame_node(name: str):
+    import csv
+    with open(ROOT / "cad" / "frame" / "frame_nodes.csv", newline="") as f:
+        for r in csv.DictReader(f):
+            if r["node"] == name:
+                return float(r["x_mm"]), float(r["y_mm"]), float(r["z_mm"])
+    raise KeyError(name)
+
+
+def support_mass(solid):
+    """Sandwich mass and its centre: skin = wetted area x SUPPORT_SKIN at RHO_CFRP (centre
+    of the skin at the area centroid), core = the rest of the volume at RHO_CORE (at the
+    volume centroid). Returns (mass kg, (x, y, z) mm, skin kg, core kg)."""
+    faces = solid.faces()
+    area = sum(f.area for f in faces)
+    ca = [sum(f.area * tuple(f.center())[k] for f in faces) / area for k in range(3)]
+    cv_ = tuple(solid.center())
+    m_skin = area * SUPPORT_SKIN * RHO_CFRP
+    m_core = max(solid.volume - area * SUPPORT_SKIN, 0.0) * RHO_CORE
+    m = m_skin + m_core
+    cg = tuple((m_skin * ca[k] + m_core * cv_[k]) / m for k in range(3))
+    return m, cg, m_skin, m_core
+
+
+def _one(shape, what):
+    s = shape.solids()
+    if len(s) != 1:
+        raise RuntimeError(f"{what}: expected one solid, got {len(s)} (volumes {[round(q.volume) for q in s]})")
+    return s[0]
+
+
+def build_rw_support(p, side: int):
+    """Rear-wing support F, right (side = +1) or left (-1). See the block comment above."""
+    import cfd_variants as cv
+    q = cv.variant_params(p, SUPPORT_VARIANT)
+    kind_ = cv.VARIANT_DEFS[SUPPORT_VARIANT]["rw_support"]
+    _, geo_cfd = cv.wing_stack(q, "rw", "C")
+    # the CFD's X range (main-element LE + 60 to X 1895 at most): the CFD rear wing sits 19 mm
+    # further back than this one (its flap trailing edges are cut at 0.97 c), so the support
+    # keeps the CFD's absolute X, which still lies under this main element
+    xa = geo_cfd["rw_main"]["le"][0] + 60.0
+    xb = min(xa + p["rw_pylon_chord"], 1895.0)
+    yc, t = p["rw_pylon_y"], p["rw_pylon_thickness"]
+    solids, geo = build_wing(p, "rw")
+    m = geo["rw_main"]
+    pts = cv.airfoil_points("rw_main", p["rw_main_chord"], p["rw_main_aoa_C"], *m["le"])
+    za, zb_ = cv.mid_z_at(pts, xa), cv.mid_z_at(pts, xb)
+    rt = frame_node("RT2_R")
+    z_bot = rt[2]                                                     # tube centre line: the support saddles its upper half
+    sec = extrude(cv.rws_section(kind_, xa, xb, yc, t, cv.RWS_EDGE_T), amount=2000.0, dir=(0, 0, 1))
+    slope = (zb_ - za) / (xb - xa)
+    xa_, xb_ = xa - 10.0, xb + 10.0
+    v = [Vector(x, 0.0, z) for x, z in [(xa_, z_bot), (xb_, z_bot), (xb_, zb_ + slope * 10.0), (xa_, za - slope * 10.0)]]
+    side_face = make_face(Wire([Line(v[i], v[(i + 1) % 4]) for i in range(4)]))
+    outline = Pos(0, yc - 40.0, 0) * extrude(side_face, amount=80.0, dir=(0, 1, 0))
+    sup = _one(sec & outline, "rear support")
+    tube = Solid.make_cylinder(12.7, 2 * abs(rt[1]) + 40.0, Plane(origin=(rt[0], -abs(rt[1]) - 20.0, rt[2]), z_dir=(0, 1, 0)))
+    sup = _one(sup - solids["rw_main"] - tube, "rear support cut by the main element and RT2_cross")
+    if side < 0:
+        sup = sup.mirror(Plane.XZ)
+    info = {"x": (xa, xb), "y": side * yc, "z_bot": z_bot, "z_top": (za, zb_), "kind": kind_}
+    return sup, info
+
+
+def build_fw_support(p, side: int):
+    """Front-wing support J, right (side = +1) or left (-1). See the block comment above."""
+    import cfd_variants as cv
+    kind_ = cv.VARIANT_DEFS[SUPPORT_VARIANT]["fw_support"]
+    solids, geo = build_wing(p, "fw")
+    m = geo["fw_main"]
+    c = p["fw_main_chord"]
+    xa, xb = m["le"][0] + 0.72 * c, m["le"][0] + 0.93 * c                # as cfd_variants.build_front_wing
+    yc, t = (cv.FWP_Y[0] + cv.FWP_Y[1]) / 2, cv.FWP_Y[1] - cv.FWP_Y[0]
+    pts = cv.airfoil_points("fw_main", c, p["fw_main_aoa_C"], *m["le"])
+    za, zb_ = cv.mid_z_at(pts, xa), cv.mid_z_at(pts, xb)
+    sec = extrude(cv.rws_section(kind_, xa, xb, yc, t, cv.RWS_EDGE_T), amount=2000.0, dir=(0, 0, 1))
+    slope = (zb_ - za) / (xb - xa)
+    xa_, xb_ = xa - 10.0, xb + 10.0
+    v = [Vector(x, 0.0, z) for x, z in [(xa_, za - slope * 10.0), (xb_, zb_ + slope * 10.0), (xb_, cv.FWP_Z_TOP), (xa_, cv.FWP_Z_TOP)]]
+    side_face = make_face(Wire([Line(v[i], v[(i + 1) % 4]) for i in range(4)]))
+    outline = Pos(0, yc - 40.0, 0) * extrude(side_face, amount=80.0, dir=(0, 1, 0))
+    sup = _one(sec & outline, "front support")
+    secs, _ = nose_sections(p)
+    nose_outer = loft([section_rounded(*s) for s in secs], ruled=True)
+    sup = _one(sup - solids["fw_main"] - nose_outer, "front support cut by the main element and the nose")
+    if side < 0:
+        sup = sup.mirror(Plane.XZ)
+    info = {"x": (xa, xb), "y": side * yc, "z_bot": (za, zb_), "z_top": cv.FWP_Z_TOP, "kind": kind_}
+    return sup, info
+
+
+# ---------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(ROOT / "cad" / "step"))
@@ -580,6 +702,37 @@ def main() -> int:
             s, note, clash = build_sidepod(p, side)
             emit(f"sidepod_{tag}", s, f"{note}; structure box overlap {clash:.0f} mm3 (0 = clears y {side * 540:+.0f}, z 320, X 700..1220)")
         attempt(f"sidepod_{tag}", pod)
+
+    # wing supports: STEP bodies like the rest (BuildAssembly imports and mates them), plus
+    # their sandwich mass and centre in cad/generate/supports_mass.csv (the budget lines
+    # m_fw_supports / m_rw_supports in params/car_params.txt come from it)
+    mass_rows = []
+    for wing, fn in (("rw", build_rw_support), ("fw", build_fw_support)):
+        for side, tag in ((1, "R"), (-1, "L")):
+            def sup(wing=wing, fn=fn, side=side, tag=tag):
+                s, info = fn(p, side)
+                mkg, cg, ms, mc = support_mass(s)
+                bb = s.bounding_box()
+                mass_rows.append((f"{wing}_support_{tag}", s.volume, sum(f.area for f in s.faces()), ms, mc, mkg, *cg))
+                export_step(s, str(out / f"{wing}_support_{tag}.step"))
+                built.append((f"{wing}_support_{tag}", bbox_str(s), mkg, info["kind"]))
+                print(f"  built   {wing + '_support_' + tag:14s} {bbox_str(s)}  {mkg:5.3f} kg (CFRP {SUPPORT_SKIN} mm skin + foam core)  "
+                      f"section {info['kind']}, X {info['x'][0]:.1f}..{info['x'][1]:.1f}, Y {info['y']:+.0f}, Z {bb.min.Z:.1f}..{bb.max.Z:.1f}")
+            attempt(f"{wing}_support_{tag}", sup)
+    if mass_rows:
+        lines = ["part,volume_mm3,area_mm2,skin_kg,core_kg,mass_kg,x_mm,y_mm,z_mm"]
+        lines += [f"{r[0]},{r[1]:.0f},{r[2]:.0f},{r[3]:.4f},{r[4]:.4f},{r[5]:.4f},{r[6]:.1f},{r[7]:.1f},{r[8]:.1f}" for r in mass_rows]
+        (ROOT / "cad" / "generate" / "supports_mass.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    # packaging envelopes (2026-11-28): space reservations with their budget mass, not designed
+    # parts; envelopes.py writes cad/step/env_*.step and cad/generate/envelopes_mass.csv
+    def envs():
+        import envelopes
+        rows = envelopes.write(p, out, ROOT / "cad" / "generate" / "envelopes_mass.csv")
+        for r in rows:
+            built.append((r[0], "", r[2], "envelope"))
+    if not only or "envelopes" in only:
+        attempt("envelopes", envs)
 
     print(f"\n{len(built)} parts built, {len(skipped)} skipped")
     for name, err in skipped:

@@ -4,11 +4,11 @@ Ring 5 lives here. Ansys Student 2026 R1 (Fluent), driven entirely from Python (
 
 | Path | What |
 |---|---|
-| `fluent_halfcar.py` | Mesh and solve one variant without clicks: `.venv/Scripts/python cfd/fluent_halfcar.py all C`. See `fluent_halfcar_setup.md`. `--set te_size=1.5` (off by default): local face size on the narrow flap trailing edges, the fix that meshed G (slot study in `fluent_halfcar_setup.md`). |
+| `fluent_halfcar.py` | Mesh and solve one variant without clicks: `.venv/Scripts/python cfd/fluent_halfcar.py all C`. Variant `FINAL` (the final car) uses CPFF's geometry files (`GEOMETRY_OF`), so its cases and results are named FINAL. See `fluent_halfcar_setup.md`. `--set te_size=1.5` (off by default): local face size on the narrow flap trailing edges, the fix that meshed G (slot study in `fluent_halfcar_setup.md`). |
 | `postprocess.py` | Forces and wake planes of every run to tables and plots; `--update-variants` puts the CFD numbers into `params/aero_variants.csv` (the lap sim's aero table). |
-| `visualise.py` | Pictures and films of A, B (= run B_AB), C (= run CP), D (= run D_AB) from the saved case and data files, no Fluent licence needed: `.venv/Scripts/python cfd/visualise.py all` (about 8 min once the export cache exists). Steps `export`, `stills`, `anims`, `compare`, `smoke`; `--selftest`. Writes `../media/cfd/vis/`. |
+| `visualise.py` | Pictures and films of A, B (= run B_AB), C (= run CP), D (= run D_AB) and FINAL (= run FINAL_bl1, the final car) from the saved case and data files, no Fluent licence needed: `.venv/Scripts/python cfd/visualise.py all` (about 8 min once the export cache exists). Steps `export`, `stills`, `anims`, `compare`, `smoke`; `--selftest`. Writes `../media/cfd/vis/`. Final car: `visualise.py stills FINAL`, `smoke FINAL`, `smoke C_FINAL` (C above FINAL; its GIF is the one in the README). |
 | `vis_common.py`, `vis_render.py`, `vis_smoke.py` | Used by `visualise.py`: streamline tracing and captions; stills, orbit / sweep / build-up films and the A-D comparison; the smoke tunnel films. |
-| `support_forces.py`, `support_flow.py`, `support_table.py` | Wing supports (rear 2026-11-26, front 2026-11-27; `--front`, zone `car_fws`, `support_table.py` for the comparison table). `support_forces.py`: force on the supports from a per-face export of a saved run, checked against Fluent's own zone reports (picks CP's pylon out of `car_rw`). `support_flow.py`: planes next to the support, `../media/cfd/supports/support_flow.png`. |
+| `support_forces.py`, `support_flow.py`, `support_table.py` | Wing supports (rear 2026-11-26, front 2026-11-27; `--front`, zone `car_fws`, `support_table.py` for the comparison table, `--out` for another file such as `results/final_table.csv`). `support_forces.py`: force on the supports from a per-face export of a saved run, checked against Fluent's own zone reports (picks CP's pylon out of `car_rw`). `support_flow.py`: planes next to the support, `../media/cfd/supports/support_flow.png`. |
 | `vis_supports.py`, `support_charts.py`, `support_summary.py` | Wing-support pictures (2026-11-28), no Fluent licence: `vis_supports.py all` (local 4 mm / 2 mm grids around the supports in `cases/vis/<run>/sup_*`, then side-by-side particle films of the rear supports CP_bl1/E/F/H and the front CP_bl1/J, `supports_compare.gif` for the README, and the CP_bl1 vs CPFF wake film); `support_charts.py` (support drag, totals with the 2.2 % band, lap time and balance); `support_summary.py` (one-page image). All write `../media/cfd/supports/`; `--selftest` on each. |
 | `explore.py` | Opens one result ready to explore: `.venv/Scripts/python cfd/explore.py C` (CFD-Post with car Cp, streamlines, wake planes at 1/2/3 L, symmetry speed) or `... C --fluent` (Fluent window with case and data read). `--test` checks it without a window. |
 | `cases/vis/<run>/` | Cache of `visualise.py export` (car surface, 12.5 mm and 30 mm resampled grids, about 260 MB per run) and the CFD-Post session files. Ignored by git; remade on demand. |
@@ -53,6 +53,15 @@ Ring 5 lives here. Ansys Student 2026 R1 (Fluent), driven entirely from Python (
 - `support_table.py` writes the comparison table (`results/support_table.csv`).
 - `support_flow.py --front` draws `../media/cfd/supports/support_flow_front.png`.
 - Results: the front-wing section of `../media/cfd/supports/wing_supports_results.md`.
+
+**Status 2026-11-28 (final car):**
+- FINAL = the final car: CP's bodywork and wings with the F rear and J front wing supports, exactly CPFF's geometry (`GEOMETRY_OF` in `fluent_halfcar.py`; no new STEP files). CFD only: the CAD has no supports.
+- 2 prism layers (as CP): 1,082,944 cells, over the 1,048,576 limit on the first try, so no further 2-layer tries. Run FINAL_bl1 has 1 layer: 989,695 cells, the same mesh as CPFF_bl1 (same cells, faces per zone and quality).
+- FINAL_bl1 reproduces CPFF_bl1 byte for byte (`forces.out` and the wake planes): Fluent is deterministic on the same mesh, so FINAL is CPFF's result under the final name, not a second sample.
+- ClA 4.133, CdA 1.684, L/D 2.454, front share 0.397: against CP_bl1 (same layers) ClA +3.9 % (beyond the 2.2 % noise), CdA +1.0 % (inside), front share -0.033. Against row CP (2 layers): ClA +6.2 %, CdA +1.4 %. Table in `../media/cfd/cfd_results.md` (section "Final car") and `results/final_table.csv`.
+- Row FINAL in `params/aero_variants.csv` (CFD only). CP stays the lap-sim default until the CAD mass is updated.
+- Pictures `../media/cfd/vis/FINAL_*.png`; films `smoke_FINAL` and `smoke_C_FINAL` (MP4 6.2 / 6.5 MB, git-ignored; `smoke_C_FINAL.gif` 3.7 MB is kept for the README).
+- Steady RANS ranking only, one run per variant.
 
 ## forces.csv columns
 

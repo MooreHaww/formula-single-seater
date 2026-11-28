@@ -386,6 +386,49 @@ def fmt_share(x: float) -> str:
     return "n/a" if math.isnan(x) else f"{x:.2f}"
 
 
+FINAL_TABLE = ROOT / "cfd" / "results" / "final_table.csv"     # cfd/support_table.py CP_bl1 CP CPFF_bl1 FINAL_bl1 --out ...
+
+
+def final_car_section() -> list[str]:
+    """The final car (2026-11-28) against CP_bl1 (same 1 prism layer, the reference) and CP (row CP, 2 layers),
+    from cfd/results/final_table.csv; nothing if that file is missing."""
+    if not FINAL_TABLE.exists():
+        return []
+    T = {r["run"]: r for r in csv.DictReader(FINAL_TABLE.open())}
+    if not {"CP_bl1", "CP", "FINAL_bl1"} <= set(T):
+        return []
+    f = lambda r, k: float(T[r][k])  # noqa: E731
+    pc = lambda a, b: 100.0 * (a / b - 1.0)  # noqa: E731
+    runs = [r for r in ("CP_bl1", "CP", "CPFF_bl1", "FINAL_bl1") if r in T]
+    L = ["## Final car (FINAL, 2026-11-28)", "",
+         "FINAL is the final car: CP's bodywork and wings with the F rear and J front wing supports, i.e. the geometry of "
+         "CPFF (CFD only; the CAD has no supports). **2 prism layers gave 1,082,944 cells, over the Student limit**, so it "
+         "ran with 1 layer as FINAL_bl1. The like-for-like reference is CP_bl1 (also 1 layer); row CP (2 layers) is shown "
+         "too. FINAL_bl1 reproduces CPFF_bl1 byte for byte (same mesh, deterministic solver), so it is the same result, not "
+         "a second sample. Noise: 2.2 % (CP vs CP_bl1, which also differ by the layer count) and 0.9 % (repeat CP_bl1r). "
+         "Support forces: zone (200-iteration mean) or face-export snapshot of the flat pylons; CP's front pylon was not "
+         "exported. Table: `cfd/results/final_table.csv` (`cfd/support_table.py`).", "",
+         "| | " + " | ".join(runs) + " |", "|---|" + "---|" * len(runs)]
+    def line(lab, fn):
+        L.append(f"| {lab} | " + " | ".join(fn(r) for r in runs) + " |")
+    num = lambda r, k, d: "-" if T[r][k] in ("", "nan") else f"{f(r, k):.{d}f}"  # noqa: E731
+    line("cells", lambda r: f"{int(T[r]['cells']):,}")
+    line("ClA (m2), vs CP_bl1 / vs CP", lambda r: f"{f(r, 'ClA'):.3f} ({pc(f(r, 'ClA'), f('CP_bl1', 'ClA')):+.1f} / {pc(f(r, 'ClA'), f('CP', 'ClA')):+.1f} %)")
+    line("CdA (m2), vs CP_bl1 / vs CP", lambda r: f"{f(r, 'CdA'):.3f} ({pc(f(r, 'CdA'), f('CP_bl1', 'CdA')):+.1f} / {pc(f(r, 'CdA'), f('CP', 'CdA')):+.1f} %)")
+    line("L/D, vs CP_bl1 / vs CP", lambda r: f"{f(r, 'L_over_D'):.3f} ({pc(f(r, 'L_over_D'), f('CP_bl1', 'L_over_D')):+.1f} / {pc(f(r, 'L_over_D'), f('CP', 'L_over_D')):+.1f} %)")
+    line("front axle share", lambda r: f"{f(r, 'aero_front'):.3f}")
+    line("front support drag, half car (N)", lambda r: num(r, "fws_drag_N_half", 2))
+    line("rear support drag, half car (N)", lambda r: num(r, "rws_drag_N_half", 2))
+    line("wake q-ratio 1 / 2 / 3 L", lambda r: " / ".join(f"{f(r, f'q_ratio_{n}L'):.3f}" for n in (1, 2, 3)))
+    L += ["", "Beyond the noise for FINAL: ClA (+3.9 % vs CP_bl1, +6.2 % vs CP), L/D and the rearward move of the front "
+          "share (-0.033; CP, CP_bl1 and CP_bl1r agree within 0.002), all from the F rear supports. CdA (+1.0 % / +1.4 %) "
+          "is inside it. The follower's q-ratio at 1 L is 0.012 higher than CP_bl1's and 0.023 higher than CP's (slightly "
+          "cleaner air behind FINAL, the wrong way for us, since dirty air is the goal); the only q-ratio noise "
+          "estimates are 0.011 (CP vs CP_bl1) and 0.003 (CP_bl1r), so this is at the edge of what one run resolves. "
+          "At 2 and 3 L every difference is under 0.01.", ""]
+    return L
+
+
 def write_md(runs, final, wakes, est, changed, boxes=(), yrows=(), comp=()):
     MEDIA.mkdir(parents=True, exist_ok=True)
     L = ["# CFD results (Ansys Fluent, half car)", "",
@@ -405,8 +448,9 @@ def write_md(runs, final, wakes, est, changed, boxes=(), yrows=(), comp=()):
          "follower most (q-ratio 0.64 / 0.65, autocross penalty +2.14 s each) and B_AB least (0.67, +1.69 s); at 2 "
          "and 3 lengths B_AB's wake persists slightly longer (0.89 / 0.95 against 0.92 / 0.98 for CP and D_AB). CP is "
          "the chosen car. D_AB's downforce lead over CP_bl1 (ClA +1.3 %) is smaller than the 2.2 % between CP's own "
-         "two runs (CP and CP_bl1), so D and CP cannot be told apart on downforce.", "",
-         "## All runs", "",
+         "two runs (CP and CP_bl1), so D and CP cannot be told apart on downforce.", ""]
+    L += final_car_section()
+    L += ["## All runs", "",
          "| run | cells | iter | ClA (m2) | CdA (m2) | L/D | front axle share | DF drift / band % | drag drift / band % | force-converged |",
          "|---|---|---|---|---|---|---|---|---|---|"]
     for r in sorted(runs, key=lambda r: r["run"]):

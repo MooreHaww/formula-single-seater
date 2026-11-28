@@ -59,6 +59,8 @@ media/cfd/vis/*.mp4
 media/cfd/vis/*.gif
 # the one CFD GIF embedded at the top of README.md stays in git
 !media/cfd/vis/compare_ABCD.gif
+# the final car against C (smoke side by side), embedded in README.md (2026-11-28)
+!media/cfd/vis/smoke_C_FINAL.gif
 # wing-support films (cfd/vis_supports.py): MP4s and GIFs re-made, one GIF kept for the README
 media/cfd/supports/*.mp4
 media/cfd/supports/*.gif

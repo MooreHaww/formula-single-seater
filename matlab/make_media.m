@@ -222,6 +222,14 @@ end
 fprintf(fid, '| **Car without driver** | **%.1f** | | | |\r\n| **With driver** | **%.1f** | %.0f | %.0f | |\r\n\r\n', mb.mass_car, mb.mass_total, mb.cg_x, mb.cg_z);
 fprintf(fid, 'CG %.0f mm behind the front axle (%.1f %% front), %.0f mm above the ground. %.0f %% of the mass is a GUESS, so the CG height is partly a guess too.\r\n', ...
     mb.cg_x, 100 * mb.wd_front, mb.cg_z, 100 * mb.guess_fraction);
+% wing lines and their supports (2026-11-28): the 6.0 and 7.0 kg guesses included the mounts, so the
+% modelled supports are taken off them; shown as the split, wing + supports = the old guess
+mi = @(n) mb.items.mass_kg(mb.items.item == n);
+if any(mb.items.item == "fw_supports") && any(mb.items.item == "rw_supports")
+    fprintf(fid, '\r\nWing lines: front_wing %.3f + fw_supports %.3f = %.3f kg; rear_wing %.3f + rw_supports %.3f = %.3f kg (the wing guesses included mounts and pylons; the supports are CALC from the CAD and are taken off them).\r\n', ...
+        mi("front_wing"), mi("fw_supports"), mi("front_wing") + mi("fw_supports"), mi("rear_wing"), mi("rw_supports"), mi("rear_wing") + mi("rw_supports"));
+end
+fprintf(fid, '\r\nThe CAD packaging envelopes (`cad/generate/envelopes.py`) take their masses from these lines and add none; `cad/generate/cad_cg_report.txt` compares the CG from the CAD geometry with this one.\r\n');
 fclose(fid);
 fprintf('make_media: %s\n', file);
 end

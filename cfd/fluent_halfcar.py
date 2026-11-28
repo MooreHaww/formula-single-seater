@@ -52,6 +52,14 @@ ROOT = Path(__file__).resolve().parents[1]
 # (used for throw-away diagnosis meshes so they stay out of cad/step/cfd and cfd/results)
 GEO = Path(os.environ.get("CFD_GEO_DIR") or ROOT / "cad" / "step" / "cfd")
 CASES = ROOT / "cfd" / "cases"
+# Variant names that use another variant's geometry files (faces_<V>.csv, fluid_<V>.step); the case and result
+# names keep the alias. FINAL (2026-11-28) is the final car: CP bodywork and wings, F rear and J front supports,
+# i.e. exactly CPFF's geometry (no copy of the STEP files in git).
+GEOMETRY_OF = {"FINAL": "CPFF"}
+
+
+def geo_variant(variant: str) -> str:
+    return GEOMETRY_OF.get(variant, variant)
 RESULTS = Path(os.environ.get("CFD_RESULTS_DIR") or ROOT / "cfd" / "results")
 ALLOW_OVER = False                      # --allow-over: write a mesh above the limit (only to test what the licence does)
 STUDENT_CELL_LIMIT = 1_048_576          # Ansys Student 2026 R1: Fluent refuses more cells (see cfd/fluent_halfcar_setup.md)
@@ -132,7 +140,7 @@ def launch(mode: str, cores: int, gui: bool, cwd: Path):
 # zone naming by bounding box
 # ---------------------------------------------------------------------------
 def read_faces(variant: str):
-    rows = list(csv.DictReader(open(GEO / f"faces_{variant}.csv")))
+    rows = list(csv.DictReader(open(GEO / f"faces_{geo_variant(variant)}.csv")))
     for r in rows:
         r["bbox_mm"] = [1000 * float(r[k]) for k in ("xmin_m", "xmax_m", "ymin_m", "ymax_m", "zmin_m", "zmax_m")]
     return rows
@@ -237,7 +245,7 @@ def run_mesh(variant: str, scale: float, tag: str, cores: int, gui: bool, keep_s
         wt = s.watertight(); mu = s.meshing_utilities
         # 1. import: one zone per CAD face, and keep that separation in the surface mesh
         ig = wt.import_geometry
-        ig.file_name.set_state(str(GEO / f"fluid_{variant}.step"))
+        ig.file_name.set_state(str(GEO / f"fluid_{geo_variant(variant)}.step"))
         ig.length_unit.set_state("mm")
         ig.cad_import_options.one_zone_per.set_state("face")
         ig.import_cad_preferences.separate_zone_by.set_state("face")
@@ -697,7 +705,7 @@ def main() -> int:
             sys.exit(f"--set {k}: not a SIZES entry ({[q for q in SIZES if not isinstance(SIZES[q], dict)]})")
         SIZES[k] = type(SIZES[k])(v)
     tag = f"_{a.tag}" if a.tag else ""
-    if not (GEO / f"faces_{a.variant}.csv").is_file():
+    if not (GEO / f"faces_{geo_variant(a.variant)}.csv").is_file():
         sys.exit(f"no cad/step/cfd/faces_{a.variant}.csv: build the geometry first (cad/generate/cfd_variants.py --only {a.variant})")
     if a.action in ("mesh", "all"):
         run_mesh(a.variant, a.scale, tag, a.cores, a.gui, wing_scale=a.wing_scale, boi=a.boi, win_size=a.win_size)

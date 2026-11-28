@@ -3,6 +3,7 @@
 
     .venv/Scripts/python cfd/support_table.py CP_bl1 CP_bl1r F_bl1 J_bl1 CPFF_bl1   # the first run is the reference
     .venv/Scripts/python cfd/support_table.py --selftest
+    .venv/Scripts/python cfd/support_table.py CP_bl1 FINAL_bl1 --out cfd/results/final_table.csv   # another output file
 
 Per run, from cfd/results/runs/<run>/ (forces.out: 200-iteration means, as cfd/postprocess.py)
 and cfd/results/wake_cfd.csv (run cfd/postprocess.py first):
@@ -75,6 +76,9 @@ def row(run: str, wb: float) -> dict:
 def main(argv) -> int:
     if "--selftest" in argv:
         return selftest()
+    out = OUT
+    if "--out" in argv:                         # another table file (the FINAL car, 2026-11-28), relative to the repo root
+        i = argv.index("--out"); out = ROOT / argv[i + 1]; argv = argv[:i] + argv[i + 2:]
     geo = json.loads((ROOT / "cad" / "step" / "cfd" / "cfd_geometry.json").read_text())
     rows = [row(r, geo["wheelbase_m"]) for r in argv]
     ref = rows[0]
@@ -84,7 +88,7 @@ def main(argv) -> int:
         r["d_aero_front"] = r["aero_front"] - ref["aero_front"]
         r["beyond_spread"] = ",".join(k for k in ("ClA", "CdA") if abs(r[f"d_{k}_pct"]) > SPREAD) or "none"
     keys = list(rows[0])
-    with OUT.open("w", newline="") as f:
+    with out.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=keys); w.writeheader()
         w.writerows([{k: (f"{v:.5g}" if isinstance(v, float) else v) for k, v in r.items()} for r in rows])
     print("| | " + " | ".join(r["run"] for r in rows) + " |\n|---|" + "---|" * len(rows))
@@ -101,7 +105,7 @@ def main(argv) -> int:
          lambda r: f"{r['fw_down_with_support_N']:.1f} / {r['fw_down_wing_only_N']:.1f} ({r['d_fw_down_with_support_N_pct']:+.1f} %)")
     line("q-ratio 1 / 2 / 3 L", lambda r: " / ".join(f"{r.get(f'q_ratio_{n}L', float('nan')):.2f}" for n in (1, 2, 3)))
     line(f"totals beyond {SPREAD} %", lambda r: r["beyond_spread"])
-    print("wrote", OUT)
+    print("wrote", out)
     return 0
 
 

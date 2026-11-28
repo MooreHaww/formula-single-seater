@@ -9,25 +9,25 @@ m_battery              45.000       955      200       955      200       +0    
 m_motor                12.300      1340      270      1340      270       +0      +0  envelopes motor
 m_inverter_hv          10.000      1380      500      1380      500       +0      +0  envelopes inverter
 m_lv_electronics        3.000       500      450       500      450       +0      +0  envelopes lv_electronics
-m_chain_drive          10.300      1620      240      1537      225      -83     -15  envelopes diff, chain, halfshaft_R, halfshaft_L
-m_corners_front        22.200         0      240         6      224       +6     -16  tyre, rim STEP; brake envelopes; hub, upright, bearings at the wheel centre
-m_corners_rear         22.200      1550      240      1556      224       +6     -16  tyre, rim STEP; brake envelopes; hub, upright, bearings at the wheel centre
+m_chain_drive          10.300      1537      225      1537      225       -0      +0  envelopes diff, chain, halfshaft_R, halfshaft_L
+m_corners_front        22.200         6      224         6      224       +0      -0  tyre, rim STEP; brake envelopes; hub, upright, bearings at the wheel centre
+m_corners_rear         22.200      1556      224      1556      224       +0      -0  tyre, rim STEP; brake envelopes; hub, upright, bearings at the wheel centre
 m_susp_links_front      4.200         0      330        -6      326       -6      -4  wishbones, pushrods, tie rods from the hardpoints; rocker and damper envelopes
 m_susp_links_rear       4.200      1550      350      1568      342      +18      -8  wishbones, pushrods, tie rods from the hardpoints; rocker and damper envelopes
-m_front_wing            5.913      -300      150      -706      128     -406     -22  STEP elements and endplates, by volume
-m_rear_wing             5.357      1850     1250      1861     1208      +11     -42  STEP elements and endplates, by volume
-m_floor_diffuser        6.000      1200       60      1250       70      +50     +10  STEP
-m_bodywork              8.000       700      350       308      290     -392     -60  STEP nose and sidepods, by volume (cockpit surround and fasteners not modelled)
-m_cockpit               9.500       650      300       556      293      -94      -7  envelopes seat and steering (4.0 kg); harness, pedal box, firewall, headrest (5.5 kg) at the budget position
+m_front_wing            5.913      -637      173      -637      173       +0      -0  STEP elements and endplates, by area
+m_rear_wing             5.357      1906     1263      1906     1263       +0      -0  STEP elements and endplates, by area
+m_floor_diffuser        6.000      1269       71      1269       71       +0      -0  STEP, by area
+m_bodywork              8.000       326      292       326      292       -0      -0  STEP nose and sidepods, by area (cockpit surround and fasteners not modelled)
+m_cockpit               9.500       583      327       583      327       -0      -0  envelopes seat and steering (4.0 kg); pedal box, harness, firewall, headrest (5.5 kg) at the frame_layout positions
 m_brake_hydraulics      2.000       300      250       300      250       +0      +0  not in the CAD: budget position
 m_cooling               4.000      1000      350      1000      350       +0      +0  not in the CAD: budget position
 m_fasteners_misc        4.000       800      350       800      350       +0      +0  not in the CAD: budget position
 m_fw_supports           0.087      -635      171      -635      171       +0      +0  CAD already (CALC line)
 m_rw_supports           1.643      1781      804      1781      804       +0      +0  CAD already (CALC line)
-mass_driver            70.000       840      330       890      389      +50     +59  envelopes driver_torso, driver_legs, driver_head
+mass_driver            70.000       890      389       890      389       -0      -0  envelopes driver_torso, driver_legs, driver_head
 
-car without driver: 232.56 kg   budget CG x 920.0, z 302.6   CAD CG x 891.7, z 295.0   (CAD - budget: x -28.3, z -7.6 mm)
-car with driver:    302.56 kg   budget CG x 901.5, z 308.9   CAD CG x 891.3, z 316.6   (CAD - budget: x -10.2, z +7.7 mm)
-front axle share (with driver): budget 41.84 %, CAD 42.50 %
-budget CG from car_params.txt (cg_x_from_front_axle, cg_height): x 901.5, z 308.9
+car without driver: 232.56 kg   budget CG x 896.4, z 299.1   CAD CG x 896.7, z 298.8   (CAD - budget: x +0.3, z -0.3 mm)
+car with driver:    302.56 kg   budget CG x 894.9, z 319.9   CAD CG x 895.1, z 319.6   (CAD - budget: x +0.2, z -0.3 mm)
+front axle share (with driver): budget 42.26 %, CAD 42.25 %
+budget CG from car_params.txt (cg_x_from_front_axle, cg_height): x 894.9, z 319.9
 

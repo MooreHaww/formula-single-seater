@@ -9,13 +9,19 @@ the CAD), and it always exits 0 unless it cannot run.
 Every budget line keeps its mass (params/car_params.txt). Only its position changes, to the
 centre of the CAD bodies that stand for it:
   - packaging envelopes (envelopes_mass.csv): the envelope centroids with their masses;
-  - STEP bodies (wings, floor, nose, sidepods, tyres, rims): volume centroids, the line's mass
-    shared by volume where one line covers several bodies;
+  - STEP bodies: tyres and rims by volume centroid; wings, floor, nose and sidepods by surface
+    (area) centroid, the line's mass shared by area where one line covers several bodies:
+    they are carbon skins or sandwich panels whose mass goes with their area (the budget
+    masses are per m2), and a volume centroid over-weights the thick solid main elements
+    (2026-11-28 reconciliation: by volume the front wing sat 70 mm further forward);
+  - cockpit: seat and steering envelopes; pedal box, harness, firewall and headrest at the
+    layout positions of COCKPIT_REST (frame_layout.m driver pose, no CAD bodies);
   - suspension members: the BuildSuspension members rebuilt from the hardpoints
     (check_clearances.suspension_members), with the per-corner masses of the budget comment;
   - frame and wing supports: the line's own position is already from the CAD (CALC);
-  - what has no CAD body (brackets, harness, pedal box, cooling, hydraulics, fasteners, hub,
-    upright and bearings) stays at the budget position, and the report says so.
+  - what has no CAD body and no layout position (brackets, cooling, hydraulics, fasteners)
+    stays at the budget position, and the report says so; hub, upright and bearings sit at
+    the wheel centre.
 Only X (from the front axle) and Z (from the ground) are compared; the budget has no Y.
 """
 from __future__ import annotations
@@ -35,6 +41,19 @@ LINES = ["m_frame", "m_brackets_welds", "m_battery", "m_motor", "m_inverter_hv",
 CORNER_SPLIT = {"tyre": 4.1, "rim": 2.5, "hub": 1.0, "upright": 1.2, "brake": 1.8, "bearings": 0.5}
 # per-corner split written in the m_susp_links_* comment (kg); rocker and damper are envelopes
 LINK_SPLIT = {"wishbones": 0.8, "pushrod": 0.2, "rocker": 0.3, "damper": 0.6, "tie": 0.2}
+# m_cockpit parts with no CAD body (kg, from the m_cockpit comment), placed in the frame_layout.m
+# driver pose: all GUESS positions, written in the x_cockpit comment as well
+COCKPIT_REST_KG = {"pedal box": 2.5, "harness": 1.5, "firewall and headrest": 1.5}
+
+
+def cockpit_rest(p):
+    """(mass, x, z, name) of the m_cockpit parts that have no CAD body."""
+    from envelopes import driver_geometry
+    g = driver_geometry(p)
+    hip, sh = g["hip"], g["shoulder"]
+    return [(COCKPIT_REST_KG["pedal box"], 150.0, 250.0, "pedal box ahead of the legs box (x 200), pedals and master cylinders"),
+            (COCKPIT_REST_KG["harness"], (hip[0] + sh[0]) / 2, (hip[1] + sh[1]) / 2, "harness at the hip-shoulder midpoint"),
+            (COCKPIT_REST_KG["firewall and headrest"], p["main_hoop_x"] + 20.0, 500.0, "firewall and headrest in the main hoop plane behind the seat back")]
 
 
 def pos_of(p, line):
@@ -66,10 +85,21 @@ def cad_positions(p, step_dir: Path, gen_dir: Path):
             cen[name] = (s.volume, c.X, c.Z)
         return cen[name]
 
-    def by_volume(mass, names):
-        vols = [step_c(n) for n in names]
-        V = sum(v[0] for v in vols)
-        return [(mass * v[0] / V, v[1], v[2]) for v in vols]
+    def step_a(name):
+        """surface area and area centroid (X, Z) of a STEP body."""
+        key = name + "#area"
+        if key not in cen:
+            from build123d import CenterOf
+            s = import_step(str(step_dir / f"{name}.step"))
+            fs = [(fc.area, fc.center(CenterOf.MASS)) for fc in s.faces()]
+            A = sum(a for a, _ in fs)
+            cen[key] = (A, sum(a * c.X for a, c in fs) / A, sum(a * c.Z for a, c in fs) / A)
+        return cen[key]
+
+    def by_area(mass, names):
+        ars = [step_a(n) for n in names]
+        A = sum(a[0] for a in ars)
+        return [(mass * a[0] / A, a[1], a[2]) for a in ars]
 
     out = {}
     for line in LINES:
@@ -102,17 +132,18 @@ def cad_positions(p, step_dir: Path, gen_dir: Path):
             src = "wishbones, pushrods, tie rods from the hardpoints; rocker and damper envelopes"
         elif line in ("m_front_wing", "m_rear_wing"):
             pre = "fw" if line == "m_front_wing" else "rw"
-            items = by_volume(m, [f"{pre}_main", f"{pre}_flap1", f"{pre}_flap2", f"{pre}_endplate_R", f"{pre}_endplate_L"])
-            src = "STEP elements and endplates, by volume"
+            items = by_area(m, [f"{pre}_main", f"{pre}_flap1", f"{pre}_flap2", f"{pre}_endplate_R", f"{pre}_endplate_L"])
+            src = "STEP elements and endplates, by area"
         elif line == "m_floor_diffuser":
-            items, src = by_volume(m, ["floor_diffuser"]), "STEP"
+            items, src = by_area(m, ["floor_diffuser"]), "STEP, by area"
         elif line == "m_bodywork":
-            items, src = by_volume(m, ["nose", "sidepod_R", "sidepod_L"]), "STEP nose and sidepods, by volume (cockpit surround and fasteners not modelled)"
+            items, src = by_area(m, ["nose", "sidepod_R", "sidepod_L"]), "STEP nose and sidepods, by area (cockpit surround and fasteners not modelled)"
         elif line == "m_cockpit":
             items = [(e[0], e[1], e[2]) for e in env[line]]
-            rest = m - sum(i[0] for i in items)
-            items.append((rest, xb, zb))
-            src = "envelopes seat and steering (%.1f kg); harness, pedal box, firewall, headrest (%.1f kg) at the budget position" % (m - rest, rest)
+            rest = cockpit_rest(p)
+            items += [(r[0], r[1], r[2]) for r in rest]
+            src = "envelopes seat and steering (%.1f kg); pedal box, harness, firewall, headrest (%.1f kg) at the frame_layout positions" % (
+                sum(e[0] for e in env[line]), sum(r[0] for r in rest))
         else:
             items, src = [(m, xb, zb)], "not in the CAD: budget position"
         mm = sum(i[0] for i in items)
@@ -165,8 +196,22 @@ def selftest():
     ok = (m, round(x, 9), round(z, 9)) == (4, 75.0, 30.0)
     # the comment splits add up to the lines: corners 11.1 per corner, links 2.1 per corner
     ok = ok and abs(sum(CORNER_SPLIT.values()) - 11.1) < 1e-9 and abs(sum(LINK_SPLIT.values()) - 2.1) < 1e-9
-    print("cad_cg self-test: %s (4 kg at (%.1f, %.1f), hand (75, 30); corner %.1f kg, link %.1f kg per corner)"
-          % ("PASS" if ok else "FAIL", x, z, sum(CORNER_SPLIT.values()), sum(LINK_SPLIT.values())))
+    # cockpit parts with no CAD body: 2.5 + 1.5 + 1.5 = 5.5 kg (9.5 minus seat 1.0 and steering 3.0); with hip (850, 180),
+    # seat back 40 deg and main hoop 1250 the harness sits at (850 + 280 sin 40, 180 + 280 cos 40) = (1030.0, 394.5)
+    # and the firewall at (1270, 500)
+    rest = cockpit_rest({"seat_back_angle": 40.0, "driver_hip_x": 850.0, "driver_hip_z": 180.0, "main_hoop_x": 1250.0})
+    ok = ok and abs(sum(r[0] for r in rest) - 5.5) < 1e-9 and (round(rest[1][1], 1), round(rest[1][2], 1)) == (1030.0, 394.5)         and (rest[2][1], rest[2][2]) == (1270.0, 500.0)
+    # area centroid by hand: an axis-aligned box 100 x 10 x 10 at x 0..100 has faces of area 1000 (4, centres at x 50),
+    # 100 (end at x 0) and 100 (end at x 100): area centroid x = 50, the same as its volume centroid
+    from build123d import Box, CenterOf, Pos
+    b = Pos(50, 0, 0) * Box(100, 10, 10)
+    fs = [(fc.area, fc.center(CenterOf.MASS).X) for fc in b.faces()]
+    ax = sum(a * c for a, c in fs) / sum(a for a, _ in fs)
+    ok = ok and abs(sum(a for a, _ in fs) - 4200) < 1e-6 and abs(ax - 50) < 1e-9
+    print("cad_cg self-test: %s (4 kg at (%.1f, %.1f), hand (75, 30); corner %.1f kg, link %.1f kg per corner; cockpit rest %.1f kg, "
+          "harness (%.1f, %.1f), hand (1030.0, 394.5); box area %.0f mm2, hand 4200, area centroid x %.1f, hand 50)"
+          % ("PASS" if ok else "FAIL", x, z, sum(CORNER_SPLIT.values()), sum(LINK_SPLIT.values()), sum(r[0] for r in rest),
+             rest[1][1], rest[1][2], sum(a for a, _ in fs), ax))
     return 0 if ok else 1
 
 

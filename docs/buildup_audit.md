@@ -171,6 +171,8 @@ Largest differences between a budget line's position and its CAD bodies:
 
 Which one is right is not settled here. The CAD positions are better for the bodies that exist, but the envelope masses are spread uniformly, and the driver's mass is certainly not uniform.
 
+**Reconciled later on 2026-11-28.** The budget positions were corrected from the CAD (reasons in each line's comment in `params/car_params.txt`, detail in `docs/log.md`). `cad_cg.py` now places the wings, floor, nose and sidepods at their surface (area) centroids, because they are skins whose mass goes with area; the cockpit parts with no CAD body (pedal box, harness, firewall and headrest) are placed at layout positions. After that the budget and the CAD agree: with driver 894.9 / 319.9 against 895.1 / 319.6 mm; without driver 896.4 / 299.1 against 896.7 / 298.8 mm. The table above is the state before the reconciliation.
+
 **Not checked:**
 - the envelopes' own masses (they are the budget's, several of them GUESS);
 - moving envelopes (brakes, halfshafts, rockers) over suspension travel, except as listed in #23 to #30;

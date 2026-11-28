@@ -20,9 +20,9 @@ Status: draft written before Ring 1. The layout sketch and the rules check again
 | Wheelbase | 1550 mm |
 | Track front / rear | 1200 / 1150 mm |
 | Wheels | 10 inch rims, 457 mm tyre OD, 222 mm rolling radius |
-| Mass car / driver | 229 / 70 kg (rolled up from the mass budget in the parameter file; a quarter of it is still a guess) |
-| Weight distribution | 41 % front (computed from the budget with the battery in two sidepod packs and the motor in the bay behind the main hoop; the earlier single block behind the hoop with the motor behind the axle gave 35 %) |
-| CG height | 314 mm (computed from the budget) |
+| Mass car / driver | 232.6 / 70 kg (rolled up from the mass budget in the parameter file; a quarter of it is still a guess) |
+| Weight distribution | 42.3 % front with driver (computed from the budget, its positions reconciled with the CAD on 2026-11-28, with the battery in two sidepod packs and the motor in the bay behind the main hoop; the earlier single block behind the hoop with the motor behind the axle gave 35 %) |
+| CG height | 320 mm with driver, 299 mm without (computed from the budget; the CAD bodies give the same within 0.3 mm) |
 | Motor | 80 kW, 230 Nm, 6500 rpm |
 | Tyre | mu 1.4 at 750 N per tyre, falling as (750/Fz)^0.10 |
 | Aero estimates ClA / CdA (m2) | A 0.2 / 0.7, B 2.8 / 1.1, C 4.0 / 1.45, D 3.8 / 1.5, 45 % front |

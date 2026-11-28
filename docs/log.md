@@ -3,6 +3,23 @@
 One entry per session. Newest at the bottom. Each entry: date, ring, what was done, what was checked, next step.
 
 
+## Summary, 2026-11-28 (CAD session 3): mass budget positions reconciled with the CAD
+
+**Status: finished, no commits.** cfd/* not touched. The packaging clashes were not fixed and did not change (22 static). No CAD file changed, so the CAD was not rebuilt.
+
+How I read the brief: where the CAD models a budget line, the budget position becomes the mass-weighted position of that line's parts at their CAD bodies. Each change has its reason in the line's comment.
+
+- **Budget CG, with driver:** 901.5 / 308.9 mm (41.84 % front) before, 894.9 / 319.9 mm (42.26 %) now. CAD CG 895.1 / 319.6 mm.
+- **Budget CG, without driver:** 920.0 / 302.6 mm before, 896.4 / 299.1 mm now. CAD CG 896.7 / 298.8 mm.
+- **Remaining difference:** 0.3 mm or less, from the suspension links (not changed) and rounding.
+- **Lines changed** (`params/car_params.txt`):
+  - front wing, rear wing, floor, bodywork: set to the area centroids of the CAD bodies;
+  - driver: set to the `frame_layout.m` pose (890, 389);
+  - chain drive: 1537 / 225, because the comment's sprocket at X 1850 was wrong and `motor_x` 1340 is right;
+  - corners: 6 / 224 and 1556 / 224;
+  - cockpit: 583 / 327.
+- **Not re-run:** the lap sim and load cases at the new CG.
+
 ## Summary, 2026-11-28 (CAD session 2): packaging envelopes, packaging clashes, CAD CG, wing mass double count
 
 **Status: finished, no commits.** cfd/* not touched; lap sim and load cases not re-run (they wait for the CFD numbers).
@@ -1792,3 +1809,65 @@ Also wanted: common colour scales; MP4 and GIF films (orbit, wake sweep, build-u
 - the lap sim and load cases at the new CG (not re-run, by instruction).
 
 The SolidWorks assembly mass (323.3 kg) is not the car's: the non-envelope bodies are at SolidWorks' default density.
+
+
+## 2026-11-28, CAD session 3: mass budget positions reconciled with the CAD (detail)
+
+**Method.**
+- `cad/generate/cad_cg.py` puts every budget mass at the CAD bodies that stand for it.
+- It now uses surface (area) centroids for the wings, floor, nose and sidepods. These parts are carbon skins or sandwich panels, and the budget masses are per m². A volume centroid over-weights the solid main elements: by volume the front wing sat 70 mm further forward (−706 against −637).
+- Tyres and rims still use volume centroids.
+- The cockpit parts with no CAD body (5.5 kg) were at the budget position, so they could never match. They now have GUESS layout positions (`COCKPIT_REST`):
+  - pedal box 2.5 kg at (150, 250), ahead of the legs box;
+  - harness 1.5 kg at the hip–shoulder midpoint (1030, 395);
+  - firewall and headrest 1.5 kg at (1270, 500), in the main hoop plane.
+- New self-test checks by hand: the cockpit rest is 5.5 kg, the harness point is (1030.0, 394.5), and a 100 × 10 × 10 box has area 4200 mm² with its area centroid at x 50.
+
+**Lines changed** (old → new x / z, mm):
+
+| Line | Old | New | Reason |
+|---|---|---|---|
+| front wing | −300 / 150 | −637 / 173 | The CAD wing spans x −1060 to −210 (main LE about −960). The old value assumed a chord stack from −600 to 0. |
+| bodywork | 700 / 350 | 326 / 292 | Area centroid of the nose (5.79 kg by area) and the two sidepods. 700 had no CAD source. The cockpit surround is not modelled. |
+| rear wing | 1850 / 1250 | 1906 / 1263 | CAD area centroid. The CAD is trusted for the wings. |
+| floor and diffuser | 1200 / 60 | 1269 / 71 | CAD area centroid. |
+| driver | 840 / 330 | 890 / 389 | See below. |
+| chain drive | 1620 / 240 | 1537 / 225 | See below. |
+| corners front / rear | 0 / 240, 1550 / 240 | 6 / 224, 1556 / 224 | Tyre, rim, hub, upright and bearings are on the wheel centre (z 222, tyre centroid 226.9). The brake envelope (1.8 kg) is centred 39.5 mm behind the axle. 240 had no reason. |
+| cockpit | 650 / 300 | 583 / 327 | Mass-weighted: seat, rack, column and wheel from the CAD envelopes (the rack is at x −70), plus the layout positions above. |
+
+**Driver.**
+- I used the `frame_layout.m` pose, because the frame check uses it:
+  - hip at (850, 180), seat back at 40°;
+  - shoulder 560 mm up the back, helmet centre 200 mm further, at (1339, 762);
+  - envelopes: legs 21 kg at (495, 290), torso 43 kg at (1020, 385), head 6 kg at (1339, 762).
+- The old 840 / 330 came from a stick figure that is not this pose.
+- The FS Rules 2026 T4.3 template (circles of 200 mm, joined by 490 mm, and 300 mm, joined by 280 mm) is shorter from hip to shoulder (490 against 560 mm). The frame was not checked against the template, so I did not use it.
+- Cross-check, not adopted: a segment model (Winter fractions) in the same pose gives (906, 425). That is 16 mm further back and 36 mm higher than the uniform boxes, and would move the car CG by about +4 / +8 mm. In the template pose the same model gives (891, 410).
+- The seat back at 40° is "reclined" under T5.1.4.
+
+**Chain drive.**
+- `motor_x` 1340 is right. Three things agree with it:
+  - `motor_z` 270: centre distance sqrt(210² + 48²) = 215 mm, as its comment says;
+  - the `frame_layout.m` motor envelope;
+  - the frame check.
+- The `x_chain_drive` comment's "motor sprocket (1850)" came from an old layout with the motor behind the axle. The line is now mass-weighted: the diff (6.0 kg) and halfshafts (2.0 kg) on the axle (1550, 222), and the chain and sprockets (2.3 kg) at the chain envelope centroid (1490, 236).
+- The chain clash with the rear cross tubes did not come from this error. The chain envelope was always built from `motor_x` 1340; the wrong comment only moved the budget CG (about −3.7 mm in x, without driver).
+
+**Checks after the change.**
+- `cad_cg_report.txt` re-run: every changed line has dx = dz = 0. The suspension links remain at −6 / −4 (front) and +18 / −8 (rear); they were not changed and add 0.2 mm.
+- `mass_budget`, `media/mass_budget.md/.png` and `media/mass_table.md` regenerated.
+- `run_all('test')`: 28 / 28 passed.
+- `check_clearances.py` re-run: `packaging_report.txt` and the clearance results are unchanged (22 static clashes).
+
+**Docs.**
+- `docs/concept.md`: mass 232.6 / 70 kg, 42.3 % front, CG height 320 / 299 mm.
+- `README.md`: the mass row and the Mass and CG bullet.
+- `docs/buildup_audit.md`: a "reconciled later" note under the CG table. The table itself stays as the before state.
+
+**Not checked:**
+- the masses themselves (unchanged; 24 % GUESS);
+- the cockpit layout positions, which are guesses;
+- the T4.3.1 helmet clearance lines;
+- the frame against the FS template;
+- the lap sim and load cases at the new CG (42.3 % front, 320 mm): these results are now stale.
